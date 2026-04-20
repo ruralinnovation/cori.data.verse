@@ -1,0 +1,25 @@
+project:
+  type: default
+  title: "Rural Insights Dataverse"
+  output-dir: content
+  render:
+    - "posts/*/index.qmd"
+    - "datasets/*/index.qmd"
+    - "charts/*/index.qmd"
+    - "packages/*/index.qmd"
+    - "projects/*/index.qmd"
+    - "resources/*/index.qmd"
+
+# Site shell (nav, footer, etc.) is now managed by NextJS.
+# See src/app/layout.tsx and src/components/
+
+format:
+  gfm:
+    toc: false
+    wrap: none
+
+execute:
+  freeze: auto
+  echo: true
+  warning: false
+  message: false

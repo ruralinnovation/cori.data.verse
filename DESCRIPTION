@@ -1,17 +1,23 @@
 Package: cori.data.verse
-Title: Rural Dataverse by the Center on Rural Innovation (CORI)
+Title: Rural Insights Dataverse by the Center on Rural Innovation (CORI)
 Version: 1.0.1
 Author: John Hall
 Maintainer: John Hall <john.hall@ruralinnovation.us>
-Description: A universe of rural innovation data, tools, research, and analysis.
+Description: A universe of rural innovation data, tools, research, and analysis from the Center on Rural Innovation (CORI).
 License: file LICENSE
 Encoding: UTF-8
 LazyData: true
 Depends:
   cori.charts,
-  cori.data
+  cori.data,
+  cori.data.bds,
+  cori.data.fcc,
+  ruraldefinitions
 Remotes:
   ruralinnovation/cori.charts,
-  ruralinnovation/cori.data
+  ruralinnovation/cori.data,
+  ruralinnovation/cori.data.bds,
+  ruralinnovation/cori.data.fcc,
+  ruralinnovation/ruraldefinitions
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2

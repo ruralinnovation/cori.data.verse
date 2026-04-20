@@ -1,0 +1,16 @@
+.columns {
+  display: flex;
+  gap: min(4vw, 1.5em);
+  margin: 1.5em 0;
+}
+
+.column {
+  flex: 1;
+  overflow-x: auto;
+}
+
+@media (max-width: 640px) {
+  .columns {
+    flex-direction: column;
+  }
+}

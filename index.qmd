@@ -1,0 +1,28 @@
+---
+title: "Rural Insights Dataverse"
+subtitle: "Center on Rural Innovation (CORI)"
+format: html
+---
+
+> Preview index — not part of the built site (managed by Next.js).
+
+### Packages
+
+- [ruraldefinitions](packages/ruraldefinitions/index.md)
+- [cori.data.bds](packages/cori-data-bds/index.md)
+- [cori.data.fcc](packages/cori-data-fcc/index.md)
+
+### Datasets
+
+- [American Community Survey](datasets/american-community-survey/index.md)
+- [BEA Real GDP](datasets/bea-real-gdp/index.md)
+- [Census BDS](datasets/census-bds/index.md)
+- [Census BFS](datasets/census-bfs/index.md)
+- [Census Building Permits](datasets/census-building-permits/index.md)
+- [Census PEP Components](datasets/census-pep-components/index.md)
+- [Census Population Estimates](datasets/census-population-estimates/index.md)
+- [FCC Broadband](datasets/fcc-broadband/index.md)
+- [IRS Migration](datasets/irs-migration/index.md)
+- [QCEW Employment & Wages](datasets/qcew-employment-wages/index.md)
+- [USDA County Typology](datasets/usda-county-typology/index.md)
+- [USPTO Patents](datasets/uspto-patents/index.md)

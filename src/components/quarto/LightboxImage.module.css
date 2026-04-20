@@ -1,0 +1,30 @@
+.image {
+  cursor: zoom-in;
+  transition: opacity 0.2s;
+}
+
+.image:hover {
+  opacity: 0.9;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  cursor: zoom-out;
+  padding: 2rem;
+}
+
+.fullImage {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 4px;
+}

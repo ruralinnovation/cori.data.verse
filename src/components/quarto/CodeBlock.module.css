@@ -1,0 +1,17 @@
+.codeBlock {
+  position: relative;
+  margin: 1em 0;
+}
+
+.lang {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0.2em 0.6em;
+  font-size: 0.7em;
+  color: var(--color-subtitle);
+  background: var(--color-border);
+  border-radius: 0 6px 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

@@ -1,0 +1,48 @@
+.tabset {
+  margin: 1.5em 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.tabList {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-light);
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 0.6em 1.2em;
+  border: none;
+  background: none;
+  font-size: 0.9em;
+  font-family: var(--font-body);
+  cursor: pointer;
+  color: var(--color-subtitle);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 500;
+}
+
+.tabPanel {
+  padding: 1.25em;
+}
+
+.tabPanel > *:first-child {
+  margin-top: 0;
+}
+
+.tabPanel > *:last-child {
+  margin-bottom: 0;
+}
