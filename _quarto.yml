@@ -3,6 +3,7 @@ project:
   title: "Rural Dataverse"
   output-dir: content
   render:
+    - "index.qmd"
     - "about.qmd"
     - "posts/*/index.qmd"
     - "datasets/*/index.qmd"
