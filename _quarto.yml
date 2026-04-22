@@ -1,8 +1,9 @@
 project:
   type: default
-  title: "Rural Insights Dataverse"
+  title: "Rural Dataverse"
   output-dir: content
   render:
+    - "about.qmd"
     - "posts/*/index.qmd"
     - "datasets/*/index.qmd"
     - "charts/*/index.qmd"

@@ -40,6 +40,8 @@ export interface PackageInfo {
 
 export interface PackageMeta extends ContentMeta {
   package?: PackageInfo;
+  usesDatasets?: string[];
+  usesResources?: string[];
 }
 
 /** Project-specific frontmatter */
@@ -56,6 +58,7 @@ export interface ProjectMeta extends ContentMeta {
 export interface BlogPostMeta extends ContentMeta {
   subtitle?: string;
   draft?: boolean;
+  references?: string[];
 }
 
 /** Chart-specific frontmatter (nested under `chart:` key in .qmd) */
@@ -70,6 +73,9 @@ export interface ChartInfo {
 
 export interface ChartMeta extends ContentMeta {
   chart?: ChartInfo;
+  usesDatasets?: string[];
+  usesPackages?: string[];
+  producedBy?: string;
 }
 
 /** Content type identifiers */

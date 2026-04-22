@@ -5,7 +5,7 @@ export default function HomePage() {
     <>
       <div className="hero">
         <div className="container">
-          <h1>Welcome to the Rural Insights Dataverse</h1>
+          <h1>Welcome to the Rural Dataverse</h1>
           <p className="hero-description">
             A universe of rural innovation data, tools, research, and analysis from the Center on Rural Innovation (CORI).
           </p>

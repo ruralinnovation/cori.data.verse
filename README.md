@@ -1,1 +1,1 @@
-# Rural Insights Dataverse by the Center on Rural Innovation (CORI)
+# Rural Dataverse by the Center on Rural Innovation (CORI)

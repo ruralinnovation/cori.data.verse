@@ -12,6 +12,9 @@ chart:
   dataSource: "FCC National Broadband Map"
   sourceUrl: "https://broadbandmap.fcc.gov/"
   featured: true
+usesDatasets: ["fcc-broadband"]
+usesPackages: ["cori-data-fcc"]
+producedBy: ""
 execute:
   echo: false
   warning: false

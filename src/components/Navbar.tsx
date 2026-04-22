@@ -29,7 +29,7 @@ export default function Navbar() {
               width={45}
               height={45}
             />
-            <span>Rural Insights Dataverse</span>
+            <span>Rural Dataverse</span>
           </Link>
 
         </div>

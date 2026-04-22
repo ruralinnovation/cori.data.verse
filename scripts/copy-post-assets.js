@@ -51,6 +51,22 @@ function copyAssets(srcDir, destDir, basePath = "") {
   return copied;
 }
 
+/**
+ * Copy a single file from content/ to public/content/ if it exists.
+ */
+function copySingleFile(relPath) {
+  const srcPath = path.join(process.cwd(), "content", relPath);
+  const destPath = path.join(PUBLIC_CONTENT_DIR, relPath);
+  if (!fs.existsSync(srcPath)) return 0;
+  fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  fs.copyFileSync(srcPath, destPath);
+  return 1;
+}
+
 // Main
-const copied = copyAssets(POSTS_DIR, PUBLIC_CONTENT_DIR);
+let copied = copyAssets(POSTS_DIR, PUBLIC_CONTENT_DIR);
+
+// Copy graph.json from content/ to public/content/
+copied += copySingleFile("graph.json");
+
 console.log(`copy-post-assets: Copied ${copied} asset files to public/content/`);

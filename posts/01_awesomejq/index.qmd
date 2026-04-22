@@ -4,6 +4,7 @@ author: "Olivier Leroy"
 date: "2024-03-10"
 categories: [cli, code, geojson, json, spatial data, broadband]
 image: thumbnail.png
+references: []
 ---
 
 If you are manipulating a lot of [`GeoJSON`](https://en.wikipedia.org/wiki/GeoJSON) features/objects and want a quick CLI tool to filter and slice them, you should give jq a try! 

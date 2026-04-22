@@ -1,5 +1,5 @@
 Package: cori.data.verse
-Title: Rural Insights Dataverse by the Center on Rural Innovation (CORI)
+Title: Rural Dataverse by the Center on Rural Innovation (CORI)
 Version: 1.0.1
 Author: John Hall
 Maintainer: John Hall <john.hall@ruralinnovation.us>
@@ -19,5 +19,16 @@ Remotes:
   ruralinnovation/cori.data.bds,
   ruralinnovation/cori.data.fcc,
   ruralinnovation/ruraldefinitions
+Imports:
+  yaml,
+  jsonlite,
+  here
+Suggests:
+  igraph,
+  ggraph,
+  ggplot2,
+  tidygraph,
+  targets,
+  testthat (>= 3.0.0)
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
