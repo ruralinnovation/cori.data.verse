@@ -15,22 +15,6 @@
     "rural",
     "data"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/ruralinnovation/blog"
-  },
-  "scripts": {
-    "build": "next build",
-    "copy:assets": "node scripts/copy-post-assets.js",
-    "dev:next": "next dev",
-    "next": "next",
-    "prebuild": "npm run render && npm run preprocess && npm run copy:assets",
-    "preprocess": "node scripts/preprocess-markdown.js",
-    "preview": "quarto preview",
-    "render": "quarto render",
-    "start": "python3 -m http.server -d out 3000",
-    "type:check": "npx tsc --noEmit"
-  },
   "dependencies": {
     "next": "^16.2.4",
     "react": "^18.3.1",
@@ -40,9 +24,28 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "chokidar-cli": "^3.0.0",
+    "concurrently": "^9.2.1",
     "gray-matter": "^4.0.3",
     "markdown-to-jsx": "^7.5.0",
     "sass": "^1.70.0",
     "typescript": "^5.9.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/ruralinnovation/blog"
+  },
+  "scripts": {
+    "build": "next build",
+    "copy": "node scripts/copy-post-assets.js",
+    "dev": "concurrently 'next dev' 'npm run watch:content'",
+    "next": "next",
+    "prebuild": "npm run preprocess && npm run copy",
+    "preprocess": "node scripts/preprocess-markdown.js",
+    "preview": "quarto preview",
+    "render": "Rscript -e \"targets::tar_make()\"",
+    "start": "python3 -m http.server -d out 3001",
+    "type:check": "npx tsc --noEmit",
+    "watch:content": "chokidar 'content/**/*' -c 'npm run prebuild'"
   }
 }

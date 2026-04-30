@@ -12,8 +12,8 @@ const bitter = Bitter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Rural Insights Dataverse",
-    template: "%s | Rural Insights Dataverse",
+    default: "Rural Dataverse",
+    template: "%s | Rural Dataverse",
   },
   description:
     "Your hub for rural innovation data, tools, research, and analysis. Explore datasets, R packages, projects, and blog posts from the CORI MDA team.",

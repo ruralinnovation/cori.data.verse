@@ -1,7 +1,7 @@
 ---
 title: "Census PEP Components of Change"
 description: "Annual decomposition of population change into births, deaths, and migration"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2026-02-02"
 categories: ["Dataset", "Demographics"]
 tags: ["Census", "Population", "Migration", "Vital Statistics", "County-Level"]

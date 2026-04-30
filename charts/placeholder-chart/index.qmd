@@ -1,7 +1,7 @@
 ---
 title: "Rural Broadband Adoption Over Time"
 description: "Trend chart of FCC broadband adoption in rural counties, 2019–2024"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2026-04-20"
 categories: ["Chart", "Broadband"]
 tags: ["FCC", "Adoption", "Time Series"]
@@ -12,6 +12,9 @@ chart:
   dataSource: "FCC National Broadband Map"
   sourceUrl: "https://broadbandmap.fcc.gov/"
   featured: true
+usesDatasets: ["fcc-broadband"]
+usesPackages: ["cori-data-fcc"]
+producedBy: ""
 execute:
   echo: false
   warning: false

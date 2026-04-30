@@ -1,7 +1,7 @@
 ---
 title: "USDA ERS County Typology Codes"
 description: "Economic and demographic classifications for understanding county characteristics"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2026-02-02"
 categories: ["Dataset", "Rural Classification"]
 tags: ["USDA", "Economic Specialization", "Persistent Poverty", "County-Level"]

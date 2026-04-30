@@ -1,7 +1,7 @@
 ---
 title: "BEA Real GDP Per Capita"
 description: "Inflation-adjusted economic output data from the Bureau of Economic Analysis"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2026-02-02"
 categories: ["Dataset", "Economic Indicators"]
 tags: ["BEA", "GDP", "Economic Growth", "County-Level"]

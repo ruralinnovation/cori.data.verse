@@ -28,3 +28,9 @@
 ^CLAUDE\.md$
 ^blog-mda\.Rproj$
 ^.*\.Rproj$
+^_targets$
+^_targets\.R$
+^data-raw$
+^tsconfig\.tsbuildinfo$
+^resources$
+^SKILLS\.md$

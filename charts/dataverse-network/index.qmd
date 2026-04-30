@@ -1,0 +1,113 @@
+---
+title: "Rural Dataverse Content Network"
+description: "Dependency network diagram showing relationships between datasets, packages, projects, charts, resources, and posts"
+author: "Mapping & Data Analytics Team"
+date: "2026-04-21"
+categories: ["Chart", "Network"]
+tags: ["graph", "dependencies", "network"]
+chart:
+  title: "Rural Dataverse Content Network"
+  chartType: "network"
+  interactive: false
+  dataSource: "content/graph.json"
+  featured: true
+usesDatasets: []
+usesPackages: []
+producedBy: ""
+execute:
+  echo: false
+  warning: false
+  message: false
+  freeze: false
+---
+
+A network visualization of content relationships in the Rural Dataverse. Nodes
+represent content items (datasets, packages, projects, charts, resources, posts)
+and edges represent dependency, production, and reference relationships.
+
+```{r}
+#| label: dataverse-network
+#| fig-width: 10
+#| fig-height: 8
+#| fig-dpi: 192
+#| fig-alt: "Network diagram showing content relationships in the Rural Dataverse"
+
+library(igraph)
+library(tidygraph)
+library(ggraph)
+library(ggplot2)
+
+# Build graph.json from .qmd frontmatter (writes to content/graph.json)
+graph <- cori.data.verse::build_graph()
+
+graph_path <- here::here("content", "graph.json")
+graph_data <- jsonlite::fromJSON(graph_path)
+
+nodes <- graph_data$nodes
+edges <- graph_data$edges
+
+# Filter out dangling edges (source or target not in node list)
+valid <- edges$source %in% nodes$id & edges$target %in% nodes$id
+edges <- edges[valid, , drop = FALSE]
+
+if (nrow(edges) == 0) {
+  plot.new()
+  text(0.5, 0.5, "No edges in graph.json.", cex = 1.2, col = "gray40")
+} else {
+  g <- graph_from_data_frame(
+    d        = edges[, c("source", "target", "relation")],
+    directed = TRUE,
+    vertices = nodes[, c("id", "type", "title")]
+  )
+
+  tg <- as_tbl_graph(g)
+
+  type_colors <- c(
+    dataset  = "#3B82F6",
+    chart    = "#F59E0B",
+    package  = "#10B981",
+    project  = "#8B5CF6",
+    post     = "#9CA3AF",
+    resource = "#14B8A6"
+  )
+
+  edge_colors <- c(
+    depends_on  = "#6B7280",
+    produced_by = "#8B5CF6",
+    references  = "#9CA3AF"
+  )
+
+  ggraph(tg, layout = "fr") +
+    geom_edge_link(
+      aes(colour = relation),
+      arrow = arrow(length = unit(3, "mm"), type = "closed"),
+      end_cap = circle(4, "mm"),
+      start_cap = circle(4, "mm"),
+      alpha = 0.6
+    ) +
+    geom_node_point(
+      aes(colour = type),
+      size = 5
+    ) +
+    geom_node_text(
+      aes(label = title),
+      repel = TRUE,
+      size = 3,
+      max.overlaps = 20
+    ) +
+    scale_colour_manual(
+      values = type_colors,
+      name = "Content Type"
+    ) +
+    scale_edge_colour_manual(
+      values = edge_colors,
+      name = "Relation"
+    ) +
+    theme_void() +
+    theme(
+      legend.position = "bottom",
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold")
+    ) +
+    labs(title = "Rural Dataverse Content Network")
+}
+```

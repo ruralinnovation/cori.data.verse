@@ -1,7 +1,7 @@
 ---
 title: "BLS Quarterly Census of Employment and Wages (QCEW)"
 description: "Comprehensive county-level employment and wage data by industry from the Bureau of Labor Statistics"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2026-02-02"
 categories: ["Dataset", "Labor Market"]
 tags: ["BLS", "Employment", "Wages", "Industry", "County-Level"]

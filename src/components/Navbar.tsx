@@ -23,13 +23,13 @@ export default function Navbar() {
           <Link href="/" className={styles.siteTitle}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/assets/images/Full-Logo_CORI_Cream.svg"
+              src="/assets/images/Logo-Mark_CORI_Cream.svg"
               alt="CORI Logo"
               className={styles.logo}
               width={45}
               height={45}
             />
-            <span>Rural Insights Dataverse</span>
+            <span>Rural Dataverse</span>
           </Link>
 
         </div>

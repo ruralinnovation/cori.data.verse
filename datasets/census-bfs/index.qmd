@@ -1,7 +1,7 @@
 ---
 title: "Census Business Formation Statistics (BFS)"
 description: "Leading indicator of new business activity based on IRS business applications"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2026-02-02"
 categories: ["Dataset", "Entrepreneurship"]
 tags: ["Census", "Business Formation", "Startups", "Leading Indicator"]

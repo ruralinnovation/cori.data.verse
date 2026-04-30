@@ -1,12 +1,15 @@
 project:
   type: default
-  title: "Rural Insights Dataverse"
+  title: "Rural Dataverse"
   output-dir: content
+  pre-render: Rscript -e "cori.data.verse::clean_stale_content()"
   render:
-    - "posts/*/index.qmd"
-    - "datasets/*/index.qmd"
+    - "index.qmd"
+    - "about.qmd"
     - "charts/*/index.qmd"
+    - "datasets/*/index.qmd"
     - "packages/*/index.qmd"
+    - "posts/*/index.qmd"
     - "projects/*/index.qmd"
     - "resources/*/index.qmd"
 

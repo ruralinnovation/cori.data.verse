@@ -7,6 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   distDir: "out",
   output: "export",
+  trailingSlash: true,
   reactStrictMode: true,
   typescript: { ignoreBuildErrors: true },
   basePath: process.env.NEXT_PUBLIC_BASE_PATH || "",

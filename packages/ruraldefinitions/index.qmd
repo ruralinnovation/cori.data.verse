@@ -13,6 +13,8 @@ package:
   version: "0.1.0"
   maintainer: "Camden Blatchly"
   featured: true
+usesDatasets: []
+usesResources: []
 execute:
   echo: true
   warning: false

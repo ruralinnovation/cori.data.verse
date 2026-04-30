@@ -1,7 +1,7 @@
 ---
 title: "FCC National Broadband Map"
 description: "Comprehensive broadband availability and adoption data from the Federal Communications Commission"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2025-12-15"
 categories: ["Dataset", "Broadband", "Infrastructure"]
 tags: ["FCC", "Connectivity", "Geographic"]
@@ -272,8 +272,7 @@ Not all technologies are equal:
 ## Related Resources
 
 - [cori.data.fcc R Package](/packages/cori-data-fcc/)
-- [FCC Data Overview Blog Post](/stories/fcc-data-overview/)
-- [Broadband Equity Project](/projects/broadband-equity/)
+- [FCC Data Overview Blog Post](/blog/12_fcc-data/)
 
 ## R Packages
 
