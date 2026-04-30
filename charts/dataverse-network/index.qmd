@@ -1,7 +1,7 @@
 ---
 title: "Rural Dataverse Content Network"
 description: "Dependency network diagram showing relationships between datasets, packages, projects, charts, resources, and posts"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2026-04-21"
 categories: ["Chart", "Network"]
 tags: ["graph", "dependencies", "network"]
@@ -18,6 +18,7 @@ execute:
   echo: false
   warning: false
   message: false
+  freeze: false
 ---
 
 A network visualization of content relationships in the Rural Dataverse. Nodes
@@ -28,6 +29,7 @@ and edges represent dependency, production, and reference relationships.
 #| label: dataverse-network
 #| fig-width: 10
 #| fig-height: 8
+#| fig-dpi: 192
 #| fig-alt: "Network diagram showing content relationships in the Rural Dataverse"
 
 library(igraph)

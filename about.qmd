@@ -1,6 +1,6 @@
 ---
 title: ""
-image: assets/images/Full-Logo_CORI_Black.svg
+image: /assets/images/Full-Logo_CORI_Black.svg
 about:
   template: jolla
   links:
@@ -10,7 +10,7 @@ about:
 
 ---
 
-<a id="github-profile-logo" href="https://ruralinnovation.us/" target="_blank"><img src="assets/images/Full-Logo_CORI_Black.svg" alt="The Center on Rural Innovation" width="12%" align="left" /></a>
+<a id="github-profile-logo" href="https://ruralinnovation.us/" target="_blank"><img src="/assets/images/Full-Logo_CORI_Black.svg" alt="The Center on Rural Innovation" width="12%" align="left" /></a>
 <br />
 
 ***

@@ -27,6 +27,48 @@ function cleanMarkdownForJSX(content: string): string {
     .replace(/(<label[^>]*)\bfor=/g, "$1htmlFor=");
 }
 
+/**
+ * Resolve Quarto-relativized internal links back to absolute NextJS route paths.
+ * Quarto converts source-level absolute links like `/blog/12_fcc-data/` to
+ * relative links like `../../blog/12_fcc-data/` based on the output file's
+ * depth in content/. When rendered at a different URL depth (e.g.
+ * /charts-and-data/datasets/fcc-broadband/), the relative link resolves
+ * incorrectly. This function resolves relative links against the content-root
+ * base to produce absolute paths.
+ *
+ * contentBasePath: path of the content file relative to content/ root,
+ *   e.g. "datasets/fcc-broadband" or "posts/12_fcc-data"
+ */
+function resolveRelativeLinks(content: string, contentBasePath: string): string {
+  const base = "/" + contentBasePath;
+  return content.replace(
+    /(?<!!)\[([^\]]*)\]\(((?:\.\.\/|\.\/)[^)#\s]*)(#[^)]*)?\)/g,
+    (_match, text, href, anchor = "") => {
+      const resolved = path.posix.resolve(base, href);
+      const withSlash = resolved.endsWith("/") ? resolved : resolved + "/";
+      return `[${text}](${withSlash}${anchor})`;
+    }
+  );
+}
+
+/**
+ * Rewrite relative asset paths (images, etc.) in rendered markdown to absolute
+ * public paths. Quarto GFM preserves relative paths like `images/foo.png`;
+ * the browser resolves these against the page URL, not the public/content/
+ * directory where copy-post-assets.js places the files.
+ */
+function rewriteRelativeAssetPaths(content: string, basePath: string): string {
+  content = content.replace(
+    /!\[([^\]]*)\]\((?!(?:https?:|\/\/|\/|data:))(\.\/)?([^)\s]+)\)/g,
+    (_match, alt, _dot, src) => `![${alt}](${basePath}${src})`
+  );
+  content = content.replace(
+    /(<img[^>]*?\ssrc=")(?!(?:https?:|\/\/|\/|data:))(\.\/)?([^"]+)"/g,
+    (_match, prefix, _dot, src) => `${prefix}${basePath}${src}"`
+  );
+  return content;
+}
+
 /** Top-level content type directories (datasets/, charts/, packages/, projects/, resources/) */
 const CONTENT_TYPE_DIRS: ContentType[] = [
   "datasets",
@@ -167,21 +209,36 @@ export function getMarkdownBody(
       ? path.join(CONTENT_DIR, "posts", slug, "index.md")
       : path.join(CONTENT_DIR, contentType, slug, "index.md");
 
+  // Base path for resolving relative assets in public/content/
+  // Blog: posts/<slug>/ → public/content/<slug>/  →  /content/<slug>/
+  // Other: <type>/<slug>/  → public/content/<type>/<slug>/  →  /content/<type>/<slug>/
+  const assetBase =
+    contentType === "blog"
+      ? `/content/${slug}/`
+      : `/content/${contentType}/${slug}/`;
+
+  // Content-root-relative path of the file (for resolving Quarto-relativized links)
+  const contentBasePath =
+    contentType === "blog" ? `posts/${slug}` : `${contentType}/${slug}`;
+
+  const transform = (raw: string) => {
+    const { content } = matter(raw);
+    return resolveRelativeLinks(
+      rewriteRelativeAssetPaths(cleanMarkdownForJSX(content), assetBase),
+      contentBasePath
+    );
+  };
+
   if (!fs.existsSync(mdPath)) {
     // Fallback: try .md file directly
     const altPath = mdPath.replace("/index.md", ".md");
     if (fs.existsSync(altPath)) {
-      const raw = fs.readFileSync(altPath, "utf-8");
-      const { content } = matter(raw);
-      return cleanMarkdownForJSX(content);
+      return transform(fs.readFileSync(altPath, "utf-8"));
     }
     return `> Content not found: ${mdPath}`;
   }
 
-  const raw = fs.readFileSync(mdPath, "utf-8");
-  // Strip frontmatter if present (gray-matter leaves it)
-  const { content } = matter(raw);
-  return cleanMarkdownForJSX(content);
+  return transform(fs.readFileSync(mdPath, "utf-8"));
 }
 
 /**

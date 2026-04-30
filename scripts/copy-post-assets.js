@@ -13,6 +13,7 @@ import fs from "fs";
 import path from "path";
 
 const POSTS_DIR = path.join(process.cwd(), "posts");
+const CONTENT_DIR = path.join(process.cwd(), "content");
 const PUBLIC_CONTENT_DIR = path.join(process.cwd(), "public", "content");
 
 /** File extensions to skip (source files, not assets) */
@@ -64,7 +65,23 @@ function copySingleFile(relPath) {
 }
 
 // Main
+
+// Blog posts: posts/<slug>/ → public/content/<slug>/
 let copied = copyAssets(POSTS_DIR, PUBLIC_CONTENT_DIR);
+
+// Other content types: <type>/<slug>/ → public/content/<type>/<slug>/
+const CONTENT_TYPE_DIRS = ["datasets", "charts", "packages", "projects", "resources"];
+for (const type of CONTENT_TYPE_DIRS) {
+  const typeDir = path.join(process.cwd(), type);
+  const destTypeDir = path.join(PUBLIC_CONTENT_DIR, type);
+  if (fs.existsSync(typeDir)) {
+    copied += copyAssets(typeDir, destTypeDir);
+  }
+}
+
+// Copy Quarto-generated assets (e.g. index_files/ figures) from content/ to public/content/.
+// SKIP_EXTENSIONS already excludes .md, so only non-markdown outputs (images, etc.) are copied.
+copied += copyAssets(CONTENT_DIR, PUBLIC_CONTENT_DIR);
 
 // Copy graph.json from content/ to public/content/
 copied += copySingleFile("graph.json");

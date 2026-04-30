@@ -1,7 +1,7 @@
 ---
 title: "FCC National Broadband Map"
 description: "Comprehensive broadband availability and adoption data from the Federal Communications Commission"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2025-12-15"
 categories: ["Dataset", "Broadband", "Infrastructure"]
 tags: ["FCC", "Connectivity", "Geographic"]

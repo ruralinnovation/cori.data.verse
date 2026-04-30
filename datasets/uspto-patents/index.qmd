@@ -1,7 +1,7 @@
 ---
 title: "USPTO Patents by County"
 description: "Patent grants by inventor and assignee location for measuring innovation"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2026-02-02"
 categories: ["Dataset", "Innovation"]
 tags: ["USPTO", "Patents", "Innovation", "County-Level"]

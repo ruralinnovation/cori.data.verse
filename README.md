@@ -46,18 +46,18 @@ Your content here...
 quarto preview datasets/my-new-dataset/index.qmd
 ```
 
-#### 4. Build the full site
+#### 4. Render all .qmd files to @`content/` and sync with S3:
 
 ```bash
-npm run render      # Render all .qmd files to content/
-npm run build       # Build the Next.js static site
-npm run start       # Serve the built site locally (so you can review and commit)
+npm run render      # Run the targets pipeline
+# Rscript -e "targets::tar_make()" # ... same
 ```
 
-#### 5. Run the targets pipeline to sync local content with S3:
+#### 5. Build the full site
 
 ```bash
-Rscript -e "targets::tar_make()"
+npm run build       # Build the Next.js static site
+npm run start       # Serve the built site locally (so you can review and commit)
 ```
 
 ## Content Types
@@ -155,6 +155,45 @@ Run the targets pipeline to sync content with S3:
 ```bash
 Rscript -e "targets::tar_make()"
 ```
+
+## GitHub Pages Deployment
+
+The site deploys to GitHub Pages automatically when changes are pushed to `main`. The CI pipeline:
+
+1. Syncs rendered content from S3 (`s3://cori.data.verse/main/content/`)
+2. Runs preprocessing and asset copying (`npm run prebuild`)
+3. Builds the Next.js static site (`npm run build`)
+4. Deploys `out/` to GitHub Pages
+
+Note: Quarto rendering happens locally, not in CI. The `content/` directory in CI is populated solely from S3.
+
+### Setting Up AWS Credentials
+
+The GitHub Actions workflows require AWS credentials to sync content from S3. Add these secrets to your repository:
+
+1. Go to **Settings > Secrets and variables > Actions**
+2. Click **New repository secret**
+3. Add the following secrets:
+
+| Secret Name | Description |
+|-------------|-------------|
+| `AWS_ACCESS_KEY_ID` | AWS access key with S3 read permissions |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret access key |
+
+The IAM user/role needs `s3:GetObject` and `s3:ListBucket` permissions on the `cori.data.verse` bucket.
+
+### Workflows
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `build.yml` | PRs to `main`, pushes to `dev/**` | Build verification (no deploy) |
+| `deploy.yml` | Push to `main` | Build and deploy to GitHub Pages |
+
+### Enabling GitHub Pages
+
+1. Go to **Settings > Pages**
+2. Under **Build and deployment**, select **GitHub Actions** as the source
+3. The first push to `main` will trigger the deployment
 
 ## License
 

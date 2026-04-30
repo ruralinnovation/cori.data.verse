@@ -1,7 +1,7 @@
 ---
 title: "IRS County-to-County Migration Data"
 description: "Annual migration flows and income data based on tax return addresses"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2026-02-02"
 categories: ["Dataset", "Migration"]
 tags: ["IRS", "Migration", "Population", "County-Level"]

@@ -1,7 +1,7 @@
 ---
 title: "Census Building Permits Survey (BPS)"
 description: "Monthly and annual data on housing units authorized by building permits"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2026-02-02"
 categories: ["Dataset", "Housing"]
 tags: ["Census", "Building Permits", "Housing Supply", "County-Level"]

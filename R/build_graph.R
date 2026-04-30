@@ -87,14 +87,14 @@ build_edges <- function(items) {
     fm <- item$frontmatter
     source_id <- paste0(item$type, "/", item$slug)
 
-    # depends_on edges: package, project, chart → dataset/package/resource
-    if (item$type %in% c("package", "project", "chart")) {
+    # depends_on edges: package, project, chart, post → dataset/package/resource
+    if (item$type %in% c("package", "project", "chart", "post")) {
       edges <- c(edges, make_edges(source_id, "depends_on", "dataset",
                                    fm[["usesDatasets"]]))
       edges <- c(edges, make_edges(source_id, "depends_on", "resource",
                                    fm[["usesResources"]]))
     }
-    if (item$type %in% c("project", "chart")) {
+    if (item$type %in% c("project", "chart", "post")) {
       edges <- c(edges, make_edges(source_id, "depends_on", "package",
                                    fm[["usesPackages"]]))
     }

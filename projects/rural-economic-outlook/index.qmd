@@ -23,7 +23,7 @@ featured: true
 projectUrl: https://github.com/ruralinnovation/data-rural-economic-outlook
 status: active
 team:
-  - CORI Mapping and Data Analytics Team
+  - Mapping & Data Analytics Team
 usesDatasets:
   - census-population-estimates
   - census-pep-components

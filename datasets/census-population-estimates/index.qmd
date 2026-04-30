@@ -1,7 +1,7 @@
 ---
 title: "Census Population Estimates Program (PEP)"
 description: "Annual county-level population estimates from the U.S. Census Bureau"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2026-02-02"
 categories: ["Dataset", "Demographics"]
 tags: ["Census", "Population", "County-Level", "Annual"]

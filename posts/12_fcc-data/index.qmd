@@ -18,9 +18,10 @@ categories:
   - NBM
   - spatial
 draft: false
-# format:
-#   gfm:
-#     variant: +yaml_metadata_block
+usesDatasets:
+  - fcc-broadband
+usesPackages:
+  - cori-data-fcc
 image: images/whats-on-the-national-broadband-map-113023-1.png
 ---
 

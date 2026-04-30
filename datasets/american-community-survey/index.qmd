@@ -1,7 +1,7 @@
 ---
 title: "American Community Survey (ACS) 5-Year Estimates"
 description: "Comprehensive demographic, social, economic, and housing data from the U.S. Census Bureau"
-author: "CORI Data Team"
+author: "Mapping & Data Analytics Team"
 date: "2026-02-02"
 categories: ["Dataset", "Demographics", "Labor Market", "Housing"]
 tags: ["Census", "ACS", "Demographics", "County-Level", "Survey"]
