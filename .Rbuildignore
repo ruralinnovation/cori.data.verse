@@ -33,3 +33,4 @@
 ^data-raw$
 ^tsconfig\.tsbuildinfo$
 ^resources$
+^SKILLS\.md$
