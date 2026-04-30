@@ -36,14 +36,17 @@ confirm_production_write <- function(prefix) {
 
 list(
   tar_target(s3_bucket, "cori.data.verse"),
-  tar_target(s3_prefix, get_s3_prefix()),
-  tar_target(confirmed, confirm_production_write(s3_prefix)),
+  tar_target(s3_prefix, get_s3_prefix(),
+             cue = tar_cue(mode = "always")),
+  tar_target(confirmed, confirm_production_write(s3_prefix),
+             cue = tar_cue(mode = "always")),
   tar_target(
     render_result,
     {
       quarto::quarto_render(as_job = FALSE)
       Sys.time()
-    }
+    },
+    cue = tar_cue(mode = "always")
   ),
   tar_target(
     sync_result,
@@ -58,6 +61,7 @@ list(
         bucket      = s3_bucket,
         prefix      = s3_prefix
       )
-    }
+    },
+    cue = tar_cue(mode = "always")
   )
 )

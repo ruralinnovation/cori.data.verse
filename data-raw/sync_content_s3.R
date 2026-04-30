@@ -16,6 +16,18 @@ get_s3_prefix <- function() {
   if (identical(branch, "main")) "main/content/" else "dev/content/"
 }
 
+# --- Git-aware deletion helpers ----------------------------------------------
+
+#' Return relative paths of .qmd files git considers deleted (staged or unstaged).
+get_git_deleted_qmds <- function() {
+  lines <- system2("git", c("status", "--porcelain"), stdout = TRUE)
+  if (length(lines) == 0) return(character(0))
+  # Lines where the first OR second status character is 'D', ending in .qmd
+  deleted <- lines[grepl("^[ D]D .+\\.qmd$", lines)]
+  # Strip the two-character status prefix + space
+  sub("^.{3}", "", deleted)
+}
+
 # --- Sync manifest -----------------------------------------------------------
 
 #' Build a sync manifest comparing local files to S3 objects.
@@ -193,14 +205,32 @@ pull_content_from_s3 <- function(content_dir, bucket, prefix,
 #' @param dry_run Logical. If TRUE, only report what would happen.
 sync_content_s3 <- function(content_dir, bucket, prefix,
                             dry_run = FALSE) {
+  # S3 keys that correspond to source .qmd files git considers deleted.
+  # These are promoted from "pull" to "delete_from_s3" rather than pulled down.
+  deleted_qmds    <- get_git_deleted_qmds()
+  deleted_s3_keys <- vapply(deleted_qmds, function(q) {
+    paste0(prefix, sub("\\.qmd$", ".md", q))
+  }, character(1))
+
   manifest <- build_sync_manifest(content_dir, bucket, prefix)
 
-  to_push <- manifest[manifest$action == "push", ]
-  to_pull <- manifest[manifest$action == "pull", ]
-  skipped <- manifest[manifest$action == "skip", ]
+  # Promote pull → delete_from_s3 only for git-deleted sources
+  if (length(deleted_s3_keys) > 0) {
+    manifest$action[
+      manifest$action == "pull" &
+      manifest$s3_key %in% deleted_s3_keys
+    ] <- "delete_from_s3"
+  }
 
-  message("sync: ", nrow(to_push), " to push, ", nrow(to_pull),
-          " to pull, ", nrow(skipped), " unchanged.")
+  to_push   <- manifest[manifest$action == "push",           ]
+  to_pull   <- manifest[manifest$action == "pull",           ]
+  to_delete <- manifest[manifest$action == "delete_from_s3", ]
+  skipped   <- manifest[manifest$action == "skip",           ]
+
+  message("sync: ", nrow(to_push),   " to push, ",
+                    nrow(to_pull),   " to pull, ",
+                    nrow(to_delete), " to delete from S3, ",
+                    nrow(skipped),   " unchanged.")
 
   if (dry_run) {
     if (nrow(to_push) > 0) {
@@ -212,6 +242,11 @@ sync_content_s3 <- function(content_dir, bucket, prefix,
       message("  [dry run] Would pull:")
       for (i in seq_len(nrow(to_pull)))
         message("    ", to_pull$rel_path[i])
+    }
+    if (nrow(to_delete) > 0) {
+      message("  [dry run] Would delete from S3:")
+      for (i in seq_len(nrow(to_delete)))
+        message("    ", to_delete$s3_key[i])
     }
     return(invisible(manifest))
   }
@@ -246,6 +281,20 @@ sync_content_s3 <- function(content_dir, bucket, prefix,
         Filename = local_path
       )
       message("  pulled: ", to_pull$rel_path[i])
+    }
+  }
+
+  # Delete from S3 (and locally) for git-deleted source .qmd files
+  if (nrow(to_delete) > 0) {
+    s3_del <- paws.storage::s3()
+    for (i in seq_len(nrow(to_delete))) {
+      local_path <- file.path(content_dir, to_delete$rel_path[i])
+      if (file.exists(local_path)) {
+        unlink(dirname(local_path), recursive = TRUE)
+        message("  deleted local: ", to_delete$rel_path[i])
+      }
+      s3_del$delete_object(Bucket = bucket, Key = to_delete$s3_key[i])
+      message("  deleted from S3: ", to_delete$s3_key[i])
     }
   }
 

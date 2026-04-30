@@ -42,7 +42,7 @@
     "preprocess": "node scripts/preprocess-markdown.js",
     "preview": "quarto preview",
     "render": "quarto render",
-    "start": "python3 -m http.server -d out 3000",
+    "start": "python3 -m http.server -d out 3001",
     "type:check": "npx tsc --noEmit"
   }
 }

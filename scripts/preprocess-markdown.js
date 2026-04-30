@@ -44,19 +44,72 @@ function findMarkdownFiles(dir) {
 }
 
 /**
- * Process a single markdown file, converting Quarto ::: directives
- * to HTML div markers.
+ * Process a single markdown file, converting Quarto directives and
+ * markdown headings inside HTML divs to proper HTML.
  *
- * Uses a stack-based approach to track nesting depth of ::: blocks.
+ * Handles both ::: syntax (legacy) and HTML divs (Quarto GFM output).
  */
 function processMarkdown(content) {
   const lines = content.split("\n");
   const output = [];
-  const divStack = []; // Track open ::: blocks for proper closing
+  const divStack = []; // Track open div blocks
+  let inCodeFence = false; // Track fenced code blocks (```)
+
+  // Quarto HTML div classes that contain markdown content
+  const quartoHtmlDivs = new Set([
+    "panel-tabset",
+    "callout-note",
+    "callout-tip",
+    "callout-warning",
+    "callout-important",
+    "columns",
+    "column",
+    "aside",
+  ]);
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
+
+    // Toggle code-fence state on ``` lines (with or without language tag)
+    // Pass through unchanged so heading conversion doesn't touch code contents
+    if (/^```/.test(trimmed)) {
+      inCodeFence = !inCodeFence;
+      output.push(line);
+      continue;
+    }
+
+    // Inside a code fence: pass everything through verbatim
+    if (inCodeFence) {
+      output.push(line);
+      continue;
+    }
+
+    // Handle HTML opening divs from Quarto (e.g., <div class="panel-tabset">)
+    const htmlDivMatch = trimmed.match(/^<div\s+(?:class|data-[a-z]+)="([^"]+)"/);
+    if (htmlDivMatch) {
+      const className = htmlDivMatch[1];
+      if (
+        quartoHtmlDivs.has(className) ||
+        className.startsWith("callout-") ||
+        className === "column" ||
+        className === "columns" ||
+        className === "tabset"
+      ) {
+        divStack.push(className);
+        output.push(line);
+        continue;
+      }
+    }
+
+    // Handle closing HTML divs
+    if (/^<\/div>/.test(trimmed)) {
+      if (divStack.length > 0) {
+        divStack.pop();
+      }
+      output.push(line);
+      continue;
+    }
 
     // Opening ::: directives (with class/attributes)
     if (/^:::\s*\{\.callout-(note|tip|warning|important)\}/.test(trimmed)) {
@@ -104,6 +157,18 @@ function processMarkdown(content) {
         output.push(line);
       }
       continue;
+    }
+
+    // Convert markdown headings to HTML when inside Quarto divs
+    // This ensures markdown-to-jsx can parse them correctly
+    if (divStack.length > 0 && /^#+\s+/.test(trimmed)) {
+      const headingMatch = line.match(/^(#+)\s+(.*?)$/);
+      if (headingMatch) {
+        const level = headingMatch[1].length;
+        const text = headingMatch[2];
+        output.push(`<h${level}>${text}</h${level}>`);
+        continue;
+      }
     }
 
     // Convert lightbox image attributes: ![](img){.lightbox} → ![](img)

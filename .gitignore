@@ -21,8 +21,10 @@ out/
 content/
 .Rproj.user
 .Rhistory
-posts/12_fcc-data/
+
 _targets/
 
 /*.md
 CLAUDE.md
+
+posts/12_fcc-data/proj-fcc-report

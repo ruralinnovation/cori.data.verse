@@ -272,8 +272,7 @@ Not all technologies are equal:
 ## Related Resources
 
 - [cori.data.fcc R Package](/packages/cori-data-fcc/)
-- [FCC Data Overview Blog Post](/stories/fcc-data-overview/)
-- [Broadband Equity Project](/projects/broadband-equity/)
+- [FCC Data Overview Blog Post](/blog/12_fcc-data/)
 
 ## R Packages
 

@@ -245,8 +245,7 @@ broadband_pop <- broadband |>
 
 This package is used in:
 
-- [Broadband Equity Analysis Project](/projects/broadband-equity/)
-- [FCC Data Overview Blog Post](/stories/fcc-data-overview/)
+- [FCC Data Overview Blog Post](/blog/12_fcc-data/)
 - [Estimating Broadband Adoption Impact](/stories/estimating-adoption-impact/)
 - Rural broadband gap identification
 - BEAD (Broadband Equity, Access, and Deployment) planning

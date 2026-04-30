@@ -33,4 +33,4 @@ Suggests:
   paws.storage,
   testthat (>= 3.0.0)
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
