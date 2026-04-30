@@ -46,6 +46,19 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
+      - name: List build outputs
+        run: |
+          echo "=== public/ ==="
+          ls -lA public/
+          echo "=== public/assets/ ==="
+          ls -lA public/assets/ 2>/dev/null || echo "No public/assets directory"
+          echo "=== out/ root ==="
+          ls -lA out/
+          echo "=== out/_next/ ==="
+          ls -lA out/_next/ 2>/dev/null || echo "No _next directory"
+          echo "=== out/assets/ ==="
+          ls -lA out/assets/ 2>/dev/null || echo "No assets directory"
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
