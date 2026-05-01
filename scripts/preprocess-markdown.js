@@ -21,8 +21,58 @@
 
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
+import os from "os";
 
 const CONTENT_DIR = path.join(process.cwd(), "content");
+const PUBLIC_CONTENT_DIR = path.join(process.cwd(), "public", "content");
+
+/**
+ * Render all ```mermaid code blocks in a markdown string to SVG files,
+ * saving them alongside the content file in public/content/, and replacing
+ * the code block with a relative ![](mermaid-N.svg) image reference.
+ *
+ * @param {string} content  - Markdown file content
+ * @param {string} filePath - Absolute path to the .md file in content/
+ * @returns {string} Updated markdown content
+ */
+function renderMermaidBlocks(content, filePath) {
+  // Relative dir of this file within content/ (e.g. "projects/rural-economic-outlook")
+  const relDir = path.relative(CONTENT_DIR, path.dirname(filePath));
+  const outDir = path.join(PUBLIC_CONTENT_DIR, relDir);
+
+  // Match ``` mermaid ... ``` blocks (Quarto GFM uses a space before "mermaid")
+  const MERMAID_RE = /^``` ?mermaid\n([\s\S]*?)^```/gm;
+  let index = 0;
+
+  return content.replace(MERMAID_RE, (_match, diagram) => {
+    const imgName = `mermaid-${index++}.svg`;
+    const imgPath = path.join(outDir, imgName);
+
+    // Write diagram to a temp file and render with mmdc
+    const tmpInput = path.join(os.tmpdir(), `mermaid-${Date.now()}.mmd`);
+    try {
+      fs.mkdirSync(outDir, { recursive: true });
+      fs.writeFileSync(tmpInput, diagram.trim());
+      const mmdc = path.join(process.cwd(), "node_modules", ".bin", "mmdc");
+      execSync(`"${mmdc}" -i "${tmpInput}" -o "${imgPath}" --quiet`, {
+        stdio: "pipe",
+      });
+      console.log(`  mermaid → ${path.relative(process.cwd(), imgPath)}`);
+    } catch (err) {
+      console.warn(`  mermaid render failed: ${err.message}`);
+      return _match; // leave block unchanged on error
+    } finally {
+      if (fs.existsSync(tmpInput)) fs.unlinkSync(tmpInput);
+    }
+
+    // Use an HTML img tag (not markdown syntax) to avoid markdown-to-jsx
+    // wrapping it in a <p>, which would cause a hydration error when
+    // LightboxImage renders its overlay <div> inside the paragraph.
+    const relContentDir = path.relative(CONTENT_DIR, path.dirname(filePath));
+    return `<img src="/content/${relContentDir.replace(/\\/g, "/")}/${imgName}" alt="Diagram" />`;
+  });
+}
 
 /**
  * Recursively find all .md files in a directory.
@@ -204,7 +254,8 @@ if (files.length === 0) {
 let processed = 0;
 for (const filePath of files) {
   const content = fs.readFileSync(filePath, "utf-8");
-  const result = processMarkdown(content);
+  const afterMermaid = renderMermaidBlocks(content, filePath);
+  const result = processMarkdown(afterMermaid);
   if (result !== content) {
     fs.writeFileSync(filePath, result, "utf-8");
     processed++;

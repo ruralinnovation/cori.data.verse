@@ -69,6 +69,25 @@ function rewriteRelativeAssetPaths(content: string, basePath: string): string {
   return content;
 }
 
+/**
+ * Strip Quarto-rendered title block from markdown content.
+ * Quarto renders the title as `# Title` and date as `YYYY-MM-DD` at the start
+ * of the body, but we render these from frontmatter in the page layout.
+ */
+function stripQuartoTitleBlock(content: string): string {
+  const lines = content.split("\n");
+  let i = 0;
+  // Skip leading H1 title
+  if (lines[i]?.startsWith("# ")) i++;
+  // Skip blank lines
+  while (lines[i]?.trim() === "") i++;
+  // Skip date line (YYYY-MM-DD format)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(lines[i]?.trim() || "")) i++;
+  // Skip trailing blank lines after date
+  while (lines[i]?.trim() === "") i++;
+  return lines.slice(i).join("\n");
+}
+
 /** Top-level content type directories (datasets/, charts/, packages/, projects/, resources/) */
 const CONTENT_TYPE_DIRS: ContentType[] = [
   "datasets",
@@ -224,7 +243,10 @@ export function getMarkdownBody(
   const transform = (raw: string) => {
     const { content } = matter(raw);
     return resolveRelativeLinks(
-      rewriteRelativeAssetPaths(cleanMarkdownForJSX(content), assetBase),
+      rewriteRelativeAssetPaths(
+        cleanMarkdownForJSX(stripQuartoTitleBlock(content)),
+        assetBase
+      ),
       contentBasePath
     );
   };

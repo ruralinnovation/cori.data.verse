@@ -36,7 +36,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Sync content from S3
-        run: aws s3 sync s3://cori.data.verse/main/content/ content/
+        run: aws s3 sync s3://cori.data.verse/prod/content/ content/
 
       - name: Build
         run: npm run build

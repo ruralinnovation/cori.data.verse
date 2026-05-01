@@ -9,11 +9,11 @@
 # --- Branch-aware prefix routing ---------------------------------------------
 
 #' Determine the S3 prefix based on the current git branch.
-#' main -> "main/content/", anything else -> "dev/content/"
+#' main -> "prod/content/", anything else -> "dev/content/"
 get_s3_prefix <- function() {
   branch <- system2("git", c("rev-parse", "--abbrev-ref", "HEAD"),
                     stdout = TRUE)
-  if (identical(branch, "main")) "main/content/" else "dev/content/"
+  if (identical(branch, "main")) "prod/content/" else "dev/content/"
 }
 
 # --- Git-aware deletion helpers ----------------------------------------------

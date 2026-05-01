@@ -23,13 +23,13 @@ tar_option_set(
 
 #' Prompt for confirmation before writing to the production S3 prefix.
 confirm_production_write <- function(prefix) {
-  if (!startsWith(prefix, "main/")) return(TRUE)
+  if (!startsWith(prefix, "prod/")) return(TRUE)
   if (!interactive()) {
-    message("Non-interactive session: skipping production sync (main/ prefix)")
+    message("Non-interactive session: skipping production sync (prod/ prefix)")
     return(FALSE)
   }
   answer <- readline(
-    "You are on 'main'. Sync to PRODUCTION (s3://cori.data.verse/main/content/)? [y/N] "
+    "You are on 'main'. Sync to PRODUCTION (s3://cori.data.verse/prod/content/)? [y/N] "
   )
   tolower(trimws(answer)) == "y"
 }

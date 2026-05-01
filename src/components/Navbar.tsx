@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Navbar.module.css";
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 const NAV_ITEMS = [
   { title: "Home", url: "/" },
   { title: "Charts & Data", url: "/charts-and-data" },
@@ -23,7 +25,7 @@ export default function Navbar() {
           <Link href="/" className={styles.siteTitle}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/assets/images/Logo-Mark_CORI_Cream.svg"
+              src={`${basePath}/assets/images/Logo-Mark_CORI_Cream.svg`}
               alt="CORI Logo"
               className={styles.logo}
               width={45}

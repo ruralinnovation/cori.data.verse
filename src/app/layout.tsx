@@ -4,6 +4,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import "./globals.css";
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 const bitter = Bitter({
   subsets: ["latin"],
   variable: "--font-heading",
@@ -18,7 +20,7 @@ export const metadata: Metadata = {
   description:
     "Your hub for rural innovation data, tools, research, and analysis. Explore datasets, R packages, projects, and blog posts from the CORI MDA team.",
   icons: {
-    icon: "/assets/images/Logo-Mark_Black.png",
+    icon: `${basePath}/assets/images/Logo-Mark_Black.png`,
   },
 };
 
@@ -30,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={bitter.variable}>
       <head>
-        <link rel="stylesheet" href="/assets/fonts.css" />
+        <link rel="stylesheet" href={`${basePath}/assets/fonts.css`} />
       </head>
       <body>
         <Navbar />
