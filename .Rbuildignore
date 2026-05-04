@@ -34,3 +34,4 @@
 ^tsconfig\.tsbuildinfo$
 ^resources$
 ^SKILLS\.md$
+^\.github$

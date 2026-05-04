@@ -2,7 +2,7 @@
 % Please edit documentation in R/clean_stale_content.R
 \name{clean_stale_content}
 \alias{clean_stale_content}
-\title{Remove Stale Rendered Content}
+\title{Remove Stale Rendered Content and Quarto Cache Entries}
 \usage{
 clean_stale_content(root_dir = here::here())
 }
@@ -14,8 +14,9 @@ clean_stale_content(root_dir = here::here())
 Invisibly returns a character vector of the directories removed.
 }
 \description{
-Deletes \verb{content/<type>/<slug>/} directories whose source
-\verb{<type>/<slug>/index.qmd} no longer exists. Intended as a Quarto
-pre-render hook to prevent orphaned rendered output from accumulating
-after source \code{.qmd} files are deleted.
+Deletes \verb{content/<type>/<slug>/} directories and \verb{.quarto/idx/<type>/<slug>/}
+cache directories whose source \verb{<type>/<slug>/index.qmd} no longer exists.
+Intended as a Quarto pre-render hook to prevent orphaned rendered output and
+stale index cache entries from accumulating after source \code{.qmd} files are
+deleted.
 }
