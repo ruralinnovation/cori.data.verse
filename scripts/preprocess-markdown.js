@@ -104,6 +104,9 @@ function processMarkdown(content) {
   const output = [];
   const divStack = []; // Track open div blocks
   let inCodeFence = false; // Track fenced code blocks (```)
+  let codeFenceLang = ""; // Language of current code fence (when inside div)
+  let codeFenceLines = []; // Collected lines inside fence (when inside div)
+  let codeFenceInDiv = false; // Whether current fence started inside a div
 
   // Quarto HTML div classes that contain markdown content
   const quartoHtmlDivs = new Set([
@@ -121,17 +124,53 @@ function processMarkdown(content) {
     const line = lines[i];
     const trimmed = line.trim();
 
-    // Toggle code-fence state on ``` lines (with or without language tag)
-    // Pass through unchanged so heading conversion doesn't touch code contents
+    // Handle code fence boundaries
     if (/^```/.test(trimmed)) {
-      inCodeFence = !inCodeFence;
-      output.push(line);
+      if (!inCodeFence) {
+        // Opening fence
+        inCodeFence = true;
+        codeFenceInDiv = divStack.length > 0;
+
+        if (codeFenceInDiv) {
+          // Inside div: extract language and start collecting
+          const langMatch = trimmed.match(/^```\s*([a-zA-Z]*)/);
+          codeFenceLang = langMatch ? langMatch[1] : "";
+          codeFenceLines = [];
+        } else {
+          // Outside div: pass through (normalize ``` r to ```r)
+          output.push(line.replace(/^(```) ([a-zA-Z]+)/, "$1$2"));
+        }
+      } else {
+        // Closing fence
+        inCodeFence = false;
+
+        if (codeFenceInDiv) {
+          // Inside div: emit as HTML <pre> (no inner <code> - markdown-to-jsx escapes it)
+          const langClass = codeFenceLang ? ` class="language-${codeFenceLang}"` : "";
+          const escaped = codeFenceLines.join("\n")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+          output.push(`<pre${langClass}>${escaped}</pre>`);
+        } else {
+          // Outside div: pass through
+          output.push(line);
+        }
+
+        codeFenceLang = "";
+        codeFenceLines = [];
+        codeFenceInDiv = false;
+      }
       continue;
     }
 
-    // Inside a code fence: pass everything through verbatim
+    // Inside a code fence
     if (inCodeFence) {
-      output.push(line);
+      if (codeFenceInDiv) {
+        codeFenceLines.push(line);
+      } else {
+        output.push(line);
+      }
       continue;
     }
 
@@ -219,6 +258,49 @@ function processMarkdown(content) {
         output.push(`<h${level}>${text}</h${level}>`);
         continue;
       }
+    }
+
+    // Convert markdown tables to HTML when inside Quarto divs
+    if (divStack.length > 0 && /^\|.*\|$/.test(trimmed)) {
+      // Collect all consecutive table lines
+      const tableLines = [line];
+      let j = i + 1;
+      while (j < lines.length && /^\|.*\|$/.test(lines[j].trim())) {
+        tableLines.push(lines[j]);
+        j++;
+      }
+      i = j - 1; // Advance loop counter
+
+      // Parse table: first line = header, second = separator, rest = body
+      if (tableLines.length >= 2) {
+        const parseRow = (row) => {
+          return row.trim().slice(1, -1).split("|").map(cell => cell.trim());
+        };
+
+        const headerCells = parseRow(tableLines[0]);
+        const bodyRows = tableLines.slice(2).map(parseRow); // Skip separator line
+
+        let html = "<table>\n<thead>\n<tr>";
+        for (const cell of headerCells) {
+          html += `<th>${cell}</th>`;
+        }
+        html += "</tr>\n</thead>\n<tbody>\n";
+        for (const row of bodyRows) {
+          html += "<tr>";
+          for (const cell of row) {
+            html += `<td>${cell}</td>`;
+          }
+          html += "</tr>\n";
+        }
+        html += "</tbody>\n</table>";
+        output.push(html);
+      } else {
+        // Not enough lines for a valid table, pass through
+        for (const tl of tableLines) {
+          output.push(tl);
+        }
+      }
+      continue;
     }
 
     // Convert lightbox image attributes: ![](img){.lightbox} → ![](img)

@@ -201,15 +201,13 @@ pkg_section_key_features <- function(key_features) {
 #' @noRd
 pkg_section_installation <- function(install_command, github_url) {
   if (is.null(install_command) && is.null(github_url)) return("")
-  parts <- "## Installation\n\n::: panel-tabset\n### GitHub\n\n```{r}\n#| eval: false\n\n"
-  if (!is.null(install_command) && nzchar(install_command)) {
-    parts <- c(parts, install_command)
-  } else if (!is.null(github_url) && nzchar(github_url)) {
+  cmd <- if (!is.null(install_command) && nzchar(install_command)) {
+    install_command
+  } else {
     repo <- gsub("https://github.com/", "", github_url)
-    parts <- c(parts, paste0('devtools::install_github("', repo, '")'))
+    paste0('devtools::install_github("', repo, '")')
   }
-  parts <- c(parts, "\n```\n:::")
-  paste(parts, collapse = "")
+  paste0("## Installation\n\n```{r}\n#| eval: false\n\n", cmd, "\n```")
 }
 
 #' @noRd
