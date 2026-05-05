@@ -259,8 +259,8 @@ generate_project_body <- function(overview,
 #' @param body_args Named list of arguments for `generate_project_body()`.
 #' @param output_path Character or `NULL`. Where to write the file. If `NULL`,
 #'   returns the content without writing.
-#' @param dataverse_root Character. Root of Dataverse project. Defaults to
-#'   `here::here()`.
+#' @param check_s3 Logical. Whether to validate slugs against S3 inventory.
+#'   Defaults to `TRUE`.
 #' @param overwrite Logical. Whether to overwrite existing file. Defaults to
 #'   `FALSE`.
 #' @return Invisibly returns the generated content (character string).
@@ -268,13 +268,13 @@ generate_project_body <- function(overview,
 generate_project_qmd <- function(frontmatter_args,
                                  body_args,
                                  output_path = NULL,
-                                 dataverse_root = here::here(),
+                                 check_s3 = TRUE,
                                  overwrite = FALSE) {
   validation <- validate_project_dependencies(
     uses_datasets  = frontmatter_args[["uses_datasets"]]  %||% character(0),
     uses_packages  = frontmatter_args[["uses_packages"]]  %||% character(0),
     uses_resources = frontmatter_args[["uses_resources"]] %||% character(0),
-    dataverse_root = dataverse_root
+    check_s3       = check_s3
   )
 
   if (is.null(body_args[["dangling_note"]])) {

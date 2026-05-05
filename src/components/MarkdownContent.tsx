@@ -1,9 +1,27 @@
 "use client";
 
 import Markdown from "markdown-to-jsx";
+import Link from "next/link";
 import Callout from "@/components/quarto/Callout";
 import { Columns, Column } from "@/components/quarto/Columns";
 import LightboxImage from "@/components/quarto/LightboxImage";
+
+/**
+ * Custom link component that uses Next.js Link for internal navigation,
+ * which automatically prepends the basePath.
+ */
+function MarkdownLink(props: Record<string, unknown>) {
+  const href = props.href as string;
+  const children = props.children as React.ReactNode;
+
+  // External links or anchors: use regular <a>
+  if (!href || href.startsWith("http") || href.startsWith("#") || href.startsWith("mailto:")) {
+    return <a {...props}>{children}</a>;
+  }
+
+  // Internal links: use Next.js Link for basePath support
+  return <Link href={href}>{children}</Link>;
+}
 
 /**
  * Routes <div data-quarto="..."> markers from preprocessed markdown
@@ -86,6 +104,7 @@ export default function MarkdownContent({ content }: MarkdownContentProps) {
         options={{
           forceBlock: true,
           overrides: {
+            a: { component: MarkdownLink },
             div: { component: QuartoDiv },
             img: { component: MarkdownImage },
           },
