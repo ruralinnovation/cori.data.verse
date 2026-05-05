@@ -144,8 +144,6 @@ generate_package_body <- function(overview,
 #' @param body_args Named list of arguments for `generate_package_body()`.
 #' @param output_path Character or `NULL`. Where to write the file. If `NULL`,
 #'   returns the content without writing.
-#' @param check_s3 Logical. Whether to validate slugs against S3 inventory.
-#'   Defaults to `TRUE`.
 #' @param overwrite Logical. Whether to overwrite existing file. Defaults to
 #'   `FALSE`.
 #' @return Invisibly returns the generated content (character string).
@@ -153,13 +151,11 @@ generate_package_body <- function(overview,
 generate_package_qmd <- function(frontmatter_args,
                                  body_args,
                                  output_path = NULL,
-                                 check_s3 = TRUE,
                                  overwrite = FALSE) {
   validation <- validate_project_dependencies(
     uses_datasets  = frontmatter_args[["uses_datasets"]]  %||% character(0),
     uses_packages  = character(0),
-    uses_resources = frontmatter_args[["uses_resources"]] %||% character(0),
-    check_s3       = check_s3
+    uses_resources = frontmatter_args[["uses_resources"]] %||% character(0)
   )
 
   if (is.null(body_args[["dangling_note"]])) {

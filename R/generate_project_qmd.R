@@ -4,57 +4,45 @@
 
 # --- 1.0 list_dataverse_content() --------------------------------------------
 
-#' List All Dataverse Content Nodes (Local + S3)
+#' List All Dataverse Content Nodes from S3
 #'
-#' Enumerates every content item across the local content directories and the
-#' remote S3 prefix, returning a unified inventory keyed by type and slug.
-#' Each item is tagged with its location(s): "local", "remote", or "both".
+#' Enumerates every content item in the remote S3 bucket, returning an
+#' inventory keyed by type and slug. Use this before slug mapping/validation
+#' so the caller can pick existing slugs by reuse, spot near-matches, and
+#' decide which discovered dependencies will be dangling.
 #'
-#' Use this before slug mapping/validation so the caller can pick existing
-#' slugs by reuse, spot near-matches, and decide which discovered dependencies
-#' will be dangling.
-#'
-#' @param dataverse_root Character. Root of the Dataverse project. Defaults to
-#'   `here::here()`.
 #' @param s3_bucket Character. Default `"cori.data.verse"`.
-#' @param s3_prefix Character or `NULL`. If `NULL`, auto-detects via the
-#'   internal `detect_s3_prefix()` (branch-aware: `"main/content/"` on main,
-#'   else `"dev/content/"`).
-#' @param check_s3 Logical. Default `TRUE`. Set `FALSE` to skip S3.
+#' @param s3_prefix Character. S3 key prefix. Default `"dev/content/"`.
 #' @return A `data.frame` with columns:
 #'   \describe{
 #'     \item{type}{Character. One of `"dataset"`, `"chart"`, `"package"`,
 #'       `"project"`, `"resource"`, `"post"`.}
 #'     \item{slug}{Character. URL slug (kebab-case directory name).}
-#'     \item{location}{Character. `"local"`, `"remote"`, or `"both"`.}
-#'     \item{local_path}{Character or `NA`. Path to local index.qmd if present.}
-#'     \item{s3_key}{Character or `NA`. S3 key if present.}
+#'     \item{location}{Character. Always `"remote"` for S3-sourced items.}
+#'     \item{local_path}{Character. Always `NA` (no local scanning).}
+#'     \item{s3_key}{Character. S3 key for the content item.}
 #'   }
 #'   Sorted by type, then slug. Includes attribute `s3_prefix_used`.
 #' @export
-list_dataverse_content <- function(dataverse_root = here::here(),
-                                   s3_bucket = "cori.data.verse",
-                                   s3_prefix = NULL,
-                                   check_s3 = TRUE) {
-  local_df <- collect_local_inventory(dataverse_root)
+list_dataverse_content <- function(s3_bucket = "cori.data.verse",
+                                   s3_prefix = "dev/content/") {
+  prefix_used <- s3_prefix
+  remote_df <- tryCatch(
+    collect_s3_inventory(s3_bucket, s3_prefix),
+    error = function(e) {
+      warning("S3 listing failed (", conditionMessage(e),
+              "); returning empty inventory.", call. = FALSE)
+      empty_inventory_df()
+    }
+  )
 
-  prefix_used <- NA_character_
-  remote_df <- empty_inventory_df()
-
-  if (isTRUE(check_s3)) {
-    if (is.null(s3_prefix)) s3_prefix <- detect_s3_prefix(dataverse_root)
-    prefix_used <- s3_prefix
-    remote_df <- tryCatch(
-      collect_s3_inventory(s3_bucket, s3_prefix),
-      error = function(e) {
-        warning("S3 listing failed (", conditionMessage(e),
-                "); proceeding with local-only inventory.", call. = FALSE)
-        empty_inventory_df()
-      }
-    )
+  if (nrow(remote_df) > 0) {
+    remote_df$location <- "remote"
+    remote_df$local_path <- NA_character_
   }
 
-  inventory <- merge_inventories(local_df, remote_df)
+  inventory <- remote_df[order(remote_df$type, remote_df$slug), , drop = FALSE]
+  rownames(inventory) <- NULL
   attr(inventory, "s3_prefix_used") <- prefix_used
   inventory
 }
@@ -62,45 +50,36 @@ list_dataverse_content <- function(dataverse_root = here::here(),
 
 # --- 1.1 validate_project_dependencies() -------------------------------------
 
-#' Validate Project Dependencies Against Dataverse Content (Local + S3)
+#' Validate Project Dependencies Against Dataverse Content in S3
 #'
 #' Compares inferred dataset/package/resource slugs against existing Dataverse
-#' content in two locations: the local content directory and the remote S3
-#' prefix (`s3://cori.data.verse/{branch}/content/`). A slug present in either
-#' location is "valid"; one missing from both is "dangling." Dangling
-#' references are intentionally preserved in the caller's slug vectors so
-#' they surface as future content needs in the graph.
+#' content in S3 (`s3://cori.data.verse/dev/content/`). A slug present in S3
+#' is "valid"; one missing is "dangling." Dangling references are intentionally
+#' preserved in the caller's slug vectors so they surface as future content
+#' needs in the graph.
 #'
 #' @param uses_datasets Character vector of dataset slugs (kebab-case).
 #' @param uses_packages Character vector of package slugs.
 #' @param uses_resources Character vector of resource slugs.
-#' @param dataverse_root Character. Root of Dataverse project. Defaults to
-#'   `here::here()`.
 #' @param s3_bucket Character. Default `"cori.data.verse"`.
-#' @param s3_prefix Character or `NULL`. If `NULL`, auto-detects from current
-#'   git branch.
-#' @param check_s3 Logical. Default `TRUE`. Set `FALSE` to skip S3.
+#' @param s3_prefix Character. S3 key prefix. Default `"dev/content/"`.
 #' @return A list with three per-type partitions plus context:
 #'   \describe{
-#'     \item{datasets}{`list(valid_local, valid_remote, dangling)`}
-#'     \item{packages}{`list(valid_local, valid_remote, dangling)`}
-#'     \item{resources}{`list(valid_local, valid_remote, dangling)`}
-#'     \item{s3_prefix_used}{The prefix queried, or `NA` if skipped.}
+#'     \item{datasets}{`list(valid_remote, dangling)`}
+#'     \item{packages}{`list(valid_remote, dangling)`}
+#'     \item{resources}{`list(valid_remote, dangling)`}
+#'     \item{s3_prefix_used}{The prefix queried.}
 #'     \item{summary}{Character. Human-readable report.}
 #'   }
 #' @export
 validate_project_dependencies <- function(uses_datasets = character(0),
                                           uses_packages = character(0),
                                           uses_resources = character(0),
-                                          dataverse_root = here::here(),
                                           s3_bucket = "cori.data.verse",
-                                          s3_prefix = NULL,
-                                          check_s3 = TRUE) {
+                                          s3_prefix = "dev/content/") {
   inventory <- list_dataverse_content(
-    dataverse_root = dataverse_root,
-    s3_bucket      = s3_bucket,
-    s3_prefix      = s3_prefix,
-    check_s3       = check_s3
+    s3_bucket = s3_bucket,
+    s3_prefix = s3_prefix
   )
   prefix_used <- attr(inventory, "s3_prefix_used")
 
@@ -259,8 +238,6 @@ generate_project_body <- function(overview,
 #' @param body_args Named list of arguments for `generate_project_body()`.
 #' @param output_path Character or `NULL`. Where to write the file. If `NULL`,
 #'   returns the content without writing.
-#' @param check_s3 Logical. Whether to validate slugs against S3 inventory.
-#'   Defaults to `TRUE`.
 #' @param overwrite Logical. Whether to overwrite existing file. Defaults to
 #'   `FALSE`.
 #' @return Invisibly returns the generated content (character string).
@@ -268,13 +245,11 @@ generate_project_body <- function(overview,
 generate_project_qmd <- function(frontmatter_args,
                                  body_args,
                                  output_path = NULL,
-                                 check_s3 = TRUE,
                                  overwrite = FALSE) {
   validation <- validate_project_dependencies(
     uses_datasets  = frontmatter_args[["uses_datasets"]]  %||% character(0),
     uses_packages  = frontmatter_args[["uses_packages"]]  %||% character(0),
-    uses_resources = frontmatter_args[["uses_resources"]] %||% character(0),
-    check_s3       = check_s3
+    uses_resources = frontmatter_args[["uses_resources"]] %||% character(0)
   )
 
   if (is.null(body_args[["dangling_note"]])) {
@@ -301,45 +276,15 @@ generate_project_qmd <- function(frontmatter_args,
 
 # --- Internal helpers (not exported) -----------------------------------------
 
-#' Detect S3 prefix from current git branch
-#' @noRd
-detect_s3_prefix <- function(dataverse_root) {
-  branch <- tryCatch(
-    suppressWarnings(system2(
-      "git", c("-C", dataverse_root, "rev-parse", "--abbrev-ref", "HEAD"),
-      stdout = TRUE, stderr = FALSE
-    )),
-    error = function(e) "dev"
-  )
-  branch <- branch[length(branch)]
-  if (length(branch) == 0 || is.na(branch)) branch <- "dev"
-  if (identical(branch, "main")) "main/content/" else "dev/content/"
-}
-
-
 #' Empty inventory data.frame skeleton
 #' @noRd
 empty_inventory_df <- function() {
   data.frame(
     type       = character(0),
     slug       = character(0),
+    location   = character(0),
     local_path = character(0),
     s3_key     = character(0),
-    stringsAsFactors = FALSE
-  )
-}
-
-
-#' Build local inventory from discover_content_items()
-#' @noRd
-collect_local_inventory <- function(dataverse_root) {
-  items <- discover_content_items(dataverse_root)
-  if (length(items) == 0) return(empty_inventory_df())
-  data.frame(
-    type       = vapply(items, `[[`, character(1), "type"),
-    slug       = vapply(items, `[[`, character(1), "slug"),
-    local_path = vapply(items, `[[`, character(1), "path"),
-    s3_key     = NA_character_,
     stringsAsFactors = FALSE
   )
 }
@@ -422,63 +367,20 @@ regex_escape <- function(s) {
 }
 
 
-#' Merge local and remote inventory data.frames
-#' @noRd
-merge_inventories <- function(local_df, remote_df) {
-  combined <- merge(local_df, remote_df,
-                    by = c("type", "slug"), all = TRUE,
-                    suffixes = c(".loc", ".rem"))
-  if (nrow(combined) == 0) {
-    out <- data.frame(
-      type = character(0), slug = character(0), location = character(0),
-      local_path = character(0), s3_key = character(0),
-      stringsAsFactors = FALSE
-    )
-    return(out)
-  }
-  local_path <- ifelse(!is.na(combined$local_path.loc),
-                       combined$local_path.loc, combined$local_path.rem)
-  s3_key <- ifelse(!is.na(combined$s3_key.rem),
-                   combined$s3_key.rem, combined$s3_key.loc)
-  has_local  <- !is.na(local_path)
-  has_remote <- !is.na(s3_key)
-  location <- ifelse(has_local & has_remote, "both",
-                     ifelse(has_local, "local", "remote"))
-
-  out <- data.frame(
-    type       = combined$type,
-    slug       = combined$slug,
-    location   = location,
-    local_path = local_path,
-    s3_key     = s3_key,
-    stringsAsFactors = FALSE
-  )
-  out <- out[order(out$type, out$slug), , drop = FALSE]
-  rownames(out) <- NULL
-  out
-}
-
-
 #' Partition input slugs against the inventory for a given type.
-#' Returns list(valid_local, valid_remote, dangling).
+#' Returns list(valid, dangling).
 #' @noRd
 partition_slugs <- function(slugs, inventory, type) {
   slugs <- unique(slugs[nzchar(slugs)])
   if (length(slugs) == 0) {
-    return(list(valid_local  = character(0),
-                valid_remote = character(0),
-                dangling     = character(0)))
+    return(list(valid = character(0), dangling = character(0)))
   }
   type_inv <- inventory[inventory$type == type, , drop = FALSE]
-  local_set  <- type_inv$slug[type_inv$location %in% c("local", "both")]
-  remote_set <- type_inv$slug[type_inv$location %in% c("remote", "both")]
+  valid_set <- type_inv$slug
 
-  valid_local  <- intersect(slugs, local_set)
-  valid_remote <- setdiff(intersect(slugs, remote_set), valid_local)
-  dangling     <- setdiff(slugs, c(local_set, remote_set))
-  list(valid_local = valid_local,
-       valid_remote = valid_remote,
-       dangling = dangling)
+  valid    <- intersect(slugs, valid_set)
+  dangling <- setdiff(slugs, valid_set)
+  list(valid = valid, dangling = dangling)
 }
 
 
@@ -486,17 +388,14 @@ partition_slugs <- function(slugs, inventory, type) {
 #' @noRd
 format_validation_summary <- function(ds, pk, rs, prefix_used) {
   fmt <- function(label, part) {
-    sprintf("  %s: %d local, %d S3-only, %d dangling%s",
-            label, length(part$valid_local), length(part$valid_remote),
-            length(part$dangling),
+    sprintf("  %s: %d valid, %d dangling%s",
+            label, length(part$valid), length(part$dangling),
             if (length(part$dangling))
               paste0(" (", paste(part$dangling, collapse = ", "), ")")
             else "")
   }
-  prefix_msg <- if (is.na(prefix_used)) "S3 check skipped"
-                else paste0("S3 prefix: ", prefix_used)
   paste(c(
-    paste0("Dataverse dependency validation [", prefix_msg, "]"),
+    paste0("Dataverse dependency validation [S3: ", prefix_used, "]"),
     fmt("datasets",  ds),
     fmt("packages",  pk),
     fmt("resources", rs)
@@ -518,8 +417,8 @@ format_dangling_note <- function(validation) {
     "::: {.callout-note}\n",
     "## Dangling references\n\n",
     "The following slugs are referenced by this project but do not yet ",
-    "have nodes in Dataverse (local or S3). They are intentionally ",
-    "preserved as future content needs:\n\n",
+    "have nodes in Dataverse. They are intentionally preserved as future ",
+    "content needs:\n\n",
     paste0("- `", dangling, "`", collapse = "\n"),
     "\n:::"
   )

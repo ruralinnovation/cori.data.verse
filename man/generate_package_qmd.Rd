@@ -8,7 +8,6 @@ generate_package_qmd(
   frontmatter_args,
   body_args,
   output_path = NULL,
-  dataverse_root = here::here(),
   overwrite = FALSE
 )
 }
@@ -20,9 +19,6 @@ generate_package_qmd(
 
 \item{output_path}{Character or \code{NULL}. Where to write the file. If \code{NULL},
 returns the content without writing.}
-
-\item{dataverse_root}{Character. Root of Dataverse project. Defaults to
-\code{here::here()}.}
 
 \item{overwrite}{Logical. Whether to overwrite existing file. Defaults to
 \code{FALSE}.}
