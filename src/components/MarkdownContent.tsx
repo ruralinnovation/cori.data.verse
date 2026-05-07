@@ -83,11 +83,20 @@ function QuartoDiv(props: Record<string, unknown>) {
 
 /**
  * Custom image component that wraps all images with lightbox behavior.
+ * Prepends basePath to absolute image paths for proper GitHub Pages deployment.
  */
 function MarkdownImage(props: Record<string, unknown>) {
+  let src = props.src as string;
+
+  // Prepend basePath to absolute paths (e.g., /content/...) unless already external
+  if (src && src.startsWith("/") && !src.startsWith("http")) {
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+    src = basePath + src;
+  }
+
   return (
     <LightboxImage
-      src={props.src as string}
+      src={src}
       alt={(props.alt as string) || ""}
     />
   );
