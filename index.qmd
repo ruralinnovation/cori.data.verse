@@ -1,28 +1,66 @@
 ---
 title: "Rural Dataverse"
 subtitle: "Center on Rural Innovation (CORI)"
-format: html
+format:
+  html:
+    theme:
+      - minty
+      - src/custom.scss
+    css: assets/fonts.css
+    fontcolor: "#121E22"
+    linkcolor: "#00835D"
+    mainfont: "Bitter"
+    grid:
+      sidebar-width: 250px
+      body-width: 1100px
+      margin-width: 250px
+    toc: true
+page-layout: full
+title-block-banner: true
+execute:
+  echo: false
 ---
 
 > Preview index — not part of the built site (managed by Next.js).
 
-### Packages
+```{r}
+#| output: asis
 
-- [ruraldefinitions](packages/ruraldefinitions/index.md)
-- [cori.data.bds](packages/cori-data-bds/index.md)
-- [cori.data.fcc](packages/cori-data-fcc/index.md)
+library(yaml)
 
-### Datasets
+content_types <- c("charts", "datasets", "packages", "projects", "posts")
 
-- [American Community Survey](datasets/american-community-survey/index.md)
-- [BEA Real GDP](datasets/bea-real-gdp/index.md)
-- [Census BDS](datasets/census-bds/index.md)
-- [Census BFS](datasets/census-bfs/index.md)
-- [Census Building Permits](datasets/census-building-permits/index.md)
-- [Census PEP Components](datasets/census-pep-components/index.md)
-- [Census Population Estimates](datasets/census-population-estimates/index.md)
-- [FCC Broadband](datasets/fcc-broadband/index.md)
-- [IRS Migration](datasets/irs-migration/index.md)
-- [QCEW Employment & Wages](datasets/qcew-employment-wages/index.md)
-- [USDA County Typology](datasets/usda-county-typology/index.md)
-- [USPTO Patents](datasets/uspto-patents/index.md)
+for (type in content_types) {
+  type_dir <- file.path(type)
+
+  if (!dir.exists(type_dir)) next
+
+  items <- list.dirs(type_dir, recursive = FALSE, full.names = FALSE)
+  if (length(items) == 0) next
+
+  # Format type name
+  type_name <- tools::toTitleCase(type)
+  cat(sprintf("### %s\n\n", type_name))
+
+  # List items
+  for (item in sort(items)) {
+    md_file <- file.path(type_dir, item, "index.qmd")
+    if (file.exists(md_file)) {
+      # Extract title from frontmatter
+      lines <- readLines(md_file, n = 1000)
+      yaml_end <- grep("^---$", lines)[2]
+
+      if (!is.na(yaml_end)) {
+        yaml_text <- paste(lines[2:(yaml_end-1)], collapse = "\n")
+        meta <- tryCatch(yaml::yaml.load(yaml_text), error = function(e) list())
+        title <- if (is.null(meta$title)) item else meta$title
+
+        cat(sprintf("- [%s](%s/index.md)\n", title, file.path(type, item)))
+      }
+    }
+  }
+
+  cat("\n")
+}
+```
+

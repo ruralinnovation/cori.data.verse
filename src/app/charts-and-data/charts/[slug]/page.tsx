@@ -71,7 +71,7 @@ export default async function ChartPage({
 
       <div className="content-grid">
         <MarkdownContent content={body} />
-        <ChartSidebar chart={metadata.chart} />
+        <ChartSidebar metadata={metadata} />
       </div>
     </div>
   );

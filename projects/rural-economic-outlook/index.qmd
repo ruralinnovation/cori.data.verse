@@ -3,7 +3,7 @@ title: Rural Economic Outlook
 description: Data pipeline integrating 12 federal datasets to compare rural vs. metropolitan
   economic performance across employment, wages, GDP, business dynamics, migration,
   broadband, and housing from 2007-2024.
-date: '2026-04-30'
+date: '2026-05-06'
 layout: default
 permalink: /projects/rural-economic-outlook/
 categories:
@@ -27,16 +27,16 @@ team:
 usesDatasets:
   - census-population-estimates
   - census-pep-components
-  - american-community-survey
   - bea-real-gdp
   - qcew-employment-wages
+  - american-community-survey
   - census-bds
   - census-bfs
   - census-building-permits
-  - irs-migration
   - uspto-patents
-  - usda-county-typology
   - fcc-broadband
+  - irs-migration
+  - usda-county-typology
   - bls-cpi-deflators
 usesPackages:
   - cori-data-bds
@@ -141,7 +141,7 @@ CBSA 2023 via ruraldefinitions package for primary rural/nonrural split; USDA ER
 ::: {.callout-note}
 ## Price Adjustment Methods
 
-All monetary values in 2023 dollars. BEA GDP: chain-weighted 2017 dollars (pre-adjusted). QCEW wages and IRS AGI: BLS CPI-U-RS deflation. Deflator dataset pending Dataverse node (bls-cpi-deflators).
+All monetary values in 2023 dollars. BEA GDP: chain-weighted 2017 dollars (pre-adjusted). QCEW wages and IRS AGI: BLS CPI-U-RS deflation.
 :::
 
 ## Data Sources & Integration
@@ -204,14 +204,14 @@ Modular ETL in R/data_import/ per source; params.yml centralizes config; renv.lo
 
 ### Data Products (Status: in development)
 
-- County-level tidy tables in PostgreSQL (proj_rural_economic_outlook)
+County-level tidy tables in PostgreSQL (proj_rural_economic_outlook)
 - Rural/metro aggregations by CBSA classification
 - 27 chart-ready datasets for webinar — export/ contains README only; no files on disk yet
 - Excel export: Rural Innovation.xlsx
 
 ### Visualizations (Status: in development)
 
-- GDP growth indices (2007=100) — gdp_change_lc.R
+GDP growth indices (2007=100) — gdp_change_lc.R
 - Employment change line charts — emp_change_lc.R
 - Real wage trends — wage_change_lc.R
 - Business entry rates — biz_entry_region_lc.R
@@ -230,5 +230,11 @@ Modular ETL in R/data_import/ per source; params.yml centralizes config; renv.lo
 | [cori.data.fcc](/packages/cori-data-fcc/) | S3-backed access layer for FCC National Broadband Map data |
 | [ruraldefinitions](/packages/ruraldefinitions/) | Rural/nonrural county classification (CBSA 2023 and other definitions) |
 
-The following slugs are not yet in Dataverse: bls-cpi-deflators
+::: {.callout-note}
+## Dangling references
+
+The following slugs are referenced by this project but do not yet have nodes in Dataverse. They are intentionally preserved as future content needs:
+
+- `dataset/bls-cpi-deflators`
+:::
 

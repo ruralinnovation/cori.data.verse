@@ -23,7 +23,7 @@ get_git_deleted_qmds <- function() {
   lines <- system2("git", c("status", "--porcelain"), stdout = TRUE)
   if (length(lines) == 0) return(character(0))
   # Lines where the first OR second status character is 'D', ending in .qmd
-  deleted <- lines[grepl("^[ D]D .+\\.qmd$", lines)]
+  deleted <- lines[grepl("^(D[ D]|[ D]D) .+\\.qmd$", lines)]
   # Strip the two-character status prefix + space
   sub("^.{3}", "", deleted)
 }
@@ -43,7 +43,8 @@ build_sync_manifest <- function(content_dir, bucket, prefix) {
   local_df <- data.frame(
     rel_path    = local_files,
     local_mtime = as.POSIXct(
-      file.mtime(file.path(content_dir, local_files)),
+      as.numeric(file.mtime(file.path(content_dir, local_files))),
+      origin = "1970-01-01",
       tz = "UTC"
     ),
     stringsAsFactors = FALSE

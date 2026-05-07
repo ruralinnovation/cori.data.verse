@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import styles from "./LightboxImage.module.css";
 
 interface LightboxImageProps {
@@ -10,6 +11,27 @@ interface LightboxImageProps {
 
 export default function LightboxImage({ src, alt = "" }: LightboxImageProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const overlay = isOpen && (
+    <div
+      className={styles.overlay}
+      onClick={() => setIsOpen(false)}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setIsOpen(false);
+      }}
+      role="dialog"
+      aria-modal="true"
+      tabIndex={0}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} className={styles.fullImage} />
+    </div>
+  );
 
   return (
     <>
@@ -25,21 +47,7 @@ export default function LightboxImage({ src, alt = "" }: LightboxImageProps) {
           if (e.key === "Enter" || e.key === " ") setIsOpen(true);
         }}
       />
-      {isOpen && (
-        <div
-          className={styles.overlay}
-          onClick={() => setIsOpen(false)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") setIsOpen(false);
-          }}
-          role="dialog"
-          aria-modal="true"
-          tabIndex={0}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt={alt} className={styles.fullImage} />
-        </div>
-      )}
+      {mounted && overlay && createPortal(overlay, document.body)}
     </>
   );
 }

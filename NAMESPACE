@@ -2,7 +2,11 @@
 
 export(build_graph)
 export(clean_stale_content)
+export(discover_chart_outputs)
 export(discover_content_items)
+export(generate_chart_body)
+export(generate_chart_frontmatter)
+export(generate_chart_qmd)
 export(generate_package_body)
 export(generate_package_frontmatter)
 export(generate_package_qmd)

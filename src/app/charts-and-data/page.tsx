@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Charts & Data",
-  description: "Federal datasets and interactive charts for rural innovation research",
+  description: "Charts produced by rural innovation research and the datasets from which they were derived.",
 };
 
 export default function ChartsAndDataPage() {
@@ -15,20 +15,20 @@ export default function ChartsAndDataPage() {
     <div className="container">
       <div className="page-header">
         <h1>Charts &amp; Data</h1>
-        <p>Federal datasets and interactive charts for rural innovation research</p>
+        <p>Charts produced by rural innovation research and the datasets from which they were derived</p>
       </div>
-
-      {datasets.length > 0 && (
-        <section style={{ marginBottom: "3rem" }}>
-          <h2>Datasets</h2>
-          <ListingGrid items={datasets} basePath="/charts-and-data/datasets" />
-        </section>
-      )}
 
       {charts.length > 0 && (
         <section>
           <h2>Charts</h2>
           <ListingGrid items={charts} basePath="/charts-and-data/charts" />
+        </section>
+      )}
+
+      {datasets.length > 0 && (
+        <section style={{ marginBottom: "3rem" }}>
+          <h2>Datasets</h2>
+          <ListingGrid items={datasets} basePath="/charts-and-data/datasets" />
         </section>
       )}
     </div>
