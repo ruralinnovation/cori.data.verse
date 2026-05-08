@@ -9,7 +9,7 @@ chart:
   title: "Rural Dataverse Content Network"
   chartType: "network"
   interactive: false
-  dataSource: "content/graph.json"
+  source: "content/graph.json"
   featured: true
 usesDatasets: []
 usesPackages: []

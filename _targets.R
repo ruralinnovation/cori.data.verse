@@ -49,9 +49,25 @@ list(
     cue = tar_cue(mode = "always")
   ),
   tar_target(
+    metadata_sidecars,
+    {
+      # Depends on render_result so this runs after every Quarto render.
+      # write_metadata_sidecars() walks content/ and writes
+      # `<path>/index.md.metadata.json` next to each rendered .md file,
+      # capturing the source .qmd's full YAML frontmatter as JSON.
+      .render_completed <- render_result
+      cori.data.verse::write_metadata_sidecars(
+        root_dir    = here::here(),
+        content_dir = "content"
+      )
+    },
+    cue = tar_cue(mode = "always")
+  ),
+  tar_target(
     sync_result,
     {
       render_result
+      metadata_sidecars
       if (!confirmed) {
         message("Production sync declined. Skipping.")
         return(NULL)

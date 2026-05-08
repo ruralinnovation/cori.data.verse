@@ -39,10 +39,10 @@ export default function ChartSidebar({ metadata }: ChartSidebarProps) {
               <dd>{chart.interactive ? "Yes" : "No"}</dd>
             </>
           )}
-          {chart?.dataSource && (
+          {chart?.source && (
             <>
               <dt>Data Source</dt>
-              <dd>{chart.dataSource}</dd>
+              <dd>{chart.source}</dd>
             </>
           )}
           {producedBy && (

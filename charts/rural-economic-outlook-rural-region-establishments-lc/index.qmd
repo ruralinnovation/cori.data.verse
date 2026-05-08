@@ -21,7 +21,7 @@ chart:
   title: Business creation stalls across rural regions
   chartType: line
   interactive: false
-  dataSource: U.S. Census Bureau, Business Dynamics Statistics
+  source: U.S. Census Bureau
   sourceUrl: https://www.census.gov/programs-surveys/bds.html
   featured: false
 producedBy: rural-economic-outlook

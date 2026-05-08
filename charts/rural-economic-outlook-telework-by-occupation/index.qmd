@@ -20,7 +20,7 @@ chart:
   title: Telework availability varies across major occupation groups
   chartType: bar
   interactive: false
-  dataSource: Bureau of Labor Statistics, Occupational Requirements Survey
+  source: Bureau of Labor Statistics, U.S. Department of Labor
   sourceUrl: https://www.bls.gov/ors/
   featured: false
 producedBy: rural-economic-outlook

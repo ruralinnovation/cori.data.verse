@@ -100,18 +100,53 @@ const CONTENT_TYPE_DIRS: ContentType[] = [
 const ROOT_DIR = process.cwd();
 
 /**
- * Read YAML frontmatter from a .qmd or .md file using gray-matter.
- * Returns the parsed data object plus the slug derived from the directory name.
+ * Read YAML frontmatter from a .qmd or .md file.
+ *
+ * For .qmd source files, parses frontmatter directly via gray-matter — the
+ * file still has its YAML block intact.
+ *
+ * For rendered .md files (under content/), Quarto's GFM render has stripped
+ * the frontmatter from the .md itself. Read the structured-frontmatter
+ * sidecar (`<file>.metadata.json`) instead — written by
+ * `cori.data.verse::write_metadata_sidecars()` during render.
+ *
+ * If the .md exists but its sidecar is missing, fall back to gray-matter
+ * (which will return the empty-frontmatter shape) and warn — this indicates
+ * a render+sync hasn't run since write_metadata_sidecars() was added.
  */
 function readFrontmatter(filePath: string, slug: string): ContentMeta {
-  const fileContent = fs.readFileSync(filePath, "utf-8");
-  const { data } = matter(fileContent);
+  let data: Record<string, unknown> = {};
+
+  if (filePath.endsWith(".md")) {
+    const sidecarPath = filePath + ".metadata.json";
+    if (fs.existsSync(sidecarPath)) {
+      try {
+        data = JSON.parse(fs.readFileSync(sidecarPath, "utf-8"));
+      } catch (err) {
+        console.warn(`Failed to parse sidecar ${sidecarPath}:`, err);
+      }
+    } else {
+      // Sidecar missing — fall back to gray-matter on the .md (typically
+      // returns near-empty data because Quarto stripped the frontmatter).
+      const fileContent = fs.readFileSync(filePath, "utf-8");
+      data = matter(fileContent).data as Record<string, unknown>;
+      console.warn(
+        `Metadata sidecar missing for ${filePath}. ` +
+          `Frontmatter will be incomplete until the next render+sync.`
+      );
+    }
+  } else {
+    // .qmd source file — frontmatter is intact, parse directly.
+    const fileContent = fs.readFileSync(filePath, "utf-8");
+    data = matter(fileContent).data as Record<string, unknown>;
+  }
+
   return {
     ...data,
     slug,
-    title: data.title || slug,
-    categories: data.categories || [],
-    tags: data.tags || [],
+    title: (data.title as string) || slug,
+    categories: (data.categories as string[]) || [],
+    tags: (data.tags as string[]) || [],
   } as ContentMeta;
 }
 

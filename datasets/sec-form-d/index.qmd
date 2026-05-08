@@ -1,0 +1,110 @@
+---
+title: "SEC Form D Filings (EDGAR)"
+description: "Notice-of-exempt-offering-of-securities filings (Form D) from the U.S. Securities and Exchange Commission's EDGAR database, used to track private capital investment activity by issuer location."
+author: "Mapping & Data Analytics Team"
+date: "2026-05-08"
+categories: ["Dataset", "Economic Indicators", "Entrepreneurship"]
+tags: ["SEC", "EDGAR", "Form D", "Private Capital", "Venture Capital", "County-Level"]
+dataset:
+  name: "SEC Form D Filings"
+  source: "U.S. Securities and Exchange Commission"
+  sourceUrl: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=D"
+  accessMethod: "EDGAR Bulk Archive (XML/JSON)"
+  updateFrequency: "Continuous (filings posted as received)"
+  geographicLevel: "County, State, National"
+  dataFormat: ["XML", "JSON"]
+  featured: false
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+Form D is a notice that issuers of unregistered securities must file with the U.S. Securities and Exchange Commission (SEC) when relying on Regulation D exemptions. Each filing reports the issuer's name, address, type of securities offered, and total offering amount, providing a direct view into private-capital investment activity that does not appear in public-market data.
+
+CORI ingests Form D filings via the SEC's EDGAR bulk archive, parses them to extract issuer geographic information, and joins them to county FIPS codes for rural/nonrural comparisons. The processed dataset is stored in CORI's `venture_capital` database schema as the `form_d_businesses` and `form_d_businesses_likely_vc` tables.
+
+::: callout-note
+## Why Form D is essential for private-capital analysis
+
+- **Comprehensive coverage** — every issuer relying on Reg D exemptions must file, capturing the bulk of private-capital activity.
+- **Geographic specificity** — issuer addresses support county-level aggregation.
+- **Funding amounts** — total offering amounts support per-capita and per-establishment normalizations.
+- **Public-domain data** — EDGAR filings are freely accessible and can be re-processed.
+:::
+
+## Coverage
+
+::: columns
+::: {.column width="50%"}
+**Geographic Coverage**
+
+- County, State, National (derived from issuer address)
+- All U.S. states and territories
+- Filings without parseable addresses are excluded
+:::
+
+::: {.column width="50%"}
+**Temporal Coverage**
+
+- Filings available from 1993 onward (EDGAR start)
+- Continuous (filings posted as received by the SEC)
+- CORI's `rural-economic-outlook` analyses use 2014–2024
+:::
+:::
+
+## Key Variables
+
+The processed `form_d_businesses` table includes:
+
+- **Filing identifier (CIK + accession number)** — unique key per filing
+- **Issuer name** — legal name of the issuer
+- **Issuer address** — street, city, state, ZIP (parsed from filing)
+- **County FIPS code (`geoid_co`)** — derived from issuer address geocoding
+- **Rural/nonrural classification (`rural_def`)** — joined from USDA ERS typology
+- **Offering type** — equity, debt, or other (from Form D Item 6)
+- **Total offering amount** — dollar value of the offering (from Item 13)
+- **Filing date** — date the Form D was filed with SEC
+
+A derived view, `form_d_businesses_likely_vc`, filters to filings whose issuer-classification heuristics suggest venture-capital activity (vs. real-estate funds, hedge funds, etc.).
+
+## Access
+
+The preferred way to access SEC Form D data is through the [`dform`](/packages/dform/) R package, which downloads directly from SEC EDGAR and handles caching, de-duplication, and multi-table aggregation:
+
+```r
+# Install once
+devtools::install_github("ruralinnovation/dform")
+
+# Load Form D data for a year, with quarterly caching
+dfm <- dForm$new()
+dfm$load_data(2020, quarter = c(1:4), remove_duplicates = TRUE, use_cache = TRUE)
+
+# Access the loaded tables
+head(dfm$submissions)
+head(dfm$issuers)
+head(dfm$offerings)
+
+# Aggregate related rows by accession number
+dfm$aggregate_data(sep = "; ")
+
+# Combine multiple tables
+combined <- dfm$combine_data(
+  tables_to_combine = c("submissions", "offerings", "issuers")
+)
+```
+
+`dform` exposes the six related Form D tables (submissions, issuers, offerings, recipients, related persons, signatures) and is the canonical entry point for new analyses. See the [package profile](/packages/dform/) for full documentation.
+
+### Direct EDGAR access
+
+For ad-hoc lookups against the SEC filings directly (without `dform`):
+
+- EDGAR Form D search: <https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=D>
+- EDGAR full-text search: <https://efts.sec.gov/LATEST/search-index?forms=D>
+- Bulk archive: <https://www.sec.gov/Archives/edgar/full-index/>

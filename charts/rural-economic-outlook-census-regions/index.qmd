@@ -17,7 +17,7 @@ chart:
   title: Census Regions
   chartType: map
   interactive: false
-  dataSource: U.S. Census Bureau
+  source: U.S. Census Bureau
   sourceUrl: https://www.census.gov/
   featured: false
 producedBy: rural-economic-outlook

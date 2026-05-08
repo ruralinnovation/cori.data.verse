@@ -21,7 +21,7 @@ chart:
   title: Remote work rates vary across rural regions
   chartType: bar
   interactive: false
-  dataSource: U.S. Census Bureau, American Community Survey
+  source: U.S. Census Bureau
   sourceUrl: https://www.census.gov/programs-surveys/acs
   featured: false
 producedBy: rural-economic-outlook

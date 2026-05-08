@@ -21,8 +21,8 @@ chart:
   title: Tech jobs have grown rapidly since 2000
   chartType: line
   interactive: false
-  dataSource: Federal Reserve Bank of St. Louis, FRED
-  sourceUrl: https://fred.stlouisfed.org/
+  source: Federal Reserve Bank of St. Louis
+  sourceUrl: https://fred.stlouisfed.org/series/LEU0254476900A
   featured: false
 producedBy: rural-economic-outlook
 usesDatasets:

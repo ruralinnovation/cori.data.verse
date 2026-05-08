@@ -1,0 +1,90 @@
+---
+title: "BLS Occupational Requirements Survey (ORS) — Telework"
+description: "National occupation-level estimates of telework availability and other physical, environmental, and cognitive job requirements from the U.S. Bureau of Labor Statistics' Occupational Requirements Survey."
+author: "Mapping & Data Analytics Team"
+date: "2026-05-08"
+categories: ["Dataset", "Labor Market"]
+tags: ["BLS", "ORS", "Telework", "Occupations", "SOC", "National", "Annual"]
+dataset:
+  name: "Occupational Requirements Survey (ORS)"
+  source: "Bureau of Labor Statistics, U.S. Department of Labor"
+  sourceUrl: "https://www.bls.gov/ors/"
+  accessMethod: "Direct Download (Excel)"
+  updateFrequency: "Annual"
+  geographicLevel: "National"
+  dataFormat: ["Excel"]
+  featured: false
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+The Occupational Requirements Survey (ORS) collects information on physical demands, environmental conditions, cognitive and mental requirements, and education, training, and experience requirements of occupations in the U.S. economy. CORI uses the ORS telework-availability fields to characterize which occupations are amenable to remote work, supporting analyses of post-pandemic remote-work adoption rates.
+
+The ORS is published as a single Excel workbook covering all surveyed occupations for a given reference year (e.g., the 2025 reference year aggregates data collected August 2023 through July 2025).
+
+::: callout-note
+## Why ORS is essential for telework analysis
+
+- **Standardized telework definitions** — ORS uses consistent field definitions across years, supporting longitudinal comparison.
+- **Detailed occupation coverage** — estimates published at the 6-digit SOC level for thousands of occupations.
+- **Direct measurement** — ORS distinguishes between "telework available" and "telework not available" rather than inferring from job postings or surveys of workers.
+:::
+
+## Coverage
+
+::: columns
+::: {.column width="50%"}
+**Geographic Coverage**
+
+- National (United States only)
+- ORS is national-level only by design — no state, MSA, or county breakdowns are published
+:::
+
+::: {.column width="50%"}
+**Temporal Coverage**
+
+- Annual reference years
+- Each reference year aggregates ~24 months of collected data
+- 2025 reference year used for current rural-economic-outlook analysis
+:::
+:::
+
+## Key Variables
+
+The ORS Excel workbook publishes one row per (occupation × characteristic × estimate type). For the telework analysis, the relevant fields include:
+
+- **Occupation (SOC code + title)** — 6-digit Standard Occupational Classification codes
+- **Telework availability** — percent of workers in the occupation for whom telework is available
+- **Estimate type** — point estimate vs. relative standard error
+- **Reference year** — the survey reference year
+
+Other ORS fields (physical demands, environmental conditions, cognitive requirements) are present in the same workbook but are not currently used by `rural-economic-outlook`.
+
+## Access
+
+```r
+# Download the complete ORS dataset (single Excel workbook, ~10 MB)
+download.file(
+  url      = "https://www.bls.gov/web/ors/ors-complete-dataset.xlsx",
+  destfile = "data/ors/ors-complete-dataset.xlsx",
+  mode     = "wb"
+)
+
+# Then read the relevant sheet
+dta <- readxl::read_excel(
+  "data/ors/ors-complete-dataset.xlsx",
+  sheet = "ORS 2025 dataset"
+)
+```
+
+Helper functions wrapping the download and the sheet-parse logic live in `R/utils/ors_utils.R` in the `rural-economic-outlook` project (`download_ors()`, `read_ors_telework_file()`).
+
+ORS landing page: <https://www.bls.gov/ors/>
+ORS data download page: <https://www.bls.gov/ors/data.htm>

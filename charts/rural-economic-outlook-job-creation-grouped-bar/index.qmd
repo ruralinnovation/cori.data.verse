@@ -21,7 +21,7 @@ chart:
   title: Young firms lead job creation across the US
   chartType: bar
   interactive: false
-  dataSource: U.S. Census Bureau, Business Dynamics Statistics
+  source: U.S. Census Bureau
   sourceUrl: https://www.census.gov/programs-surveys/bds.html
   featured: false
 producedBy: rural-economic-outlook

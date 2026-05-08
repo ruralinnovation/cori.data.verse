@@ -22,7 +22,7 @@ chart:
   title: Tradable services employment recovery varies across regions
   chartType: line
   interactive: false
-  dataSource: Bureau of Labor Statistics, Quarterly Census of Employment and Wages
+  source: Bureau of Labor Statistics, U.S. Department of Labor
   sourceUrl: https://www.bls.gov/cew/
   featured: false
 producedBy: rural-economic-outlook

@@ -21,7 +21,7 @@ chart:
   title: Domestic migration patterns shift toward Rural areas
   chartType: line
   interactive: false
-  dataSource: IRS Statistics of Income, Migration Data
+  source: Internal Revenue Service
   sourceUrl: https://www.irs.gov/statistics/soi-tax-stats-migration-data
   featured: false
 producedBy: rural-economic-outlook

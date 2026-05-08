@@ -1,0 +1,119 @@
+---
+title: dform
+description: Downloads and manages simple data processing tasks for SEC Form D data.
+author: Matt Rogers
+date: '2026-05-08'
+categories:
+  - R Package
+  - Economic Indicators
+tags:
+  - SEC Form D
+  - Securities
+  - Business Formation
+  - County-Level
+  - Caching
+  - Data Processing
+package:
+  name: dform
+  githubUrl: https://github.com/ruralinnovation/dform
+  installCommand: devtools::install_github("ruralinnovation/dform")
+  status: development
+  version: 0.0.1
+  maintainer: Matt Rogers
+  featured: false
+usesDatasets:
+  - sec-form-d
+usesResources: []
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+dform provides a programmatic interface to SEC Form D data through an R6 class. Form D is the notice of offering filed by companies with the SEC under Regulation D, containing information about securities offerings including issuer details, offering terms, and recipient information. This package automates downloading quarterly datasets from the SEC's EDGAR system, manages local caching to reduce redundant downloads, and handles de-duplication and aggregation of the various data tables.
+
+::: callout-note
+## Why Use This Package
+
+- **SEC EDGAR Integration** - Downloads directly from SEC EDGAR structured data API for Form D filings
+- **Local Caching** - Caches downloaded quarterly datasets locally to avoid redundant downloads
+- **De-duplication** - Removes duplicate offerings using previous accession numbers
+- **Multi-table Processing** - Handles six related data tables: submissions, issuers, offerings, recipients, related persons, and signatures
+- **Data Aggregation** - Aggregates multiple rows per accession number using configurable separators
+- **Method Chaining** - Public methods return invisible(self) for fluent interface
+:::
+
+## Installation
+
+```{r}
+#| eval: false
+
+devtools::install_github("ruralinnovation/dform")
+```
+
+## Quick Start
+
+```{r}
+#| eval: false
+
+dfm <- dForm$new()
+
+# Load Form D data for 2020, cache results, remove duplicates
+dfm$load_data(2020, quarter = c(1:4), remove_duplicates = TRUE, use_cache = TRUE)
+
+# Access the loaded data
+head(dfm$submissions)
+head(dfm$issuers)
+head(dfm$offerings)
+
+# Aggregate related data by accession number
+dfm$aggregate_data(sep = "; ")
+
+# Combine multiple tables
+combined <- dfm$combine_data(tables_to_combine = c("submissions", "offerings", "issuers"))
+```
+
+## Core Functions
+
+| Function | Description |
+|----------|-------------|
+| `dForm()` | R6 class for downloading, caching, and processing SEC Form D data |
+
+## Data Sources
+
+| Dataset | Role |
+|---------|------|
+| [SEC Form D](/datasets/sec-form-d/) | Primary |
+
+## Use Cases at CORI
+
+This package is used in:
+
+- Analyzing private securities offerings by geography and industry
+- Researching entrepreneurship and business formation patterns
+- Studying capital formation trends across counties
+- Building county-level datasets on securities activity
+
+::: callout-tip
+## Optimization Tips
+
+Use use_cache = TRUE (default) to avoid re-downloading data. For large years or multiple quarters, consider loading data in batches to manage memory usage.
+:::
+
+::: callout-warning
+## Known Limitations
+
+Package version 0.0.1 is in development. Codebook generation is currently disabled (commented out) and may be added in future versions.
+:::
+
+## Documentation
+
+- [GitHub Repository](https://github.com/ruralinnovation/dform)
+- [Full README](https://github.com/ruralinnovation/dform/blob/main/README.md)
+- [Function Documentation](https://github.com/ruralinnovation/dform/tree/main/man)
+

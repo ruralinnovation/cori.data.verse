@@ -18,7 +18,7 @@ chart:
   title: Consumer confidence recovering from historic lows
   chartType: line
   interactive: false
-  dataSource: University of Michigan, Surveys of Consumers
+  source: University of Michigan, Surveys of Consumers
   sourceUrl: https://www.sca.isr.umich.edu/
   featured: false
 producedBy: rural-economic-outlook

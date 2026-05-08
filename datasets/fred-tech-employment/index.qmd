@@ -1,0 +1,83 @@
+---
+title: "FRED Tech Employment (BLS via Federal Reserve Bank of St. Louis)"
+description: "Annual national employment counts for tech occupations (SOC 15-XXXX, Computer and Mathematical Occupations), sourced from the U.S. Bureau of Labor Statistics' Current Population Survey and republished through the Federal Reserve Bank of St. Louis FRED data service."
+author: "Mapping & Data Analytics Team"
+date: "2026-05-08"
+categories: ["Dataset", "Labor Market", "Technology"]
+tags: ["FRED", "BLS", "Tech Employment", "SOC", "National", "Annual"]
+dataset:
+  name: "FRED Tech Employment (BLS Series LEU0254476900A)"
+  source: "Federal Reserve Bank of St. Louis"
+  sourceUrl: "https://fred.stlouisfed.org/series/LEU0254476900A"
+  accessMethod: "FRED CSV Download"
+  updateFrequency: "Annual"
+  geographicLevel: "National"
+  dataFormat: ["CSV"]
+  featured: false
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+The Federal Reserve Bank of St. Louis FRED data service republishes select labor market indicators sourced from the U.S. Bureau of Labor Statistics. CORI uses FRED series **LEU0254476900A** — annual national employment in Computer and Mathematical Occupations (SOC major group 15-0000) — to chart tech-employment growth from 2007 (pre-recession baseline) through 2025.
+
+The underlying observations originate from BLS but are accessed via FRED because FRED's flat CSV endpoints provide a stable, scriptable download path that does not require BLS API authentication.
+
+::: callout-note
+## Why FRED is essential for tech-employment time series
+
+- **Stable single-series CSV endpoint** — pulls return uniform schema regardless of revision date.
+- **Long historical run** — annual observations available back to 2000 for major occupational groups.
+- **Direct attribution to BLS** — series IDs are documented and citation-stable.
+- **Recession bar overlays** — FRED graph configuration can be embedded in URLs for reproducible visualizations.
+:::
+
+## Coverage
+
+::: columns
+::: {.column width="50%"}
+**Geographic Coverage**
+
+- National (United States only)
+- No state, MSA, or county breakdowns
+- Source occupational data is national-only by design
+:::
+
+::: {.column width="50%"}
+**Temporal Coverage**
+
+- Annual observations, 2000–present
+- 2007 baseline used for momentum charts
+- Updated annually as BLS releases new estimates
+:::
+:::
+
+## Key Variables
+
+The FRED endpoint returns a two-column CSV: `DATE` and `LEU0254476900A` (employment count, in thousands). The series is defined as:
+
+- **Universe**: Employed persons aged 16 and over in the United States
+- **Occupational scope**: SOC major group 15-0000 (Computer and Mathematical Occupations) — software developers, data analysts, computer programmers, computer support specialists, etc.
+- **Estimation**: Annual averages computed from monthly Current Population Survey (CPS) data
+- **Units**: Thousands of persons
+
+CORI's tech-employment time series uses this single series and normalizes to a 2007 baseline.
+
+## Access
+
+```r
+# Direct CSV pull from FRED
+data <- data.table::fread(
+  "https://fred.stlouisfed.org/graph/fredgraph.csv?id=LEU0254476900A"
+)
+```
+
+The full FRED graph URL with formatting parameters is documented in `R/viz/presentation/2007_2025_tech_jobs_viz.R` and `R/viz/presentation/create_line_chart_fred_2000_2025_tech_jobs_viz.R` in the `rural-economic-outlook` project. No authentication required.
+
+Series page: <https://fred.stlouisfed.org/series/LEU0254476900A>

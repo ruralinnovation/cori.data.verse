@@ -20,7 +20,7 @@ chart:
   title: Population growth is concentrated in Nonrural areas
   chartType: line
   interactive: false
-  dataSource: U.S. Census Bureau, Population Estimates Program
+  source: U.S. Census Bureau
   sourceUrl: https://www.census.gov/programs-surveys/popest.html
   featured: false
 producedBy: rural-economic-outlook

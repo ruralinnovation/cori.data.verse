@@ -1,0 +1,81 @@
+---
+title: "University of Michigan Index of Consumer Sentiment"
+description: "Monthly national index of U.S. consumer sentiment from the University of Michigan's Surveys of Consumers, used to contextualize macroeconomic conditions in rural and nonrural economic comparisons."
+author: "Mapping & Data Analytics Team"
+date: "2026-05-08"
+categories: ["Dataset", "Economic Indicators"]
+tags: ["UMich", "Consumer Sentiment", "Macroeconomy", "National", "Monthly"]
+dataset:
+  name: "University of Michigan Index of Consumer Sentiment (ICS)"
+  source: "University of Michigan, Surveys of Consumers"
+  sourceUrl: "https://www.sca.isr.umich.edu/"
+  accessMethod: "Direct Download (CSV)"
+  updateFrequency: "Monthly"
+  geographicLevel: "National"
+  dataFormat: ["CSV"]
+  featured: false
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+The University of Michigan's Surveys of Consumers, conducted continuously since 1946, produce the Index of Consumer Sentiment (ICS) — a monthly national index that summarizes household perceptions of personal financial conditions, business conditions, and buying conditions. The ICS is one of the most widely cited leading indicators of U.S. consumer behavior and macroeconomic conditions.
+
+CORI uses the ICS time series to contextualize the rural/nonrural economic comparisons in the Rural Economic Outlook narrative — for example, plotting consumer sentiment alongside employment recovery to show how household perceptions tracked (or diverged from) realized labor-market conditions during and after the Great Recession.
+
+::: callout-note
+## Why ICS is useful in macroeconomic context
+
+- **Long historical run** — monthly observations available since 1978; longer series available with caveats.
+- **Stable methodology** — sample design and question wording have been consistent for decades.
+- **Free public access** — historical CSV files are published directly on the program site.
+- **Recession-sensitive** — well-documented declines during NBER-defined recessions, useful for stress-test annotations.
+:::
+
+## Coverage
+
+::: columns
+::: {.column width="50%"}
+**Geographic Coverage**
+
+- National (United States only)
+- The published index does not include subnational breakdowns
+:::
+
+::: {.column width="50%"}
+**Temporal Coverage**
+
+- Monthly observations since 1978 (in the published table)
+- Index value normalized to 1966 Q1 = 100
+- Updated mid-month (preliminary) and end-of-month (final)
+:::
+:::
+
+## Key Variables
+
+The published CSV (`tbmics.csv`) contains monthly observations with columns:
+
+- **`Month`** — calendar month (e.g., `Jan`, `Feb`)
+- **`YYYY`** — calendar year (4-digit)
+- **`ICS_ALL`** — Index of Consumer Sentiment, full sample
+- Subindices for sentiment by demographic and political subgroup may also be present in expanded files
+
+CORI's `rural-economic-outlook` analyses rebase the index to a 2007 baseline (matching the project's pre-recession reference year) and overlay Great Recession shading from December 2007 to June 2009.
+
+## Access
+
+```r
+# Direct CSV pull (no authentication required)
+dta <- data.table::fread("https://www.sca.isr.umich.edu/files/tbmics.csv")
+```
+
+The pull, transform, and visualization logic for the consumer-sentiment chart lives in `R/viz/presentation/consumer_sentiment.R` in the `rural-economic-outlook` project.
+
+Surveys of Consumers landing page: <https://www.sca.isr.umich.edu/>
+Methodology: <https://www.sca.isr.umich.edu/info.php>

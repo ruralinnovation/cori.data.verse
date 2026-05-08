@@ -21,7 +21,7 @@ chart:
   title: Young firms drive job creation in rural and nonrural economies
   chartType: bar
   interactive: false
-  dataSource: U.S. Census Bureau, Business Dynamics Statistics
+  source: U.S. Census Bureau
   sourceUrl: https://www.census.gov/programs-surveys/bds.html
   featured: false
 producedBy: rural-economic-outlook

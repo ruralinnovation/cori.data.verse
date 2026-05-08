@@ -66,7 +66,7 @@ export interface ChartInfo {
   title?: string;
   chartType?: string;
   interactive?: boolean;
-  dataSource?: string;
+  source?: string;
   sourceUrl?: string;
   featured?: boolean;
 }

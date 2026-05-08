@@ -21,8 +21,8 @@ chart:
   title: A decade of fiber infrastructure investment transforms broadband access
   chartType: bar
   interactive: false
-  dataSource: FCC National Broadband Map
-  sourceUrl: https://broadbandmap.fcc.gov/
+  source: Federal Communications Commission
+  sourceUrl: https://broadbandmap.fcc.gov/data-download
   featured: false
 producedBy: rural-economic-outlook
 usesDatasets:

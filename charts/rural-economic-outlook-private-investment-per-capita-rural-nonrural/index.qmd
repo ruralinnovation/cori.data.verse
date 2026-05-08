@@ -21,8 +21,8 @@ chart:
   title: Private investment in rural areas lags nonrural but is on the rise
   chartType: line
   interactive: false
-  dataSource: U.S. Securities and Exchange Commission, EDGAR
-  sourceUrl: https://www.sec.gov/cgi-bin/browse-edgar
+  source: U.S. Securities and Exchange Commission
+  sourceUrl: https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=D
   featured: false
 producedBy: rural-economic-outlook
 usesDatasets:

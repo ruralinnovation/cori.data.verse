@@ -20,8 +20,8 @@ chart:
   title: High Farming-Concentration Counties
   chartType: map
   interactive: false
-  dataSource: USDA Economic Research Service, County Typology Codes
-  sourceUrl: https://www.ers.usda.gov/data-products/rural-urban-continuum-codes/
+  source: U.S. Department of Agriculture, Economic Research Service
+  sourceUrl: https://www.ers.usda.gov/data-products/county-typology-codes/
   featured: false
 producedBy: rural-economic-outlook
 usesDatasets:

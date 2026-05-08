@@ -22,7 +22,7 @@ chart:
   title: Remote work distribution varies by rural region
   chartType: density
   interactive: false
-  dataSource: U.S. Census Bureau, American Community Survey
+  source: U.S. Census Bureau
   sourceUrl: https://www.census.gov/programs-surveys/acs
   featured: false
 producedBy: rural-economic-outlook

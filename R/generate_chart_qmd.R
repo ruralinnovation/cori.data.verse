@@ -64,20 +64,24 @@ generate_chart_frontmatter <- function(title,
     fm$image <- image
   }
 
-  # Auto-derive data_source/source_url from uses_datasets when not explicitly
+  # Auto-derive source/sourceUrl from uses_datasets when not explicitly
   # provided OR when Claude defaulted to the generic "CORI analysis" string.
-  # A lookup hit takes precedence over those two conditions; an explicit
-  # non-generic value is preserved as-is.
-  needs_source <- is.null(data_source) || !nzchar(data_source %||% "") ||
-                  identical(trimws(data_source), "CORI analysis")
-  if (needs_source) {
-    derived <- lookup_dataset_source_name(uses_datasets)
-    if (!is.null(derived)) data_source <- derived
-  }
-  needs_url <- is.null(source_url) || !nzchar(source_url %||% "")
-  if (needs_url) {
-    derived_url <- lookup_dataset_source_url(uses_datasets)
-    if (!is.null(derived_url)) source_url <- derived_url
+  # A lookup hit (against the live S3 dataset profiles) takes precedence over
+  # those two conditions; an explicit non-generic value is preserved as-is.
+  generic_source <- !is.null(data_source) &&
+                    identical(trimws(data_source), "CORI analysis")
+  needs_source <- is.null(data_source) || !nzchar(data_source %||% "") || generic_source
+  needs_url    <- is.null(source_url)  || !nzchar(source_url  %||% "") || generic_source
+  if (needs_source || needs_url) {
+    derived <- lookup_dataset_source(uses_datasets)
+    if (!is.null(derived)) {
+      if (needs_source && !is.null(derived$source) && !is.na(derived$source)) {
+        data_source <- derived$source
+      }
+      if (needs_url && !is.null(derived$sourceUrl) && !is.na(derived$sourceUrl)) {
+        source_url <- derived$sourceUrl
+      }
+    }
   }
 
   chart_block <- list(title = title)
@@ -86,7 +90,7 @@ generate_chart_frontmatter <- function(title,
   }
   chart_block$interactive <- isTRUE(interactive)
   if (!is.null(data_source) && nzchar(data_source %||% "")) {
-    chart_block$dataSource <- data_source
+    chart_block$source <- data_source
   }
   if (!is.null(source_url) && nzchar(source_url %||% "")) {
     chart_block$sourceUrl <- source_url
@@ -315,68 +319,3 @@ chart_section_dangling_note <- function(dangling_note) {
   dangling_note
 }
 
-
-# --- Dataset slug lookup tables (not exported) --------------------------------
-
-.dataset_source_names <- c(
-  "census-population-estimates" = "U.S. Census Bureau, Population Estimates Program",
-  "census-pep-components"       = "U.S. Census Bureau, Population Estimates Program",
-  "bea-real-gdp"                = "U.S. Bureau of Economic Analysis",
-  "qcew-employment-wages"       = "Bureau of Labor Statistics, Quarterly Census of Employment and Wages",
-  "american-community-survey"   = "U.S. Census Bureau, American Community Survey",
-  "census-bds"                  = "U.S. Census Bureau, Business Dynamics Statistics",
-  "census-bfs"                  = "U.S. Census Bureau, Business Formation Statistics",
-  "census-building-permits"     = "U.S. Census Bureau, Building Permits Survey",
-  "uspto-patents"               = "U.S. Patent and Trademark Office",
-  "fcc-broadband"               = "FCC National Broadband Map",
-  "irs-migration"               = "IRS Statistics of Income, Migration Data",
-  "usda-county-typology"        = "USDA Economic Research Service, County Typology Codes",
-  "umich-consumer-sentiment"    = "University of Michigan, Surveys of Consumers",
-  "fred-tech-employment"        = "Federal Reserve Bank of St. Louis, FRED",
-  "sec-form-d"                  = "U.S. Securities and Exchange Commission, EDGAR",
-  "bls-ors-telework"            = "Bureau of Labor Statistics, Occupational Requirements Survey"
-)
-
-.dataset_source_urls <- c(
-  "census-population-estimates" = "https://www.census.gov/programs-surveys/popest.html",
-  "census-pep-components"       = "https://www.census.gov/programs-surveys/popest.html",
-  "bea-real-gdp"                = "https://www.bea.gov/",
-  "qcew-employment-wages"       = "https://www.bls.gov/cew/",
-  "american-community-survey"   = "https://www.census.gov/programs-surveys/acs",
-  "census-bds"                  = "https://www.census.gov/programs-surveys/bds.html",
-  "census-bfs"                  = "https://www.census.gov/econ/bfs/",
-  "census-building-permits"     = "https://www.census.gov/construction/bps/",
-  "uspto-patents"               = "https://www.uspto.gov/",
-  "fcc-broadband"               = "https://broadbandmap.fcc.gov/",
-  "irs-migration"               = "https://www.irs.gov/statistics/soi-tax-stats-migration-data",
-  "usda-county-typology"        = "https://www.ers.usda.gov/data-products/rural-urban-continuum-codes/",
-  "umich-consumer-sentiment"    = "https://www.sca.isr.umich.edu/",
-  "fred-tech-employment"        = "https://fred.stlouisfed.org/",
-  "sec-form-d"                  = "https://www.sec.gov/cgi-bin/browse-edgar",
-  "bls-ors-telework"            = "https://www.bls.gov/ors/"
-)
-
-#' Return the canonical source name for the first recognized dataset slug.
-#' When multiple datasets are supplied, names are joined with " and " if both
-#' are recognized; otherwise the first recognized name is used.
-#' Returns NULL if no slug matches the lookup table.
-#' @noRd
-lookup_dataset_source_name <- function(slugs) {
-  slugs <- slugs[nzchar(slugs %||% "")]
-  if (length(slugs) == 0) return(NULL)
-  hits <- .dataset_source_names[slugs[slugs %in% names(.dataset_source_names)]]
-  if (length(hits) == 0) return(NULL)
-  if (length(hits) == 1) return(unname(hits))
-  paste(unique(unname(hits)), collapse = " and ")
-}
-
-#' Return the canonical source URL for the first recognized dataset slug.
-#' Returns NULL if no slug matches.
-#' @noRd
-lookup_dataset_source_url <- function(slugs) {
-  slugs <- slugs[nzchar(slugs %||% "")]
-  if (length(slugs) == 0) return(NULL)
-  hit <- .dataset_source_urls[slugs[slugs %in% names(.dataset_source_urls)]]
-  if (length(hit) == 0) return(NULL)
-  unname(hit[[1]])
-}
