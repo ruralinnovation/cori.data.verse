@@ -1,0 +1,185 @@
+---
+title: "cori.data.hu"
+description: "Access and analyze U.S. Census Bureau Housing Unit Estimates at the national, state, and county level from 2020 to present"
+author: "Drew Rosebush"
+date: "2026-05-12"
+categories: ["R Package", "Housing"]
+tags: ["Housing Units", "Census", "Housing Stock", "County-Level", "S3", "Tidy Data"]
+package:
+  name: "cori.data.hu"
+  githubUrl: "https://github.com/ruralinnovation/cori.data.hu"
+  installCommand: 'devtools::install_github("ruralinnovation/cori.data.hu")'
+  status: "development"
+  version: "0.1.0"
+  maintainer: "Drew Rosebush"
+  featured: false
+usesDatasets: ["census-housing-units"]
+usesResources: []
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+The `cori.data.hu` package provides access to the U.S. Census Bureau's
+**National, State, and County Housing Unit Totals** — annual estimates
+of the total number of housing units in existence, published under the
+Population Estimates Program. This package measures housing **stock**
+(how many units exist at a point in time), as distinct from construction
+activity or permitting flow.
+
+::: callout-note
+## Why Use This Package
+
+-   **Total housing stock** — Measures all existing units, not just new
+    construction; pairs with `cori.data.bps` for net-new activity
+-   **S3-backed access** — Pre-processed data queryable via DuckDB
+    without downloading per-state source files
+-   **Long history** — Vintage series back to 1970, anchored to each
+    decennial census
+-   **Methodology-aware** — README documents the components-of-change
+    model, vintage gap analysis, and known limitations for longitudinal
+    use
+:::
+
+## Installation
+
+```{r}
+#| eval: false
+
+devtools::install_github("ruralinnovation/cori.data.hu")
+```
+
+## Quick Start
+
+```{r}
+#| eval: false
+
+library(cori.data.hu)
+
+# Read housing unit estimates for all counties, latest vintage
+df <- read_hu_from_s3()
+
+# Variable documentation
+get_hu_codebook()
+
+# Most recent available vintage year
+latest_hu_vintage()
+```
+
+## Key Features
+
+### S3-Backed Data Access
+
+```{r}
+#| eval: false
+
+# Read all counties, current vintage
+read_hu_from_s3()
+```
+
+### Components-of-Change Methodology
+
+The Census Bureau builds housing unit estimates using:
+
+```
+2020 Census Housing Units
+  + New Residential Construction  (permitted × completion rate + non-permitted)
+  + New Mobile Homes              (Manufactured Homes Survey)
+  - Housing Units Lost            (AHS-based loss rates + FEMA disaster losses)
+= July 1 Annual Housing Unit Estimate
+```
+
+## Core Functions
+
+| Function | Category | Description |
+|---|---|---|
+| `read_hu_from_s3()` | Data Access | Read processed housing unit estimates from S3 via DuckDB |
+| `get_hu_codebook()` | Utility | Return variable definitions and metadata |
+| `latest_hu_vintage()` | Utility | Return the most recent available vintage year |
+
+## Data Coverage
+
+| Dimension | Coverage |
+|---|---|
+| **Geography** | National, State, County (5-digit FIPS) |
+| **Time Period** | 2020–present (current series); historical back to 1970 |
+| **Vintage** | Annual (typically released each May) |
+| **Update Frequency** | Annual |
+| **Source** | Census Bureau Population Estimates Program |
+
+## Known Limitations
+
+::: callout-important
+## Cross-Decade Comparisons
+
+Do **not** compute net change across the 2009→2010 or 2019→2020
+boundaries. Each decade series is anchored to its own decennial census
+baseline. Subtracting across these resets produces a methodological
+artifact, not a real change in housing stock. For year-over-year change
+analysis, restrict to a single decade series or use `cori.data.bps`
+permit data as a proxy for net new construction.
+:::
+
+Additional limitations:
+
+-   **No structure type breakdown** in the public release — pair with
+    BPS data for single-family vs. multifamily distinctions
+-   **No vacancy or occupancy status** — pair with ACS for vacancy rates
+-   **Loss rates are static** — derived from 2009/2011 AHS, unchanged
+    across all vintages; demolition patterns may be underestimated in
+    active redevelopment markets
+-   **Non-permitted construction not distributed to the West** —
+    methodology gap for Western counties without permit offices
+
+## Use Cases
+
+-   **Housing supply analysis** — Track total stock growth or decline at
+    county level
+-   **Rural housing research** — Compare housing stock trends between
+    rural and nonrural counties
+-   **Per-capita housing ratios** — Combine with PEP population
+    estimates for units-per-household analysis
+-   **Longitudinal panels** — Build within-decade housing stock panels
+    (restrict to single vintage series)
+
+## Related Resources
+
+### Datasets
+
+-   Census Housing Unit Estimates *(slug: `census-housing-units` — node
+    pending)* — Source dataset documentation
+
+### Related Packages
+
+-   [cori.data.bds](/packages/cori-data-bds/) — Business Dynamics
+    Statistics for economic context
+-   [cori.data.pep](/packages/cori-data-pep/) — Population estimates
+    for per-capita denominators
+
+### External Links
+
+-   [Census Housing Unit Estimates Dataset Page](https://www.census.gov/data/datasets/time-series/demo/popest/2020s-total-housing-units.html)
+-   [Vintage 2024 Methodology (PDF)](https://www2.census.gov/programs-surveys/popest/technical-documentation/methodology/2020-2024/2024-hu-meth.pdf)
+
+::: callout-note
+## Dangling references
+
+The following slugs are referenced by this package but do not yet have
+nodes in Dataverse. They are intentionally preserved as future content
+needs:
+
+-   `dataset/census-housing-units`
+:::
+
+---
+
+**Contact:** Drew Rosebush (drew.rosebush@ruralinnovation.us)
+
+For bug reports or feature requests, please open an issue on
+[GitHub](https://github.com/ruralinnovation/cori.data.hu/issues).

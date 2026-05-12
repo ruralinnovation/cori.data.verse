@@ -2,6 +2,31 @@
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
 
+# --- safe_yaml_list() --------------------------------------------------------
+
+#' Convert a character vector to a list safe for YAML serialization
+#'
+#' Ensures that character values that look like numbers (e.g., "2023") are
+#' explicitly quoted in the YAML output to prevent them from being parsed
+#' as numeric values.
+#'
+#' @param x Character vector.
+#' @return A list suitable for yaml::as.yaml() with numeric-looking strings
+#'   properly quoted.
+#' @noRd
+safe_yaml_list <- function(x) {
+  lapply(x, function(item) {
+    if (is.character(item) && grepl("^-?\\d+(\\.\\d+)?$", item)) {
+      result <- paste0("\"", item, "\"")
+      class(result) <- "verbatim"
+      result
+    } else {
+      item
+    }
+  })
+}
+
+
 # --- 1.0 generate_package_frontmatter() ---------------------------------------
 
 #' Generate Package YAML Frontmatter
@@ -40,8 +65,8 @@ generate_package_frontmatter <- function(title,
     description = description,
     author      = author,
     date        = format(as.Date(date)),
-    categories  = as.list(categories),
-    tags        = as.list(tags)
+    categories  = safe_yaml_list(categories),
+    tags        = safe_yaml_list(tags)
   )
 
   fm$package <- list(

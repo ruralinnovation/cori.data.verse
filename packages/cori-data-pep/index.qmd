@@ -1,0 +1,187 @@
+---
+title: "cori.data.pep"
+description: "Access and analyze U.S. Census Bureau Population Estimates Program (PEP) data at the county level from 2000 to present, including population totals and components of change"
+author: "Drew Rosebush"
+date: "2026-05-12"
+categories: ["R Package", "Demographics"]
+tags: ["PEP", "Population", "Migration", "County-Level", "S3", "Tidy Data", "Rural"]
+package:
+  name: "cori.data.pep"
+  githubUrl: "https://github.com/ruralinnovation/cori.data.pep"
+  installCommand: 'remotes::install_github("ruralinnovation/cori.data.pep")'
+  status: "development"
+  version: "0.1.0"
+  maintainer: "Drew Rosebush"
+  featured: false
+usesDatasets: ["census-population-estimates", "census-pep-components"]
+usesResources: []
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+The `cori.data.pep` package provides access to U.S. Census Bureau
+Population Estimates Program (PEP) data at the county level from 2000
+to present. It covers eight variables including total population,
+working-age population (16+), and a full decomposition of population
+change into natural change (births minus deaths) and net migration
+(domestic and international). Data span three Census vintages, handled
+internally by the package.
+
+::: callout-note
+## Why Use This Package
+
+-   **Eight variables** — Total population, pop 16+, births, deaths,
+    natural change, domestic migration, international migration, net
+    migration
+-   **Continuous panel from 2000** — Spans three decennial vintages
+    (2000–2009, 2010–2019, 2020–present), stitched into a single
+    consistent series
+-   **S3-backed access** — Pre-processed data available via DuckDB for
+    fast county-level queries
+-   **Standard long format** — One row per `geoid / year / variable`,
+    ready for tidy analysis
+:::
+
+## Installation
+
+```{r}
+#| eval: false
+
+remotes::install_github("ruralinnovation/cori.data.pep")
+```
+
+## Quick Start
+
+```{r}
+#| eval: false
+
+library(cori.data.pep)
+
+# All data, latest vintage
+df <- read_pep_from_s3()
+
+# Total population and migration, specific years
+df <- read_pep_from_s3(
+  variables = c("population", "net_mig"),
+  years     = 2010:2024
+)
+
+# Specific counties
+df <- read_pep_from_s3(
+  variables = c("domestic_mig", "international_mig"),
+  geoids    = c("54011", "54025")
+)
+
+# Variable documentation
+get_pep_codebook()
+```
+
+## Key Features
+
+### Eight Population and Migration Variables
+
+| Variable | Coverage | Description |
+|---|---|---|
+| `population` | 2000–present | Total resident population |
+| `pop_16plus` | 2007–present | Resident population age 16+ |
+| `births` | 2000–present | Annual births |
+| `deaths` | 2000–present | Annual deaths |
+| `natural_chg` | 2000–present | Natural change (births minus deaths) |
+| `domestic_mig` | 2000–present | Net domestic migration |
+| `international_mig` | 2000–present | Net international migration |
+| `net_mig` | 2000–present | Net migration (domestic + international) |
+
+### Multi-Vintage Coverage
+
+Three Census PEP vintages are handled internally:
+
+| Vintage | URL Source |
+|---|---|
+| 2000–2009 | Intercensal county estimates |
+| 2010–2019 | Vintage 2019 county estimates |
+| 2020–present | Latest vintage county estimates |
+
+### Data Refresh (Admin)
+
+After Census releases new estimates:
+
+```{r}
+#| eval: false
+
+write_pep_processed_to_s3(years = 2000:2025)
+```
+
+## Core Functions
+
+| Function | Category | Description |
+|---|---|---|
+| `read_pep_from_s3()` | Data Access | Read processed PEP data from S3 via DuckDB |
+| `pull_population()` | Data Access | Pull population totals from Census source files |
+| `pull_pop_16plus()` | Data Access | Pull population age 16+ from Census source files |
+| `pull_components()` | Data Access | Pull components of change from Census source files |
+| `write_pep_processed_to_s3()` | Admin | Process and write PEP data to S3 |
+| `get_pep_codebook()` | Utility | Return variable definitions and metadata |
+| `latest_pep_vintage()` | Utility | Return the most recent available vintage year |
+
+## Data Coverage
+
+| Dimension | Coverage |
+|---|---|
+| **Geography** | County (5-digit FIPS) |
+| **Time Period** | 2000–present |
+| **Update Frequency** | Annual (Census releases new vintage each year) |
+| **Source** | Census Bureau Population Estimates Program |
+
+## Use Cases
+
+-   **Population trend analysis** — Track rural population growth and
+    decline from 2000 to present
+-   **Migration decomposition** — Separate domestic and international
+    migration to understand drivers of population change
+-   **Natural change analysis** — Identify counties where deaths exceed
+    births (natural population decline)
+-   **Per-capita denominators** — Provide population base for rate
+    calculations in other CORI analyses
+-   **Workforce proxies** — Use `pop_16plus` as a working-age population
+    denominator for employment rate calculations
+
+## Related Resources
+
+### Datasets
+
+-   [Census Population Estimates](/datasets/census-population-estimates/) —
+    Source dataset documentation (population totals)
+-   [Census PEP Components of Change](/datasets/census-pep-components/) —
+    Source dataset documentation (births, deaths, migration)
+
+### Related Packages
+
+-   [ruraldefinitions](/packages/ruraldefinitions/) — Rural/nonrural
+    county classification for stratified population analysis
+
+### External Links
+
+-   [Census PEP Homepage](https://www.census.gov/programs-surveys/popest.html)
+-   [Vintage 2024 County Data](https://www.census.gov/data/tables/time-series/demo/popest/2020s-counties-total.html)
+-   [PEP Methodology](https://www.census.gov/programs-surveys/popest/technical-documentation/methodology.html)
+
+## Documentation
+
+-   [GitHub Repository](https://github.com/ruralinnovation/cori.data.pep)
+-   [Full README](https://github.com/ruralinnovation/cori.data.pep/blob/main/README.md)
+-   [Vignette: Introduction](https://github.com/ruralinnovation/cori.data.pep/blob/main/vignettes/introduction.Rmd)
+-   [Vignette: Rural Population Trends](https://github.com/ruralinnovation/cori.data.pep/blob/main/vignettes/rural-population-trends.Rmd)
+
+---
+
+**Contact:** Drew Rosebush (drew.rosebush@ruralinnovation.us)
+
+For bug reports or feature requests, please open an issue on
+[GitHub](https://github.com/ruralinnovation/cori.data.pep/issues).
