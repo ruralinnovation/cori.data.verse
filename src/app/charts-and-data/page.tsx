@@ -1,5 +1,6 @@
 import { getDatasets, getCharts } from "@/utils/content";
 import ListingGrid from "@/components/ListingGrid";
+import SearchBar from "@/components/SearchBar";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -12,7 +13,9 @@ export default function ChartsAndDataPage() {
   const charts = getCharts();
 
   return (
-    <div className="container">
+    <>
+      <SearchBar />
+      <div className="container">
       <div className="page-header">
         <h1>Charts &amp; Data</h1>
         <p>Charts produced by rural innovation research and the datasets from which they were derived</p>
@@ -32,5 +35,6 @@ export default function ChartsAndDataPage() {
         </section>
       )}
     </div>
+    </>
   );
 }
