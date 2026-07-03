@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SearchBar from "@/components/SearchBar";
 
 export default function HomePage() {
   return (
@@ -16,6 +17,8 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      <SearchBar />
 
       <section style={{ padding: "3rem 0" }}>
         <div className="container">

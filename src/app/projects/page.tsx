@@ -1,5 +1,6 @@
 import { getProjects } from "@/utils/content";
 import ListingGrid from "@/components/ListingGrid";
+import SearchBar from "@/components/SearchBar";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,12 +12,15 @@ export default function ProjectsPage() {
   const projects = getProjects();
 
   return (
-    <div className="container">
+    <>
+      <SearchBar />
+      <div className="container">
       <div className="page-header">
         <h1>Projects</h1>
         <p>Research projects and analyses from the CORI MDA team</p>
       </div>
       <ListingGrid items={projects} basePath="/projects" />
     </div>
+    </>
   );
 }
