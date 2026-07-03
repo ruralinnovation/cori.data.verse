@@ -35,7 +35,7 @@ confirm_production_write <- function(prefix) {
 }
 
 list(
-  tar_target(s3_bucket, "cori.data.verse"),
+  tar_target(s3_bucket, "cori.agent.kb"),
   tar_target(s3_prefix, get_s3_prefix(),
              cue = tar_cue(mode = "always")),
   tar_target(confirmed, confirm_production_write(s3_prefix),
