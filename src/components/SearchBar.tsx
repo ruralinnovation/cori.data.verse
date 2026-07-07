@@ -61,7 +61,9 @@ export default function SearchBar({ defaultTypeFilter }: SearchBarProps) {
 
   // Fetch index on mount
   useEffect(() => {
-    fetch("/content/search-index.json")
+    // fetch("/content/search-index.json") // <- breaks in production
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+    fetch(`${basePath}/content/search-index.json`)
       .then((res) => res.json())
       .then((data) => setIndex(data))
       .catch((err) => console.error("Failed to load search index:", err));
