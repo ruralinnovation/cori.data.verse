@@ -53,7 +53,6 @@ export default function SearchBar({ defaultTypeFilter }: SearchBarProps) {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [engaged, setEngaged] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
@@ -104,7 +103,6 @@ export default function SearchBar({ defaultTypeFilter }: SearchBarProps) {
         setActiveTypes(defaultTypeFilter ? new Set([defaultTypeFilter]) : new Set());
         setSelectedCategories(new Set());
         setSelectedTags(new Set());
-        setEngaged(false);
         searchInputRef.current?.blur();
       }
     }
@@ -157,7 +155,6 @@ export default function SearchBar({ defaultTypeFilter }: SearchBarProps) {
     debouncedQuery.trim().length > 0;
 
   const toggleType = useCallback((type: string) => {
-    if (!engaged) setEngaged(true);
     setActiveTypes((prev) => {
       const next = new Set(prev);
       if (next.has(type)) {
@@ -167,10 +164,9 @@ export default function SearchBar({ defaultTypeFilter }: SearchBarProps) {
       }
       return next;
     });
-  }, [engaged]);
+  }, []);
 
   const toggleCategory = useCallback((cat: string) => {
-    if (!engaged) setEngaged(true);
     setSelectedCategories((prev) => {
       const next = new Set(prev);
       if (next.has(cat)) {
@@ -183,7 +179,6 @@ export default function SearchBar({ defaultTypeFilter }: SearchBarProps) {
   }, []);
 
   const toggleTag = useCallback((tag: string) => {
-    if (!engaged) setEngaged(true);
     setSelectedTags((prev) => {
       const next = new Set(prev);
       if (next.has(tag)) {
@@ -201,7 +196,6 @@ export default function SearchBar({ defaultTypeFilter }: SearchBarProps) {
     setActiveTypes(defaultTypeFilter ? new Set([defaultTypeFilter]) : new Set());
     setSelectedCategories(new Set());
     setSelectedTags(new Set());
-    setEngaged(false);
   }, [defaultTypeFilter]);
 
   if (!index) return null;
@@ -217,50 +211,52 @@ export default function SearchBar({ defaultTypeFilter }: SearchBarProps) {
       <div className={styles.inner}>
         {/* Search input */}
         <div className={styles.searchRow}>
-          <div className={styles.inputWrapper}>
-            <svg
-              className={styles.searchIcon}
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              ref={searchInputRef}
-              type="text"
-              className={styles.searchInput}
-              placeholder="Search datasets, charts, packages, projects..."
-              value={query}
-              onChange={(e) => {
-                if (!engaged && e.target.value.trim()) setEngaged(true);
-                setQuery(e.target.value);
-              }}
-              aria-label="Search content"
-            />
-            {(query || totalActiveFilters > 0) && (
-              <button
-                className={styles.clearBtn}
-                onClick={() => setQuery("")}
-                aria-label="Clear search"
+          <div>
+            <div className={styles.inputWrapper}>
+              <svg
+                className={styles.searchIcon}
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                &times;
-              </button>
-            )}
-          </div>
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                ref={searchInputRef}
+                type="text"
+                className={styles.searchInput}
+                placeholder="Search datasets, charts, packages, projects..."
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                }}
+                aria-label="Search content"
+              />
+              {(query || totalActiveFilters > 0) && (
+                <button
+                  className={styles.clearBtn}
+                  onClick={() => setQuery("")}
+                  aria-label="Clear search"
+                >
+                  &times;
+                </button>
+              )}
+            </div>
 
-          <span className={styles.hint}>Press / to focus</span>
+            <span className={styles.hint}>Press / to focus</span>
+          </div>
         </div>
 
-        {/* Filter row — only shown after user engages with search */}
-        {engaged && (
+        {/* Filter row */}
         <div className={styles.filterRow}>
+          <div>
+
           {/* Content type pills */}
           <div className={styles.filterGroup}>
             <span className={styles.filterLabel}>Type</span>
@@ -381,8 +377,10 @@ export default function SearchBar({ defaultTypeFilter }: SearchBarProps) {
               Clear all ({totalActiveFilters})
             </button>
           )}
+
+          </div>
+          
         </div>
-        )}
 
         {/* Active filter chips */}
         {hasActiveFilters && (
@@ -429,28 +427,30 @@ export default function SearchBar({ defaultTypeFilter }: SearchBarProps) {
                 <> for &ldquo;{debouncedQuery.trim()}&rdquo;</>
               )}
             </p>
-            {filteredItems.length > 0 ? (
-              <div className={styles.resultsGrid}>
-                {filteredItems.map((item) => (
-                  <SearchResultCard
-                    key={`${item.type}-${item.slug}`}
-                    type={item.type}
-                    title={item.title}
-                    description={item.description}
-                    categories={item.categories}
-                    date={item.date}
-                    url={item.url}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className={styles.emptyState}>
-                <p>No matching content found.</p>
-                <button className={styles.resetLink} onClick={clearAll}>
-                  Clear all filters
-                </button>
-              </div>
-            )}
+            <div>
+              {filteredItems.length > 0 ? (
+                <div className={styles.resultsGrid}>
+                  {filteredItems.map((item) => (
+                    <SearchResultCard
+                      key={`${item.type}-${item.slug}`}
+                      type={item.type}
+                      title={item.title}
+                      description={item.description}
+                      categories={item.categories}
+                      date={item.date}
+                      url={item.url}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyState}>
+                  <p>No matching content found.</p>
+                  <button className={styles.resetLink} onClick={clearAll}>
+                    Clear all filters
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
