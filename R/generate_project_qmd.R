@@ -343,11 +343,11 @@ collect_s3_inventory <- function(s3_bucket, s3_prefix) {
 
 
 #' List all S3 keys under a bucket, filtered to those starting with a prefix.
-#' Tries cori.data first, then falls back to paws.storage.
+#' Tries cori.data.s3 first, then falls back to paws.storage.
 #' @noRd
 list_s3_keys <- function(s3_bucket, s3_prefix) {
-  if (requireNamespace("cori.data", quietly = TRUE)) {
-    df <- cori.data::list_s3_objects(bucket_name = s3_bucket)
+  if (requireNamespace("cori.data.s3", quietly = TRUE)) {
+    df <- cori.data.s3::list_s3_objects(bucket_name = s3_bucket)
     if (is.null(df) || !"key" %in% names(df)) return(character(0))
     keys <- as.character(df$key)
     return(keys[startsWith(keys, s3_prefix)])
@@ -372,7 +372,7 @@ list_s3_keys <- function(s3_bucket, s3_prefix) {
     }
     return(keys)
   }
-  stop("Neither cori.data nor paws.storage is installed; cannot list S3.")
+  stop("Neither cori.data.s3 nor paws.storage is installed; cannot list S3.")
 }
 
 
