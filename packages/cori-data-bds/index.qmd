@@ -64,12 +64,12 @@ devtools::install_github("ruralinnovation/cori.data.bds")
 Sys.setenv(CENSUS_API_KEY = "your_api_key_here")
 ```
 
-**S3 Access** (optional, for reading/writing processed data):
+**S3 Access** (for reading/writing processed data):
 ```{r}
 #| eval: false
 
-# Install cori.db package
-remotes::install_github("ruralinnovation/cori.db")
+# Install cori.data package
+remotes::install_github("ruralinnovation/cori.data")
 
 # Configure AWS CLI
 # aws configure

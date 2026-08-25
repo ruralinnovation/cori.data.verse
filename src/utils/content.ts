@@ -151,6 +151,14 @@ function readFrontmatter(filePath: string, slug: string): ContentMeta {
 }
 
 /**
+ * Compare two content titles for alphabetical (A-Z) ordering.
+ * Case-insensitive, with numeric-aware collation so "Table 2" precedes "Table 10".
+ */
+function compareByTitle(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+}
+
+/**
  * Get metadata for all items of a given content type (datasets, packages, etc.).
  * Reads frontmatter from posts/[contentType]/[name]/index.qmd files.
  */
@@ -189,12 +197,8 @@ export function getContentMetadata<T extends ContentMeta = ContentMeta>(
     }
   }
 
-  // Sort by date descending
-  items.sort((a, b) => {
-    const da = a.date ? new Date(a.date).getTime() : 0;
-    const db = b.date ? new Date(b.date).getTime() : 0;
-    return db - da;
-  });
+  // Sort by title ascending
+  items.sort((a, b) => compareByTitle(a.title, b.title));
 
   return items;
 }
@@ -238,12 +242,8 @@ export function getBlogMetadata(): BlogPostMeta[] {
     }
   }
 
-  // Sort by date descending
-  posts.sort((a, b) => {
-    const da = a.date ? new Date(a.date).getTime() : 0;
-    const db = b.date ? new Date(b.date).getTime() : 0;
-    return db - da;
-  });
+  // Sort by title ascending
+  posts.sort((a, b) => compareByTitle(a.title, b.title));
 
   return posts;
 }

@@ -29,7 +29,6 @@ Suggests:
   ggplot2,
   tidygraph,
   targets,
-  cori.db,
   paws.storage,
   testthat (>= 3.0.0)
 Roxygen: list(markdown = TRUE)

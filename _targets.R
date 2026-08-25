@@ -13,7 +13,7 @@ if (!require("cori.data.verse")) {
 tar_option_set(
   packages = c(
     "quarto",
-    "cori.db",
+    "cori.data",
     "cori.data.verse",
     "here",
     "jsonlite", 

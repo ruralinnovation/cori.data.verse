@@ -1,7 +1,7 @@
 # sync_content_s3.R
 #
 # S3 content sync functions for cori.data.verse.
-# These are standalone scripts (NOT exported) because they depend on cori.db
+# These are standalone scripts (NOT exported) because they depend on cori.data
 # (a private package). They live in data-raw/ per R package convention.
 #
 # The _targets.R pipeline in the project root is the user-facing entry point.
@@ -51,7 +51,7 @@ build_sync_manifest <- function(content_dir, bucket, prefix) {
   )
 
   # Enumerate S3 objects (list_s3_objects returns columns: key, last_modified)
-  s3_objects <- cori.db::list_s3_objects(bucket_name = bucket)
+  s3_objects <- cori.data::list_s3_objects(bucket_name = bucket)
 
   # Coerce key column to character vector (rbind returns a matrix)
   s3_keys <- as.character(s3_objects$key)
@@ -124,7 +124,7 @@ push_content_to_s3 <- function(content_dir, bucket, prefix,
     return(invisible(to_push))
   }
 
-  # Initialize S3 client for direct uploads (bypasses cori.db overwrite guard
+  # Initialize S3 client for direct uploads (bypasses cori.data overwrite guard
   # on non-dev/test keys)
   s3_client <- paws.storage::s3()
 
@@ -133,14 +133,14 @@ push_content_to_s3 <- function(content_dir, bucket, prefix,
     s3_key <- to_push$s3_key[i]
 
     if (startsWith(s3_key, "dev/") || startsWith(s3_key, "test/")) {
-      # Use cori.db for dev/test prefixes (overwrite is allowed)
-      cori.db::put_s3_object(
+      # Use cori.data for dev/test prefixes (overwrite is allowed)
+      cori.data::put_s3_object(
         bucket_name  = bucket,
         s3_key_path  = s3_key,
         file_path    = local_path
       )
     } else {
-      # Bypass cori.db overwrite guard for production keys
+      # Bypass cori.data overwrite guard for production keys
       s3_client$put_object(
         Bucket = bucket,
         Key    = s3_key,
@@ -259,7 +259,7 @@ sync_content_s3 <- function(content_dir, bucket, prefix,
       local_path <- file.path(content_dir, to_push$rel_path[i])
       s3_key <- to_push$s3_key[i]
       if (startsWith(s3_key, "dev/") || startsWith(s3_key, "test/")) {
-        cori.db::put_s3_object(bucket_name = bucket, s3_key_path = s3_key, file_path = local_path)
+        cori.data::put_s3_object(bucket_name = bucket, s3_key_path = s3_key, file_path = local_path)
       } else {
         s3_client$put_object(
           Bucket = bucket, Key = s3_key,
