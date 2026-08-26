@@ -8,7 +8,7 @@ tags: ["USDA", "Census", "RUCA", "Rural Definitions", "Geography"]
 package:
   name: "ruraldefinitions"
   githubUrl: "https://github.com/ruralinnovation/ruraldefinitions"
-  installCommand: 'devtools::install_github("ruralinnovation/ruraldefinitions")'
+  installCommand: 'remotes::install_github("ruralinnovation/ruraldefinitions")'
   status: "stable"
   version: "0.1.0"
   maintainer: "Camden Blatchly"
@@ -52,7 +52,7 @@ This package is essential for researchers and analysts who need consistent, well
 install.packages("devtools")
 
 # Install ruraldefinitions
-devtools::install_github("ruralinnovation/ruraldefinitions")
+remotes::install_github("ruralinnovation/ruraldefinitions")
 ```
 
 ## AWS S3 Access

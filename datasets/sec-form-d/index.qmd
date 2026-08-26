@@ -79,7 +79,7 @@ The preferred way to access SEC Form D data is through the [`dform`](/packages/d
 
 ```r
 # Install once
-devtools::install_github("ruralinnovation/dform")
+remotes::install_github("ruralinnovation/dform")
 
 # Load Form D data for a year, with quarterly caching
 dfm <- dForm$new()

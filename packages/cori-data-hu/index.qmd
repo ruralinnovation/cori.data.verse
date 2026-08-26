@@ -8,7 +8,7 @@ tags: ["Housing Units", "Census", "Housing Stock", "County-Level", "S3", "Tidy D
 package:
   name: "cori.data.hu"
   githubUrl: "https://github.com/ruralinnovation/cori.data.hu"
-  installCommand: 'devtools::install_github("ruralinnovation/cori.data.hu")'
+  installCommand: 'remotes::install_github("ruralinnovation/cori.data.hu")'
   status: "development"
   version: "0.1.0"
   maintainer: "Drew Rosebush"
@@ -52,7 +52,7 @@ activity or permitting flow.
 ```{r}
 #| eval: false
 
-devtools::install_github("ruralinnovation/cori.data.hu")
+remotes::install_github("ruralinnovation/cori.data.hu")
 ```
 
 ## Quick Start

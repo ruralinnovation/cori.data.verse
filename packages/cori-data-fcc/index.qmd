@@ -17,7 +17,7 @@ tags:
 package:
   name: cori.data.fcc
   githubUrl: https://github.com/ruralinnovation/cori.data.fcc
-  installCommand: devtools::install_github("ruralinnovation/cori.data.fcc")
+  installCommand: remotes::install_github("ruralinnovation/cori.data.fcc")
   status: stable
   version: 1.0.0
   maintainer: Olivier Leroy
@@ -57,7 +57,7 @@ The goal of cori.data.fcc is to facilitate the discovery, analysis, and use of F
 ```{r}
 #| eval: false
 
-devtools::install_github("ruralinnovation/cori.data.fcc")
+remotes::install_github("ruralinnovation/cori.data.fcc")
 ```
 :::
 

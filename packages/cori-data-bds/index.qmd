@@ -8,7 +8,7 @@ tags: ["Census", "Business Dynamics", "Employment", "Startups", "Economic Develo
 package:
   name: "cori.data.bds"
   githubUrl: "https://github.com/ruralinnovation/cori.data.bds"
-  installCommand: 'devtools::install_github("ruralinnovation/cori.data.bds")'
+  installCommand: 'remotes::install_github("ruralinnovation/cori.data.bds")'
   status: "stable"
   version: "0.2.0"
   maintainer: "Drew Rosebush"
@@ -51,7 +51,7 @@ The `cori.data.bds` package provides tools for accessing and analyzing Census Bu
 #| eval: false
 
 # Install from GitHub
-devtools::install_github("ruralinnovation/cori.data.bds")
+remotes::install_github("ruralinnovation/cori.data.bds")
 ```
 
 ## Requirements

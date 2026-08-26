@@ -16,7 +16,7 @@ tags:
 package:
   name: dform
   githubUrl: https://github.com/ruralinnovation/dform
-  installCommand: devtools::install_github("ruralinnovation/dform")
+  installCommand: remotes::install_github("ruralinnovation/dform")
   status: development
   version: 0.0.1
   maintainer: Matt Rogers
@@ -53,7 +53,7 @@ dform provides a programmatic interface to SEC Form D data through an R6 class. 
 ```{r}
 #| eval: false
 
-devtools::install_github("ruralinnovation/dform")
+remotes::install_github("ruralinnovation/dform")
 ```
 
 ## Quick Start

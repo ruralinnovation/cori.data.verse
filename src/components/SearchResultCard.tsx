@@ -38,6 +38,7 @@ export default function SearchResultCard({
               year: "numeric",
               month: "short",
               day: "numeric",
+              timeZone: "UTC",
             })}
           </time>
         )}
