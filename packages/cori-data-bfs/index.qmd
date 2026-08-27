@@ -2,7 +2,7 @@
 title: "cori.data.bfs"
 description: "Access and analyze U.S. Census Bureau Business Formation Statistics (BFS) at county, state, and national level from 2005 to present"
 author: "Drew Rosebush"
-date: "2026-05-12"
+date: "2026-08-26"
 categories: ["R Package", "Entrepreneurship"]
 tags: ["BFS", "Business Formation", "Business Applications", "County-Level", "S3", "Tidy Data"]
 package:
@@ -28,14 +28,16 @@ editor:
 
 The `cori.data.bfs` package provides access to U.S. Census Bureau
 Business Formation Statistics (BFS) at the county, state, and national
-level from 2005 to present. BFS data tracks the number of business
-applications filed with the IRS — a leading indicator of entrepreneurial
-activity that precedes actual business formation by 6–18 months.
+level from 2005 to present. BFS measures total EIN applications filed
+with the IRS — excluding tax liens, estates, trusts, agriculture
+(NAICS 11), and public administration (NAICS 92) — a leading indicator
+of entrepreneurial activity that precedes actual business formation by
+6–18 months.
 
 Data are returned in long format: one row per `geoid / year / variable`.
 
 ::: callout-note
-## Why Use This Package
+## What's in the package
 
 -   **Leading indicator** — Business applications precede actual firm
     births, making BFS the earliest available signal of entrepreneurship
@@ -44,8 +46,8 @@ Data are returned in long format: one row per `geoid / year / variable`.
     without downloading full Census source files
 -   **Long panel** — Annual data from 2005 to present, refreshed each
     year after Census release
--   **Consistent geoids** — Standard 5-digit FIPS for counties, 2-digit
-    for states, `"00"` for national
+-   **Consistent geoids** — 5-digit FIPS for counties, 2-digit for
+    states, `"00"` for national
 :::
 
 ## Installation
@@ -56,7 +58,7 @@ Data are returned in long format: one row per `geoid / year / variable`.
 remotes::install_github("ruralinnovation/cori.data.bfs")
 ```
 
-## Quick Start
+## Quick start
 
 ```{r}
 #| eval: false
@@ -77,17 +79,17 @@ df <- read_bfs_from_s3(
 get_bfs_codebook()
 ```
 
-## Key Features
+## Core functions
 
-### S3-Backed Data Access
+### Reading data
 
-Pre-processed data is stored in S3 and queried via DuckDB, returning
-only the rows you need without downloading the full dataset:
+`read_bfs_from_s3()` reads pre-processed data straight from S3 via
+DuckDB — filter by geography, variables, and year range without
+downloading the full dataset:
 
 ```{r}
 #| eval: false
 
-# Filter by geography, variables, and year range
 read_bfs_from_s3(
   variables = "business_applications",
   geoids    = c("54011"),
@@ -95,10 +97,25 @@ read_bfs_from_s3(
 )
 ```
 
-### Data Refresh (Admin)
+`get_business_applications()` is the tidy-format entry point used
+throughout analysis workflows:
 
-After Census releases new estimates (typically mid-year), refresh the
-S3 store:
+```{r}
+#| eval: false
+
+df <- get_business_applications(geography = "county")
+
+# Filter to specific geographies and years
+nh_bfs <- get_business_applications(
+  geoids = grep("^33", unique(df$geoid), value = TRUE),
+  years  = 2010:2024
+)
+```
+
+### Data refresh (admin)
+
+After Census releases new estimates (typically ~6 months after
+year-end), refresh the S3 store:
 
 ```{r}
 #| eval: false
@@ -106,38 +123,86 @@ S3 store:
 write_bfs_processed_to_s3(years = 2005:2024)
 ```
 
-## Core Functions
+## Key variables
 
-| Function | Category | Description |
+| Variable | Description |
+|---|---|
+| `business_applications` | Total business applications (BA series) |
+
+| Geography | geoid format | Example |
 |---|---|---|
-| `read_bfs_from_s3()` | Data Access | Read processed BFS data from S3 via DuckDB |
-| `pull_bfs()` | Data Access | Pull raw data from Census source files |
-| `write_bfs_processed_to_s3()` | Admin | Process and write BFS data to S3 |
-| `get_bfs_codebook()` | Utility | Return variable definitions and metadata |
-| `latest_bfs_vintage()` | Utility | Return the most recent available vintage year |
+| County | 5-digit FIPS | `"33009"` |
+| State | 2-digit FIPS | `"33"` |
+| National | `"00"` | `"00"` |
 
-## Data Coverage
+Use `get_bfs_codebook()` for complete variable definitions, units, and notes.
+
+## Common use cases
+
+### Rural vs. nonrural business formation
+
+Business formation diverges between rural and nonrural counties.
+Joining BFS to population data (via `cori.data.pep`) and CORI's rural
+definitions produces a per-capita comparison:
+
+```{r}
+#| eval: false
+
+library(cori.data.pep)
+library(ruraldefinitions)
+library(dplyr)
+
+rural_definitions <- cbsa_2023 |> select(geoid, is_rural)
+
+county_pop <- get_population(
+  geoids    = unique(df$geoid),
+  variables = "population",
+  years     = 2005:2024
+) |>
+  select(geoid, year, population = value)
+
+rural_avg <- df |>
+  left_join(rural_definitions, by = "geoid") |>
+  left_join(county_pop, by = c("geoid", "year")) |>
+  filter(!is.na(is_rural), !is.na(population), population > 0) |>
+  group_by(year, is_rural) |>
+  summarise(
+    applications = sum(value, na.rm = TRUE),
+    population   = sum(population, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(apps_per_1k = applications / population * 1000)
+```
+
+CORI's own analysis using this pattern found rural business formation
+surged during the pandemic and has remained elevated relative to its
+pre-2020 trend.
+
+### County spotlight
+
+The same `geoids` filter works across geography levels in a single
+call, useful for comparing a county against its state and the nation:
+
+```{r}
+#| eval: false
+
+grafton_bfs <- get_business_applications(
+  geoids = c("33009", "33", "00"),  # county, state, national
+  years  = 2005:2024
+)
+```
+
+## Data coverage
 
 | Dimension | Coverage |
 |---|---|
 | **Variables** | `business_applications` (BA series) |
-| **Geography** | National (`"00"`), State (2-digit FIPS), County (5-digit FIPS) |
+| **Geography** | National (`"00"`), state (2-digit FIPS), county (5-digit FIPS) |
 | **Time Period** | 2005–present |
 | **Update Frequency** | Annual (~6 months after year-end) |
 | **Source File** | `bfs_county_apps_annual.xlsx` (Census Bureau) |
 
-## Use Cases
-
--   **Leading indicator analysis** — Track business application trends
-    6–18 months before firm births are recorded in BDS
--   **Rural entrepreneurship** — Compare rural vs. metro application
-    rates at county level
--   **Economic development** — Identify counties with accelerating or
-    decelerating startup formation
--   **Nowcasting** — Use latest BFS release to estimate upcoming BDS
-    figures before annual publication
-
-## Related Resources
+## Related resources
 
 ### Datasets
 
@@ -146,12 +211,14 @@ write_bfs_processed_to_s3(years = 2005:2024)
 -   [Census Business Dynamics Statistics](/datasets/census-bds/) —
     Lagged companion measuring actual firm entry/exit
 
-### Related Packages
+### Related packages
 
--   [cori.data.bds](/packages/cori-data-bds/) — S3-backed access layer
-    for Business Dynamics Statistics (actual firm births/deaths)
+-   [cori.data.bds](/packages/cori-data-bds/) — Business Dynamics
+    Statistics (actual firm births/deaths)
+-   [cori.data.pep](/packages/cori-data-pep/) — Population estimates,
+    used as the denominator for per-capita comparisons
 
-### External Links
+### External links
 
 -   [Census BFS Homepage](https://www.census.gov/econ/bfs/)
 -   [BFS Methodology](https://www.census.gov/econ/bfs/methodology.html)
@@ -161,6 +228,7 @@ write_bfs_processed_to_s3(years = 2005:2024)
 
 -   [GitHub Repository](https://github.com/ruralinnovation/cori.data.bfs)
 -   [Full README](https://github.com/ruralinnovation/cori.data.bfs/blob/main/README.md)
+-   [Introduction Vignette](https://github.com/ruralinnovation/cori.data.bfs/blob/main/vignettes/introduction.Rmd)
 
 ---
 

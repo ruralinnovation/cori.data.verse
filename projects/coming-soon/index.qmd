@@ -1,0 +1,10 @@
+---
+title: "More projects coming soon"
+description: "Project profiles are being updated. Check back soon for the full list."
+date: "2026-08-27"
+categories: ["Placeholder"]
+tags: []
+status: "planned"
+---
+
+New project profiles are being prepared. Check back soon for the full list.

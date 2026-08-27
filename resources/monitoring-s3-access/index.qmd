@@ -1,7 +1,7 @@
 ---
 title: "Monitoring S3 access"
-description: "Turn S3 server access logs into charts of who is downloading what, from which bucket, and how that changes over time"
 date: "2026-08-24"
+draft: true
 categories: ["Resource", "Data Infrastructure"]
 tags: ["S3", "AWS", "Logging", "DuckDB", "Monitoring"]
 execute:

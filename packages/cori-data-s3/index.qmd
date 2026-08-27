@@ -1,0 +1,137 @@
+---
+title: "cori.data.s3"
+description: "CORI functions used by cori.data.* packages to connect to S3"
+author: "John Hall"
+date: "2026-08-26"
+categories: ["R Package", "Data Infrastructure"]
+tags: ["S3", "AWS", "DuckDB", "Credentials", "Internal"]
+package:
+  name: "cori.data.s3"
+  githubUrl: "https://github.com/ruralinnovation/cori.data.s3"
+  installCommand: 'remotes::install_github("ruralinnovation/cori.data.s3")'
+  status: "stable"
+  version: "1.0.0"
+  maintainer: "John Hall"
+  featured: false
+usesDatasets: []
+usesResources: ["monitoring-s3-access"]
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+`cori.data.s3` is the shared S3 access layer that every `cori.data.*`
+package depends on. It is not a data package itself — it provides the
+DuckDB connection, credential resolution, and object read/write
+functions the other packages call underneath. These functions
+previously lived in the `cori.db` package and were split out here.
+
+::: callout-note
+## What's in the package
+
+-   **Local-then-vended credentials** — uses local AWS credentials
+    when configured (env vars or `~/.aws/credentials`); otherwise
+    falls back to temporary, read-only credentials from CORI's
+    credential-vending endpoint, no local AWS setup required
+-   **DuckDB S3 connections** — `connect_to_s3()` opens a DuckDB
+    connection pre-configured for S3, so parquet files can be queried
+    directly with SQL
+-   **Read and write object functions** — get, list, read, and write
+    individual objects or recursive directories
+-   **Writes require local credentials** — vended credentials are
+    read-only, so `put_s3_object()`, `put_s3_objects_recursive()`,
+    `write_s3_object()`, and `list_s3_buckets()` always need local AWS
+    setup
+:::
+
+## Installation
+
+```{r}
+#| eval: false
+
+remotes::install_github("ruralinnovation/cori.data.s3")
+```
+
+## Quick start
+
+```{r}
+#| eval: false
+
+library(cori.data.s3)
+
+con <- connect_to_s3("cori.data.bds")
+
+DBI::dbGetQuery(con,
+  "SELECT * FROM read_parquet('s3://cori.data.bds/**/*.parquet')")
+
+DBI::dbDisconnect(con, shutdown = TRUE)
+```
+
+`has_local_aws_credentials()` checks whether local credentials are
+configured, without attempting a connection.
+
+## Core functions
+
+| Function | Description |
+|---|---|
+| `connect_to_s3()` | Open a DuckDB connection configured for S3 access |
+| `has_local_aws_credentials()` | Check whether local AWS credentials are configured |
+| `get_s3_object()` | Download a single S3 object |
+| `list_s3_objects()` | List objects under a bucket/prefix |
+| `list_s3_buckets()` | List accessible buckets (requires local credentials) |
+| `read_s3_object()` | Read an S3 object directly into memory |
+| `write_s3_object()` | Write an object to S3 (requires local credentials) |
+| `put_s3_object()` | Upload a single local file to S3 (requires local credentials) |
+| `put_s3_objects_recursive()` | Upload a local directory tree to S3 (requires local credentials) |
+| `sync_s3_to_local()` | Sync an S3 prefix to a local directory |
+| `set_aws_credentials()` | Set AWS credentials for the current session |
+
+## Credential resolution
+
+Reads (`get_s3_object()`, `list_s3_objects()`, `read_s3_object()`) try
+local AWS credentials first, then fall back to short-lived, read-only
+credentials from CORI's credential-vending endpoint — no local AWS
+setup required for read-only work. Writes and `list_s3_buckets()`
+always require local credentials, since vended credentials cannot
+write.
+
+For monitoring who is actually using vended vs. local credentials
+against a bucket, see the related resource below — it parses S3 server
+access logs into per-caller download charts.
+
+## Related resources
+
+-   [Monitoring S3 access](/resources/monitoring-s3-access/) — Turns
+    S3 server access logs into charts of who is downloading what, by
+    bucket and by credential type
+
+### Related packages
+
+Every `cori.data.*` data package depends on `cori.data.s3` for its S3
+access:
+
+-   [cori.data.bds](/packages/cori-data-bds/)
+-   [cori.data.bfs](/packages/cori-data-bfs/)
+-   [cori.data.bps](/packages/cori-data-bps/)
+-   [cori.data.fcc](/packages/cori-data-fcc/)
+-   [cori.data.hu](/packages/cori-data-hu/)
+-   [cori.data.pep](/packages/cori-data-pep/)
+-   [cori.data.qcew](/packages/cori-data-qcew/)
+
+## Documentation
+
+-   [GitHub Repository](https://github.com/ruralinnovation/cori.data.s3)
+-   [Full README](https://github.com/ruralinnovation/cori.data.s3/blob/main/README.md)
+
+---
+
+**Contact:** John Hall (john.hall@ruralinnovation.us)
+
+For bug reports or feature requests, please open an issue on
+[GitHub](https://github.com/ruralinnovation/cori.data.s3/issues).

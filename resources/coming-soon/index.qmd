@@ -1,0 +1,9 @@
+---
+title: "More resources coming soon"
+description: "Resource guides are being added. Check back soon."
+date: "2026-08-27"
+categories: ["Placeholder"]
+tags: []
+---
+
+New resource guides are being prepared. Check back soon.

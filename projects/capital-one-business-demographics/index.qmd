@@ -6,6 +6,7 @@ description: >
   with a county-level entrepreneurship index (global, metro, and rural
   variants) built from ACS, BDS, and kernel PCA methods.
 date: '2026-05-12'
+draft: true
 layout: default
 permalink: /projects/capital-one-business-demographics/
 categories:

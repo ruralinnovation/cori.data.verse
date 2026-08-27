@@ -1,0 +1,12 @@
+---
+title: "More datasets coming soon"
+description: "Dataset profiles are being migrated into this catalog as part of an ongoing update. Check back soon for the full list."
+date: "2026-08-27"
+categories: ["Placeholder"]
+tags: []
+dataset:
+  name: "Coming Soon"
+  source: "CORI"
+---
+
+New dataset profiles are being migrated into this catalog as part of an ongoing update. Check back soon for the full list.

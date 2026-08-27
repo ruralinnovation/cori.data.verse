@@ -1,0 +1,275 @@
+---
+title: "cori.data.qcew"
+description: "Access and analyze Bureau of Labor Statistics Quarterly Census of Employment and Wages (QCEW) data at the county and state level from 1990 to present"
+author: "Drew Rosebush"
+date: "2026-08-26"
+categories: ["R Package", "Labor Market"]
+tags: ["QCEW", "Employment", "Wages", "NAICS", "County-Level", "S3", "Tidy Data"]
+package:
+  name: "cori.data.qcew"
+  githubUrl: "https://github.com/ruralinnovation/cori.data.qcew"
+  installCommand: 'remotes::install_github("ruralinnovation/cori.data.qcew")'
+  status: "development"
+  version: "0.1.0"
+  maintainer: "Drew Rosebush"
+  featured: false
+usesDatasets: ["qcew-employment-wages"]
+usesResources: []
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+The `cori.data.qcew` package provides access to Bureau of Labor
+Statistics Quarterly Census of Employment and Wages (QCEW) data at the
+county and state level, covering 1990 to the present. QCEW covers
+roughly 95% of all U.S. jobs through the unemployment insurance
+system — unlike a survey, it's a near-census of covered employment and
+wages, making it the standard source for local labor market analysis.
+
+::: callout-note
+## What's in the package
+
+-   **Five analysis functions** — total employment, average pay,
+    sector employment, sector wages, and employment concentration (HHI)
+-   **Two sector taxonomies** — BLS's 11 source-level supersectors, or
+    CORI's own 3-way Tradable Goods / Tradable Services / Local
+    Services classification
+-   **Weighted aggregation built in** — rate and share variables carry
+    an `agg_var` employment-weight column
+-   **Long panel** — annual data from 1990 to present, always
+    pointing at the latest vintage
+:::
+
+## Installation
+
+```{r}
+#| eval: false
+
+remotes::install_github("ruralinnovation/cori.data.qcew")
+```
+
+## Quick start
+
+```{r}
+#| eval: false
+
+library(cori.data.qcew)
+
+# See all available variables and which functions return them
+get_qcew_codebook()
+
+# Total employment — all counties, all years
+get_employment(geography = "county")
+
+# Average annual pay — specific counties
+get_wage_salary(geoids = c("33009", "33011"), years = 2010:2023)
+
+# Employment by BLS supersector
+get_sector_employment(geography = "county", years = 2018:2023,
+                      sector_type = "BLS", value_type = "share")
+
+# Employment concentration (HHI)
+get_employment_concentration(geography = "county", years = 2023)
+```
+
+## Core functions
+
+| Function | Returns | Key parameters |
+|---|---|---|
+| `get_employment()` | Total average annual employment | `geography`, `geoids`, `years` |
+| `get_wage_salary()` | Total average annual pay | `geography`, `geoids`, `years` |
+| `get_sector_employment()` | Employment by sector | + `sector_type`, `value_type` |
+| `get_sector_wages()` | Average pay by sector | + `sector_type` |
+| `get_employment_concentration()` | Employment HHI | `geography`, `geoids`, `years` |
+
+All functions return tidy (long) format:
+`geoid | year | sector | variable | value`. Rate and share variables
+include an `agg_var` column — the employment weight for computing
+correctly weighted averages across geographies.
+
+## Sector classifications
+
+QCEW sector data is available under two classification systems,
+controlled by the `sector_type` parameter in `get_sector_employment()`
+and `get_sector_wages()`.
+
+### BLS supersectors (`sector_type = "BLS"`)
+
+The default classification follows BLS's own QCEW supersector
+groupings — 11 aggregations of 2-digit NAICS industries:
+
+| Sector (variable prefix) | BLS supersector | NAICS codes |
+|---|---|---|
+| `natural_resources_mining` | Natural Resources and Mining | 11, 21 |
+| `construction` | Construction | 23 |
+| `manufacturing` | Manufacturing | 31–33 |
+| `trade_transportation_utilities` | Trade, Transportation, and Utilities | 22, 42, 44–45, 48–49 |
+| `information` | Information | 51 |
+| `financial_activities` | Financial Activities | 52–53 |
+| `professional_business_services` | Professional and Business Services | 54–56 |
+| `education_health_services` | Education and Health Services | 61–62 |
+| `leisure_hospitality` | Leisure and Hospitality | 71–72 |
+| `other_services` | Other Services | 81 |
+| `public_administration` | Public Administration | 92 |
+
+BLS publishes government employment under ownership codes (Federal,
+State, Local Government) rather than as a NAICS industry — CORI
+derives public administration employment by summing rows where
+ownership is Federal, State, or Local Government.
+
+### CORI supersectors (`sector_type = "CORI"`)
+
+CORI aggregates the 11 BLS supersectors into 3 custom groupings based
+on whether an industry primarily serves tradable (national/
+international) or local demand, loosely following the methodology in
+Eckert (2018), *Growing Apart: Tradable Services and the Fragmentation
+of the US Economy*.
+
+| CORI supersector | Constituent BLS supersectors | Rationale |
+|---|---|---|
+| **Tradable Goods** | Natural Resources & Mining, Construction, Manufacturing, Trade, Transportation & Utilities | Industries producing or moving physical goods that cross geographic boundaries and face national or international competition |
+| **Tradable Services** | Information, Financial Activities, Professional & Business Services | Knowledge-intensive service industries whose output can be delivered remotely, with markets extending beyond the local area |
+| **Local Services** | Education & Health Services, Leisure & Hospitality, Other Services, Public Administration | Industries primarily serving local demand — residents and institutions within the geography |
+
+::: callout-important
+## CORI supersector limitations
+
+CORI supersectors are available as **employment shares only**, not
+counts — multiply `value` (share) by `agg_var` (total employment) to
+approximate counts. This is an opinionated aggregation; use
+`sector_type = "BLS"` when the source-level groupings are needed, or
+to build a different custom aggregation.
+:::
+
+## Geography
+
+| `geography` | `geoid` format | Coverage |
+|---|---|---|
+| `"county"` | 5-digit FIPS | ~3,100 U.S. counties |
+| `"state"` | 2-digit FIPS | 50 states + DC |
+
+```{r}
+#| eval: false
+
+# Specific counties
+get_employment(geoids = c("33009", "33011"), years = 2010:2023)
+
+# Specific states
+get_wage_salary(geoids = c("33", "50", "23"), years = 2015:2023)
+```
+
+## Key variables
+
+| Variable | Function | Unit | `agg_var` |
+|---|---|---|---|
+| `employment` | `get_employment`, `get_sector_employment` | workers | — |
+| `avg_pay` | `get_wage_salary`, `get_sector_wages` | nominal $/worker | total employment (wages) or sector employment (sector wages) |
+| `emp_share` | `get_sector_employment` | proportion (0–1) | total employment |
+| `employment_hhi` | `get_employment_concentration` | index (0–10,000) | — |
+
+Pay values are **nominal dollars** — deflate using a BLS price index
+such as the Consumer Price Index (CPI-U) or Employment Cost Index
+(ECI) to convert to real dollars.
+
+## Common use cases
+
+### Employment-weighted aggregation
+
+```{r}
+#| eval: false
+
+library(dplyr)
+
+pay <- get_wage_salary(geography = "county", years = 2023)
+
+# Employment-weighted average pay across all counties
+pay |>
+  summarize(
+    weighted_avg_pay = sum(value * agg_var, na.rm = TRUE) /
+                       sum(agg_var, na.rm = TRUE)
+  )
+```
+
+### Rural vs. nonrural employment since the Great Recession
+
+```{r}
+#| eval: false
+
+library(ruraldefinitions)
+
+rural_definition <- cbsa_2023 |> select(geoid, is_rural)
+
+county_comparison <- get_employment(geography = "county", years = 2007:2023) |>
+  left_join(rural_definition, by = "geoid") |>
+  filter(!is.na(is_rural)) |>
+  group_by(year, is_rural) |>
+  summarize(total_employment = sum(value, na.rm = TRUE), .groups = "drop")
+```
+
+CORI's own analysis using this pattern found rural employment has been
+set back twice since 2007 — a more fragile recovery than nonrural
+counties — and that within rural counties, the West led the recovery
+by Census region.
+
+### Industry concentration by region
+
+`get_employment_concentration()`'s HHI values are directly comparable
+across counties. CORI's own analysis found rural Midwest counties have
+more concentrated (less diversified) economies than other rural
+regions.
+
+## Vintages
+
+Each processed snapshot is tagged with a vintage (e.g.
+`"vintage_2025"`). A `_LATEST` pointer on S3 always resolves to the
+most recent vintage, so existing code picks up new data automatically:
+
+```{r}
+#| eval: false
+
+# Check current vintage
+latest_qcew_vintage()
+```
+
+## Related resources
+
+### Datasets
+
+-   [QCEW Employment & Wages](/datasets/qcew-employment-wages/) —
+    Source dataset documentation
+
+### Related packages
+
+-   [ruraldefinitions](/packages/ruraldefinitions/) — Rural/nonrural
+    county classification used throughout the comparison examples above
+
+### External links
+
+-   [BLS QCEW Homepage](https://www.bls.gov/cew/)
+-   [BLS QCEW Industry Supersectors](https://www.bls.gov/cew/classifications/industry/industry-supersectors.htm)
+-   [Consumer Price Index (CPI-U)](https://www.bls.gov/cpi/)
+-   [Employment Cost Index (ECI)](https://www.bls.gov/eci/)
+-   Eckert, F. (2018). [*Growing Apart: Tradable Services and the
+    Fragmentation of the US Economy*](https://economics.nd.edu/assets/303413/eckert_jmp_2018.pdf).
+    Job Market Paper, University of Notre Dame.
+
+## Documentation
+
+-   [GitHub Repository](https://github.com/ruralinnovation/cori.data.qcew)
+-   [Full README](https://github.com/ruralinnovation/cori.data.qcew/blob/main/README.md)
+-   [Vignette: Introduction](https://github.com/ruralinnovation/cori.data.qcew/blob/main/vignettes/introduction.Rmd)
+-   [Vignette: Rural Employment Trends](https://github.com/ruralinnovation/cori.data.qcew/blob/main/vignettes/rural-employment-trends.Rmd)
+
+---
+
+**Contact:** Drew Rosebush (drew.rosebush@ruralinnovation.us)
+
+For bug reports or feature requests, please open an issue on
+[GitHub](https://github.com/ruralinnovation/cori.data.qcew/issues).

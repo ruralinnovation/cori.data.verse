@@ -2,7 +2,7 @@
 title: "cori.data.pep"
 description: "Access and analyze U.S. Census Bureau Population Estimates Program (PEP) data at the county level from 2000 to present, including population totals and components of change"
 author: "Drew Rosebush"
-date: "2026-05-12"
+date: "2026-08-26"
 categories: ["R Package", "Demographics"]
 tags: ["PEP", "Population", "Migration", "County-Level", "S3", "Tidy Data", "Rural"]
 package:
@@ -31,11 +31,11 @@ Population Estimates Program (PEP) data at the county level from 2000
 to present. It covers eight variables including total population,
 working-age population (16+), and a full decomposition of population
 change into natural change (births minus deaths) and net migration
-(domestic and international). Data span three Census vintages, handled
-internally by the package.
+(domestic and international). Data span three Census vintages,
+stitched into a single continuous series.
 
 ::: callout-note
-## Why Use This Package
+## What's in the package
 
 -   **Eight variables** — Total population, pop 16+, births, deaths,
     natural change, domestic migration, international migration, net
@@ -57,25 +57,25 @@ internally by the package.
 remotes::install_github("ruralinnovation/cori.data.pep")
 ```
 
-## Quick Start
+## Quick start
 
 ```{r}
 #| eval: false
 
 library(cori.data.pep)
 
-# All data, latest vintage
-df <- read_pep_from_s3()
+# Population, latest vintage
+df <- get_population()
 
-# Total population and migration, specific years
-df <- read_pep_from_s3(
-  variables = c("population", "net_mig"),
+# Net migration and births, specific years
+df <- get_population_change(
+  variables = c("births", "net_migration"),
   years     = 2010:2024
 )
 
 # Specific counties
-df <- read_pep_from_s3(
-  variables = c("domestic_mig", "international_mig"),
+df <- get_population_change(
+  variables = c("domestic_migration", "international_migration"),
   geoids    = c("54011", "54025")
 )
 
@@ -83,9 +83,7 @@ df <- read_pep_from_s3(
 get_pep_codebook()
 ```
 
-## Key Features
-
-### Eight Population and Migration Variables
+## Key variables
 
 | Variable | Coverage | Description |
 |---|---|---|
@@ -93,53 +91,121 @@ get_pep_codebook()
 | `pop_16plus` | 2007–present | Resident population age 16+ |
 | `births` | 2000–present | Annual births |
 | `deaths` | 2000–present | Annual deaths |
-| `natural_chg` | 2000–present | Natural change (births minus deaths) |
-| `domestic_mig` | 2000–present | Net domestic migration |
-| `international_mig` | 2000–present | Net international migration |
-| `net_mig` | 2000–present | Net migration (domestic + international) |
+| `natural_change` | 2000–present | Natural change (births minus deaths) |
+| `domestic_migration` | 2000–present | Net domestic migration |
+| `international_migration` | 2000–present | Net international migration |
+| `net_migration` | 2000–present | Net migration (domestic + international) |
 
-### Multi-Vintage Coverage
+Use `get_pep_codebook()` for the current, authoritative variable list —
+package documentation has shown short forms (`net_mig`, `domestic_mig`)
+in one place and these full names in working code examples elsewhere;
+the names above are what the package's own vignettes actually call.
 
-Three Census PEP vintages are handled internally:
+### Multi-vintage coverage
 
-| Vintage | URL Source |
+Three Census PEP vintages are stitched together internally:
+
+| Vintage | Source |
 |---|---|
 | 2000–2009 | Intercensal county estimates |
 | 2010–2019 | Vintage 2019 county estimates |
 | 2020–present | Latest vintage county estimates |
 
-### Data Refresh (Admin)
+## Core functions
 
-After Census releases new estimates:
+`get_population()` returns total population; `get_population_change()`
+returns the components-of-change variables:
 
 ```{r}
 #| eval: false
 
-write_pep_processed_to_s3(years = 2000:2025)
+# Total population, all counties, all years
+pop <- get_population(geography = "county", variables = "population")
+
+# Migration components for West Virginia counties
+wv_mig <- get_population_change(
+  variables = c("domestic_migration", "international_migration", "net_migration"),
+  geoids    = grep("^54", unique(pop$geoid), value = TRUE),
+  years     = 2010:2025
+)
 ```
 
-## Core Functions
+## Common use cases
 
-| Function | Category | Description |
-|---|---|---|
-| `read_pep_from_s3()` | Data Access | Read processed PEP data from S3 via DuckDB |
-| `pull_population()` | Data Access | Pull population totals from Census source files |
-| `pull_pop_16plus()` | Data Access | Pull population age 16+ from Census source files |
-| `pull_components()` | Data Access | Pull components of change from Census source files |
-| `write_pep_processed_to_s3()` | Admin | Process and write PEP data to S3 |
-| `get_pep_codebook()` | Utility | Return variable definitions and metadata |
-| `latest_pep_vintage()` | Utility | Return the most recent available vintage year |
+### Components of population change
 
-## Data Coverage
+Population change is driven by two forces: natural change (births
+minus deaths) and migration (domestic and international):
+
+```{r}
+#| eval: false
+
+library(dplyr)
+
+grafton <- get_population_change(
+  variables = c("natural_change", "domestic_migration", "international_migration"),
+  geoids    = "33009",
+  years     = 2000:2025
+)
+```
+
+CORI's own analysis of Grafton County, NH found migration patterns —
+not natural change — are what shape the county's population
+trajectory.
+
+### Rural vs. nonrural population growth
+
+Indexing population to a base year isolates relative growth trends
+between rural and nonrural counties:
+
+```{r}
+#| eval: false
+
+library(ruraldefinitions)
+
+rural_definition <- cbsa_2023 |> select(geoid, is_rural)
+
+pop <- get_population(variables = "population", years = 2000:2025) |>
+  left_join(rural_definition, by = "geoid") |>
+  filter(!is.na(is_rural)) |>
+  group_by(year, is_rural) |>
+  summarise(value = sum(value, na.rm = TRUE), .groups = "drop") |>
+  group_by(is_rural) |>
+  mutate(index = value / value[year == 2000] * 100) |>
+  ungroup()
+```
+
+CORI's own analysis using this pattern found rural population growth
+leveled off after the Great Recession, while nonrural growth continued.
+
+### Natural change vs. migration, rural counties
+
+Aggregating across all rural counties separates the two drivers of
+population change — useful because they imply different policy levers:
+
+```{r}
+#| eval: false
+
+rural_comp <- get_population_change(
+  variables = c("natural_change", "net_migration"),
+  years     = 2000:2025
+) |>
+  left_join(rural_definition, by = "geoid") |>
+  filter(is_rural == "Rural") |>
+  group_by(year, variable) |>
+  summarise(value = sum(value, na.rm = TRUE), .groups = "drop")
+```
+
+## Data coverage
 
 | Dimension | Coverage |
 |---|---|
 | **Geography** | County (5-digit FIPS) |
-| **Time Period** | 2000–present |
-| **Update Frequency** | Annual (Census releases new vintage each year) |
+| **Time period** | 2000–present |
+| **Update frequency** | Annual (Census releases new vintage each year) |
 | **Source** | Census Bureau Population Estimates Program |
 
-## Use Cases
+## Use cases
 
 -   **Population trend analysis** — Track rural population growth and
     decline from 2000 to present
@@ -152,7 +218,7 @@ write_pep_processed_to_s3(years = 2000:2025)
 -   **Workforce proxies** — Use `pop_16plus` as a working-age population
     denominator for employment rate calculations
 
-## Related Resources
+## Related resources
 
 ### Datasets
 
@@ -161,12 +227,12 @@ write_pep_processed_to_s3(years = 2000:2025)
 -   [Census PEP Components of Change](/datasets/census-pep-components/) —
     Source dataset documentation (births, deaths, migration)
 
-### Related Packages
+### Related packages
 
 -   [ruraldefinitions](/packages/ruraldefinitions/) — Rural/nonrural
     county classification for stratified population analysis
 
-### External Links
+### External links
 
 -   [Census PEP Homepage](https://www.census.gov/programs-surveys/popest.html)
 -   [Vintage 2024 County Data](https://www.census.gov/data/tables/time-series/demo/popest/2020s-counties-total.html)
