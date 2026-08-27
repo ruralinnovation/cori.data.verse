@@ -26,5 +26,8 @@ _targets/
 
 /*.md
 CLAUDE.md
+PLAN.md
 
 posts/12_fcc-data/proj-fcc-report
+
+**/*.quarto_ipynb
