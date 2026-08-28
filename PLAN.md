@@ -171,31 +171,48 @@ vignettes ported inline for `cori-data`, `cori-data-qcew`, `cori-data-fcc`
 
 ---
 
-### Datasets (Priority: MEDIUM — DEFERRED)
+### Datasets (Priority: MEDIUM — after packages)
 
-The developer gutted all dataset content and replaced with a single "coming soon"
-placeholder. Dataset cut list and page structure **have not yet been decided** —
-this requires its own interview process (see Step 1).
+Dataset cut list decided. All pages written from scratch to v1 template.
 
-Dataset work does not begin until packages are complete.
+**Include:**
 
-> **Do not write dataset pages until the interview process is done and a cut list is agreed.**
+| Slug | Tied To | Notes |
+|------|---------|-------|
+| `qcew-employment-wages` | cori.data.qcew | Core labor market data |
+| `fcc-broadband` | cori.data.fcc | Rural broadband gap well documented |
+| `census-bds` | cori.data.bds | Draft exists, revise to template |
+| `census-population-estimates` | cori.data.pep | Components of change framing |
+| `usda-county-typology` | ruraldefinitions | Rural heterogeneity story |
+| `census-bfs` | cori.data.bfs | Leading indicator story, pairs with BDS |
+| `american-community-survey` | (no CORI package) | Good hub example — tidycensus already excellent, Data Verse surfaces it as a key rural resource without duplicating |
+| `tiger-line` | cori.data (bundled) | Geography orientation — why counties, what the geographic framework means for rural analysis. Addresses the rural data learner persona. |
+
+**Cut for v1:**
+bea-real-gdp, bls-ors-telework, fred-tech-employment, irs-migration,
+sec-form-d, umich-consumer-sentiment, uspto-patents, census-building-permits
+(may revisit if time permits), census-housing-units
+
+> **Do not begin dataset pages until package work is complete.**
 
 ---
 
-### Projects (Priority: MEDIUM)
+### Projects (Priority: MEDIUM — after packages)
 
-All 3 existing projects are marked `draft: true`. They have strong methodology/ETL
-documentation but **no actual findings or outputs**. Our work is to add the interpretive
-layer and surface real results where they exist.
+All existing projects marked `draft: true`. Our work is to add the interpretive
+layer and surface real results.
 
-| Slug | Dev Branch State | Our Action |
-|------|-----------------|------------|
-| `rural-economic-outlook` | Strong ETL docs, outputs "in development" | Add findings + interpretive section, confirm outputs exist |
-| `rwjf-seeds-of-change-public-funding` | Strong methodology, no findings | Add findings + interpretive section — confirm public-facing ready |
-| `capital-one-business-demographics` | Good methodology, no index values shown | Evaluate — keep if findings can be shared publicly |
+**Include all four:**
 
-**Target for conference:** 2 strong projects with findings visible, `draft: true` removed
+| Slug | Notes |
+|------|-------|
+| `rural-economic-outlook` | Most comprehensive ecosystem demo — QCEW, BDS, BFS, PEP, FCC all contributing. Confirm outputs exist on disk before writing findings. |
+| `rwjf-seeds-of-change-public-funding` | 45-year fiscal capacity divergence analysis. RWJF-backed, publicly presentable. |
+| `rwjf-seeds-of-change-private-funding` | Private capital access gaps in rural communities. Companion to public funding. Needs a page created — currently not in site. |
+| `capital-one-business-demographics` | Rural Entrepreneurship Index — methodology just accepted to peer-reviewed journal. Strong credibility signal. Index values and findings are shareable. |
+
+**Target for conference:** All 4 projects with interpretive sections and findings visible,
+`draft: true` removed
 
 ---
 
