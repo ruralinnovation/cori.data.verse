@@ -11,6 +11,7 @@ project:
     - "packages/*/index.qmd"
     - "posts/*/index.qmd"
     - "projects/*/index.qmd"
+    - "resources/index.qmd"
     - "resources/*/index.qmd"
 
 # Site shell (nav, footer, etc.) is now managed by NextJS.

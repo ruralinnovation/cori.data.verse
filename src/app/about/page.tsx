@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import MarkdownContent from "@/components/MarkdownContent";
+import SearchBar from "@/components/SearchBar";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -25,8 +26,11 @@ export default function AboutPage() {
   const content = getAboutContent();
 
   return (
-    <div className="container" style={{ padding: "2rem 0" }}>
-      <MarkdownContent content={content} />
-    </div>
+    <>
+      <SearchBar />
+      <div className="container" style={{ padding: "2rem 0" }}>
+        <MarkdownContent content={content} />
+      </div>
+    </>
   );
 }

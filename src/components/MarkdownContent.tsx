@@ -14,8 +14,17 @@ function MarkdownLink(props: Record<string, unknown>) {
   const href = props.href as string;
   const children = props.children as React.ReactNode;
 
-  // External links or anchors: use regular <a>
-  if (!href || href.startsWith("http") || href.startsWith("#") || href.startsWith("mailto:")) {
+  // External links: open in a new tab
+  if (href && href.startsWith("http")) {
+    return (
+      <a {...props} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    );
+  }
+
+  // Anchors and mailto links: use regular <a>
+  if (!href || href.startsWith("#") || href.startsWith("mailto:")) {
     return <a {...props}>{children}</a>;
   }
 

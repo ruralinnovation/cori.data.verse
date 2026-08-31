@@ -5,6 +5,7 @@ draft: true
 categories: ["Resource", "Data Infrastructure"]
 tags: ["S3", "AWS", "Logging", "DuckDB", "Monitoring"]
 execute:
+  cache: true
   eval: false
   echo: true
   warning: false
@@ -66,23 +67,23 @@ memory.
 ```{r}
 #| label: read
 
-# NOTE: on.exit() only defers to the exit of an enclosing *function* -- a
-# knitr chunk isn't one. evaluate::evaluate() runs each top-level statement
-# individually, so on.exit() here would fire the instant it's called,
-# closing `con` before the query below ever runs (confirmed: this is what
-# produced the "Invalid connection" render failure). Disconnect explicitly
-# at the end of the chunk instead, once `con` is actually done being used.
-con <- connect_to_s3("cori.data.verse")
-
-# Widen or narrow this glob to set the reporting window.
-glob <- "s3://cori.data.verse/logs/312512371189/us-east-1/*/2026/*/*/*"
+buckets <- c(
+  "cori.data.bds",
+  "cori.data.bfs",
+  "cori.data.bps",
+  "cori.data.fcc",
+  "cori.data.hu",
+  "cori.data.pep",
+  "cori.data.qcew",
+  "ruraldefinitions"
+)
 
 log_pattern <- paste0(
   "^(\\S+) (\\S+) \\[([^\\]]+)\\] (\\S+) (\\S+) (\\S+) (\\S+) (\\S+) ",
   "\"[^\"]*\" (\\S+) (\\S+) (\\S+)"
 )
 
-activity <- DBI::dbGetQuery(con, sprintf("
+query_template <- "
   WITH raw AS (
     SELECT regexp_extract(line, '%s',
       ['owner','bucket','ts','ip','requester','reqid',
@@ -95,18 +96,6 @@ activity <- DBI::dbGetQuery(con, sprintf("
     CAST(strptime(split_part(f.ts, ' ', 1),
                   '%%d/%%b/%%Y:%%H:%%M:%%S') AS DATE)          AS day,
     CASE
-      -- Deliberately conflated: a request with no credentials at all and a
-      -- vended credential nobody tagged both mean the same thing for this
-      -- report -- we cannot say who did it. That is the operative line, not
-      -- whether a credential existed. local credentials stays separate
-      -- below because it IS a known identity, just one that skipped
-      -- vending.
-      -- The vending endpoint's own untagged fallback embeds the literal
-      -- text 'anon' in the session name (coridata-anon-<timestamp>), so
-      -- regexp_extract succeeds and returns 'anon' -- not NULL or empty.
-      -- nullif(..., '') alone never catches that; it has to be checked for
-      -- explicitly, same as the empty-string case, or it survives as its
-      -- own category.
       WHEN f.requester = '-' THEN 'anonymous'
       WHEN f.requester LIKE '%%CoriDataS3ReaderRole%%'
         THEN coalesce(nullif(nullif(regexp_extract(
@@ -119,21 +108,54 @@ activity <- DBI::dbGetQuery(con, sprintf("
   FROM raw
   WHERE f.operation LIKE 'REST.GET.OBJECT%%'
   GROUP BY 1, 2, 3
-", log_pattern, glob)) |>
-  dplyr::filter(
-    `bucket` %in% c(
-      "cori.data.bds",
-      "cori.data.bfs",
-      "cori.data.bps",
-      "cori.data.fcc",
-      "cori.data.hu",
-      "cori.data.pep",
-      "cori.data.qcew",
-      "ruraldefinitions"
-    )
+"
+
+activity <- list()
+
+for (b in buckets) {
+
+  # One glob per day for the past week — each query hits a single
+  # bucket/date prefix, which is what keeps a query inside the vended
+  # credential's lifetime.
+  dates <- seq(Sys.Date() - 7, Sys.Date(), by = "day")
+  globs <- sprintf(
+    "s3://cori.data.verse/logs/312512371189/us-east-1/%s/%s/*",
+    b, format(dates, "%Y/%m/%d")
   )
 
-DBI::dbDisconnect(con, shutdown = TRUE)
+  bucket_activity <- purrr::map(globs, \(g) {
+    con <- connect_to_s3("cori.data.verse")
+    # NOTE: on.exit() only defers to the exit of an enclosing *function*
+    on.exit(DBI::dbDisconnect(con, shutdown = TRUE))
+
+    # A quiet bucket/day legitimately has no log objects, and read_csv()
+    # raises an IO Error rather than returning zero rows when its glob
+    # matches nothing. glob() returns zero rows instead of erroring, so it
+    # is the guard -- one LIST request on the connection that is already
+    # authenticated, rather than a second client with its own credentials.
+    found <- DBI::dbGetQuery(
+      con, sprintf("SELECT count(*) AS n FROM glob('%s')", g)
+    )$n
+
+    if (found > 0) {
+      DBI::dbGetQuery(con, sprintf(query_template, log_pattern, g))
+    } else {
+      return(NULL)
+    }
+  })
+
+  # Appends this bucket's per-day data frames as elements, keeping `activity`
+  # a flat list for bind_rows() below. This relies on map() returning a plain
+  # list: a data frame is itself a list of columns, so c() would splice one
+  # column-by-column rather than appending it whole.
+  activity <- c(activity, bucket_activity)
+}
+
+activity <- activity |>
+  dplyr::bind_rows() |>
+  dplyr::filter(
+    bucket %in% buckets
+  )
 
 glimpse(activity)
 ```

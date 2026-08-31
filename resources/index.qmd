@@ -1,0 +1,25 @@
+---
+title: "Resources"
+description: "Mapping where opportunity is growing in rural America — the dashboards CORI builds to track it, and the public data that fuels them"
+---
+
+Explore the dashboards that we've built to map growing opportunity across rural America, as well as additional public data resources.
+
+## CORI Public Tools
+
+- [Capital One Entrepreneurship Index Map](https://entrepreneurship-index-map.ruralinnovation.us/)<br />
+Interactive map of CORI's county-level entrepreneurship index (global, metro, and rural variants), built from ACS, Business Dynamics Statistics, and kernel PCA methods.
+<br />
+- [Economic Development Tool](https://rural-economic-development-dashboard.ruralinnovation.us/)<br />
+CORI's interactive dashboard for exploring county-level economic development indicators.
+<br />
+
+
+## External Data Sources
+
+- [American Community Survey (ACS) 5-Year Estimates](https://www.census.gov/programs-surveys/acs)<br />
+U.S. Census Bureau. Comprehensive demographic, social, economic, and housing data at the county, tract, block group, and place level. Used across multiple CORI projects (Rural Economic Outlook, Capital One Business Demographics, RWJF Seeds of Change) but not yet formally packaged.
+<br />
+- [BEA Regional Economic Accounts - Real GDP](https://www.bea.gov/data/gdp/gdp-county-metro-and-other-areas)<br />
+Bureau of Economic Analysis. Inflation-adjusted economic output data at the county, MSA, state, and national level.
+<br />
