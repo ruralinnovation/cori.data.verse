@@ -101,10 +101,9 @@ U.S. Census Bureau's Business Formation Statistics. Data cover
 applications filed with the IRS, excluding tax liens, estates, trusts,
 agriculture (NAICS 11), and public administration (NAICS 92).
 
-**Source:** U.S. Census Bureau, Business Formation Statistics
-**Coverage:** 2005–present, updated annually
-**Geography:** County (5-digit FIPS), state (2-digit FIPS), national
-(`"00"`)
+**Source:** U.S. Census Bureau, Business Formation Statistics\
+**Coverage:** 2005–present, updated annually\
+**Geography:** County (5-digit FIPS), state (2-digit FIPS), national (`"00"`)
 
 ### Variables
 
