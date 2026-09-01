@@ -457,22 +457,29 @@ Add to every page:
 - Vignettes inline where applicable (with GitHub link alongside)
 
 **Pilot:**
-- [ ] `cori-data` — trim to v1 template, add interpretive section, port `getting-started`
+- [x] `cori-data` — trim to v1 template, add interpretive section, port `getting-started`
       + `tidy-data` vignettes inline, link to GitHub for full source
-- [ ] Review and sign off on `cori-data` page
-- [ ] Update `generate-dataverse-package` skill to encode v1 template + rural context +
+- [x] Review and sign off on `cori-data` page
+- [x] Update `generate-dataverse-package` skill to encode v1 template + rural context +
       vignette porting pattern
 
 **Remaining packages (apply updated skill):**
-- [ ] `cori-data-qcew` — port `employment-rate`, `sector-analysis`, `weighted-averages`
-- [ ] `cori-data-fcc` — port `broadband`
-- [ ] `cori-data-bds`
-- [ ] `cori-data-pep`
-- [ ] `cori-data-bfs`
-- [ ] `cori-data-bps`
-- [ ] `ruraldefinitions`
-- [ ] `cori-data-hu` — evaluate: keep or cut for v1
-- [ ] `dform` — remove for v1
+- [x] `cori-data-qcew` — ported `introduction` + `rural-employment-trends` vignettes inline;
+      rural context from RURAL_CONTEXT_COPY.md (flagged for copy revision)
+- [x] `cori-data-fcc` — ported NBM + Form 477 vignettes inline; maintainer updated to
+      John Hall (note: DESCRIPTION in cori.data.fcc repo still shows Olivier Leroy)
+- [x] `cori-data-bds` — ported introduction vignette; rural context ✅ strong evidence
+- [x] `cori-data-pep` — ported introduction vignette; rural context ✅ strong evidence
+- [x] `cori-data-bfs` — ported introduction vignette; rural context trimmed to grounded copy only
+- [x] `cori-data-bps` — ported introduction vignette; rural context 🔶 partial evidence
+- [x] `ruraldefinitions` — ported maps vignette (CBSA + CORI examples); rural context ✅ strong evidence
+- [x] `cori-data-hu` — ported introduction vignette; rural context written (asset framing)
+- [x] `dform` — removed for v1
+
+**Cross-package cleanup (done):**
+- Removed internal pipeline language (S3/DuckDB/download) from all descriptions and overview sections
+- Standardized intro paragraph voice — asset framing consistent across all packages
+- FCC rural context trimmed to grounded copy only
 
 ### Step 3 — Datasets
 Write from scratch to v1 template. Each page: Overview, What This Data Tells Us, Coverage, Key Variables, Accessing the Data, Related.
@@ -734,4 +741,4 @@ Sections deferred from v1 templates — revisit after conference:
 
 ---
 
-*Last updated: 2026-08-26*
+*Last updated: 2026-09-01*

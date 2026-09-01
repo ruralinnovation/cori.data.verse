@@ -1,19 +1,32 @@
 ---
-title: "cori.data.bds"
-description: "Access and analyze Census Bureau Business Dynamics Statistics (BDS) data covering establishment and job dynamics from 1978-2023"
-author: "Drew Rosebush"
-date: "2026-08-26"
-categories: ["R Package", "Entrepreneurship"]
-tags: ["Census", "Business Dynamics", "Employment", "Startups", "Tidy Data", "Economic Development"]
+title: cori.data.bds
+description: Access and analyze Census Bureau Business Dynamics Statistics (BDS)
+  data covering establishment and job dynamics from 1978 to present. Provides tidy
+  access to business dynamics — entries, exits, job creation, job destruction — by
+  geography, industry, establishment age, and firm size.
+author: Drew Rosebush
+date: '2026-08-31'
+categories:
+  - R Package
+  - Entrepreneurship
+tags:
+  - BDS
+  - Business Dynamics
+  - Establishments
+  - County-Level
+  - S3
+  - Tidy Data
+  - Rural
 package:
-  name: "cori.data.bds"
-  githubUrl: "https://github.com/ruralinnovation/cori.data.bds"
-  installCommand: 'remotes::install_github("ruralinnovation/cori.data.bds")'
-  status: "stable"
-  version: "0.3.0"
-  maintainer: "Drew Rosebush"
+  name: cori.data.bds
+  githubUrl: https://github.com/ruralinnovation/cori.data.bds
+  installCommand: remotes::install_github("ruralinnovation/cori.data.bds")
+  status: development
+  version: 0.3.0
+  maintainer: Drew Rosebush
   featured: true
-usesDatasets: ["census-bds"]
+usesDatasets:
+  - census-bds
 usesResources: []
 execute:
   echo: true
@@ -26,235 +39,171 @@ editor:
 
 ## Overview
 
-The `cori.data.bds` package provides tools for accessing and analyzing Census Bureau Business Dynamics Statistics (BDS) data. This dataset tracks establishment and job dynamics from 1978 to the present — not just how many jobs exist, but where those jobs came from: new businesses opening, existing businesses expanding, or businesses closing and contracting.
+The `cori.data.bds` package provides access to Census Bureau Business
+Dynamics Statistics (BDS) data at the county, state, and national level
+from 1978 to the present. BDS tracks establishment and job dynamics —
+entries, exits, job creation, and job destruction — across dimensions
+that most employment sources cannot provide: industry, establishment age,
+and firm size. This makes it possible to ask not just *how many jobs
+exist* in a place, but *where those jobs came from* and how the
+underlying economy is churning.
 
-All `get_*` functions return **tidy (long) format** data — one row per `geoid × year × variable` combination, with metric values in a `value` column. Dimensional functions (`_by_sector`, `_by_age`, `_by_size`) add the relevant dimension column(s) as additional identifiers.
+All `get_*` functions return long-format data — one row per
+`geoid × year × variable` — with additional dimension columns for
+sector, age, and size breakdowns, consistent with the rest of the
+`cori.data` ecosystem.
 
-::: callout-note
-## What's in the package
-
-- **Tidy output** — every function returns long-format data, ready for `dplyr`/`tidyr` pipelines
-- **Two data domains** — business dynamics (establishments, entries, exits) and employment dynamics (job creation, destruction, net change)
-- **Three dimensional breakdowns** — sector, establishment age, and firm size, each mutually exclusive
-- **Flexible filtering** — by geography, year, specific FIPS codes, or specific variables
-:::
-
-## Installation
-
-::: panel-tabset
-## GitHub
+## Installation & Quick Start
 
 ```{r}
 #| eval: false
-
 remotes::install_github("ruralinnovation/cori.data.bds")
 ```
 
-## Requirements
-
-**Census API key** (required):
 ```{r}
 #| eval: false
-
-# Get one at: http://api.census.gov/data/key_signup.html
-Sys.setenv(CENSUS_API_KEY = "your_api_key_here")
-```
-
-**S3 access** (for reading processed data from S3):
-```{r}
-#| eval: false
-
-# cori.data.bds depends on cori.data.s3 for S3 reads.
-# Falls back to CORI's credential-vending endpoint if no
-# local AWS credentials are configured.
-remotes::install_github("ruralinnovation/cori.data.s3")
-```
-:::
-
-## Quick start
-
-```{r}
-#| eval: false
-
 library(cori.data.bds)
 
-# See all available variables and which functions return them
+# Variable definitions
 get_bds_codebook()
 
-# Aggregate business dynamics (no dimensional breakdown)
-# Returns: geoid | year | variable | value
-bd <- get_business_dynamics(geography = "county", years = 2018:2023)
+# Aggregate business dynamics — county level
+get_business_dynamics(geography = "county", years = 2018:2023)
 
-# Aggregate employment dynamics
+# Aggregate employment dynamics — county level
+get_employment_dynamics(geography = "county", years = 2018:2023)
+
+# By NAICS sector — state level
+get_business_dynamics_by_sector(geography = "state", years = 2018:2023)
+
+# By establishment age — county level
+get_business_dynamics_by_age(geography = "county", years = 2018:2023)
+```
+
+## What This Data Tells Us About Rural
+
+Business dynamics data captures what employment data misses: the
+churning process beneath aggregate counts. A county can hold steady
+employment while simultaneously losing established firms and gaining new
+ones — or vice versa. Entry and exit rates, job creation by firm age,
+and establishment counts together describe whether a rural economy is
+renewing itself or sustaining on its existing institutional base.
+
+Young firms — those five years old or less — create a disproportionate
+share of net new jobs in the U.S. economy. Rural communities with active
+entrepreneurial ecosystems show this pattern clearly, and CORI's
+community research documents meaningful business formation growth in
+communities that have invested in their entrepreneurial infrastructure.
+Converting new business formation into employment growth takes time,
+capital, and ecosystem depth — the BDS data supports tracking that
+progression over multiple years rather than treating any single year as
+definitive.
+
+High exit rates in isolation can look like distress. But exit rates
+interpreted alongside entry rates tell a more nuanced story: dynamic
+economies churn. A community with both high entry and high exit rates may
+be more economically active than one with low rates of both. The BDS
+data supports this kind of comparative reading across rural county types
+and over time.
+
+Industry concentration at the county level reveals the degree to which
+a rural economy's employment base is anchored in a narrow set of sectors
+— often a direct reflection of the community's core assets.
+Understanding that concentration is the starting point for any economic
+development strategy, whether the goal is to deepen existing strengths or
+to build complementary capacity alongside them.
+
+## Introduction
+
+*Adapted from the [Introduction
+vignette](https://github.com/ruralinnovation/cori.data.bds/blob/main/vignettes/introduction.Rmd)
+on GitHub.*
+
+### What is this data?
+
+The Census Bureau's Business Dynamics Statistics track the birth, death,
+and employment of U.S. establishments and firms from 1978 to the
+present. Unlike most employment data sources, BDS lets you ask not just
+*how many jobs* exist, but *where those jobs came from* — new businesses
+opening, existing businesses expanding, or businesses closing and
+contracting.
+
+Data is available at the county, state, and national level.
+
+### Quick start
+
+```{r}
+#| eval: false
+library(cori.data.bds)
+
+get_bds_codebook()
+
+# Aggregate — no dimensional breakdown
+bd <- get_business_dynamics(geography = "county", years = 2018:2023)
 ed <- get_employment_dynamics(geography = "county", years = 2018:2023)
 ```
 
-## Core functions
+### Dimensional breakdowns
 
-### Business dynamics
-
-Track establishment births, deaths, and counts:
+BDS measures three mutually exclusive dimensions. Each `_by_*` function
+slices the data along one dimension at a time.
 
 ```{r}
 #| eval: false
-
-# Aggregate totals
-get_business_dynamics(geography = "county", years = 2018:2023)
-
 # By NAICS sector
-get_business_dynamics_by_sector(geography = "state", years = 2018:2023)
+bd_sector <- get_business_dynamics_by_sector(geography = "state", years = 2018:2023)
+ed_sector <- get_employment_dynamics_by_sector(geography = "state", years = 2018:2023)
+```
 
+**Note on NAICS granularity:** At the county level, data is limited to
+20 major 2-digit NAICS sectors. At state and national level, the Census
+API provides considerably more detail — 2-, 3-, and 4-digit codes across
+approximately 390 categories.
+
+```{r}
+#| eval: false
 # By establishment age
-get_business_dynamics_by_age(geography = "county", years = 2018:2023)
-
-# By firm size
-get_business_dynamics_by_size(geography = "county", years = 2018:2023)
+bd_age <- get_business_dynamics_by_age(geography = "county", years = 2018:2023)
+ed_age <- get_employment_dynamics_by_age(geography = "county", years = 2018:2023)
 ```
-
-### Employment dynamics
-
-Track job creation, destruction, and net change — dimensional breakdowns follow the same `_by_sector` / `_by_age` / `_by_size` pattern:
 
 ```{r}
 #| eval: false
-
-get_employment_dynamics(geography = "county", years = 2018:2023)
-get_employment_dynamics_by_sector(geography = "state", years = 2018:2023)
-get_employment_dynamics_by_age(geography = "county", years = 2018:2023)
-get_employment_dynamics_by_size(geography = "county", years = 2018:2023)
+# By firm size (mutually exclusive groups: 1-19, 20-499, 500+)
+bd_size <- get_business_dynamics_by_size(geography = "county", years = 2018:2023)
+ed_size <- get_employment_dynamics_by_size(geography = "county", years = 2018:2023)
 ```
 
-## Dimensional breakdowns
-
-BDS measures three **mutually exclusive** dimensions. Each `_by_*` function slices the data along one dimension at a time.
-
-::: callout-important
-## NAICS granularity differs by geography
-
-At the **county** level, sector data is limited to the 20 major 2-digit NAICS sectors (e.g. `"23"` Construction, `"62"` Health Care). At the **state and national** level, the Census BDS API provides considerably more detail — 2, 3, and 4-digit codes across roughly 390 categories (e.g. `"2361"` Residential Building Construction, `"6221"` General Medical and Surgical Hospitals). Keep this in mind when comparing sector breakdowns across geographies.
-:::
-
-| Dimension | Groups |
-|---|---|
-| Sector (NAICS) | 20 major sectors (county) or ~390 codes at 2–4 digits (state/national) |
-| Establishment age | 0, 1, 2, 3, 4, 5, 6–10, 11–15, 16–20, 21–25, 26+ years |
-| Firm size | 1–19, 20–499, 500+ employees |
-
-## Filtering and selection
-
-### Filter by geography
-
-Use `geoids` to pull specific counties or states by FIPS code:
+### Filtering by geography and variable
 
 ```{r}
 #| eval: false
-
 # Specific counties
 rural_counties <- get_employment_dynamics(
-  geoids    = c("33009", "33011", "33013"),
-  geography = "county",
-  years     = 2010:2023
+  geoids = c("33009", "33011", "33013"),
+  years  = 2010:2023
 )
 
-# Specific states
-mountain_west <- get_business_dynamics(
-  geoids    = c("30", "16", "56", "49", "08"),
-  geography = "state",
-  years     = 2010:2023
-)
-```
-
-### Select specific variables
-
-Use `variables` to return only the columns you need:
-
-```{r}
-#| eval: false
-
-# Net job creation only
+# Specific variables only
 net_jobs <- get_employment_dynamics(
   geography = "county",
   years     = 2018:2023,
   variables = c("net_job_creation", "net_job_creation_rate")
 )
-
-# Establishment entry and exit rates only
-churn <- get_business_dynamics(
-  geography = "state",
-  years     = 2018:2023,
-  variables = c("estab_entry_rate", "estab_exit_rate")
-)
 ```
 
-## Key variables
-
-### Business dynamics
-
-| Variable | Description |
-|---|---|
-| establishments | Number of establishments |
-| estab_entry_rate | Rate of establishment births |
-| estab_exit_rate | Rate of establishment exits |
-| firms | Number of firms |
-| firm_deaths | Firm deaths in 12 months |
-
-### Employment dynamics
-
-| Variable | Description |
-|---|---|
-| employees | Number of employees |
-| job_creation | Jobs created from births and expansions |
-| job_creation_rate | Rate of job creation |
-| job_destruction | Jobs lost from closures and contractions |
-| job_destruction_rate | Rate of job destruction |
-| net_job_creation | Net employment change |
-| net_job_creation_rate | Rate of net job change |
-
-Use `get_bds_codebook()` for complete variable documentation.
-
-## Alternative data access
-
-For wide-format data with original Census variable names:
+### Rural vs. nonrural comparison
 
 ```{r}
 #| eval: false
-
-# Pull specific years
-raw_data <- pull_bds_raw(years = 2020:2023, geography = "state")
-
-# Pull all available years (1978-2023)
-raw_data <- pull_bds_raw(years = "all", geography = "county")
-
-# Custom variables
-raw_data <- pull_bds_raw(
-  years     = 2023,
-  geography = "national",
-  variables = c("YEAR", "NAICS", "ESTAB", "JOB_CREATION")
-)
-```
-
-## Common use cases
-
-### Rural vs. non-rural comparison
-
-```{r}
-#| eval: false
-
 library(dplyr)
 library(ruraldefinitions)
 
 county_ed <- get_employment_dynamics(geography = "county", years = 2018:2023)
 
-rural_definitions <- cbsa_2023 |>
-  select(geoid, is_rural)
-
-rural_comparison <- county_ed |>
-  tidyr::pivot_wider(
-    id_cols     = c(geoid, year),
-    values_from = "value",
-    names_from  = "variable"
-  ) |>
-  left_join(rural_definitions, by = "geoid") |>
+county_ed |>
+  left_join(select(cbsa_2023, geoid, is_rural), by = "geoid") |>
+  filter(!is.na(is_rural)) |>
   group_by(year, is_rural) |>
   summarize(
     avg_job_creation_rate    = mean(job_creation_rate, na.rm = TRUE),
@@ -264,37 +213,24 @@ rural_comparison <- county_ed |>
   )
 ```
 
-## Data coverage
+## Related
 
-- **Time period**: 1978–2023
-- **Geographies**: National, state, county
-- **Sectors**: 20 major NAICS sectors (county) or ~390 codes at 2–4 digits (state/national)
-- **Establishment ages**: 0, 1, 2, 3, 4, 5, 6–10, 11–15, 16–20, 21–25, 26+ years
-- **Firm sizes**: 1–19, 20–499, 500+ employees
-- **Update frequency**: Annual (Census releases new data each year)
+-   **Dataset:** [Census Business Dynamics
+    Statistics](/datasets/census-bds/)
+-   **Package:** [cori.data](/packages/cori-data/) — meta-package that
+    includes `cori.data.bds`
+-   **Package:** [cori.data.bfs](/packages/cori-data-bfs/) — business
+    applications as a leading indicator; pairs with BDS for the full
+    formation-to-employment story
+-   **Package:** [ruraldefinitions](/packages/ruraldefinitions/) —
+    rural/nonrural classification used in comparison examples
+-   **Project:** [Rural Economic
+    Outlook](/projects/rural-economic-outlook/) — BDS is a core input to
+    CORI's multi-dataset economic analysis
 
-## Related resources
-
-### Datasets
-
-- [Census Business Dynamics Statistics](/datasets/census-bds/) — Source dataset documentation
-- [Census Business Formation Statistics](/datasets/census-bfs/) — Leading indicator
-- [QCEW Employment & Wages](/datasets/qcew-employment-wages/) — Quarterly employment data
-
-### External links
-
-- [Census BDS Homepage](https://www.census.gov/programs-surveys/bds.html)
-- [BDS Documentation](https://www.census.gov/programs-surveys/bds/documentation.html)
-- [Census API Documentation](https://www.census.gov/data/developers/data-sets/business-dynamics.html)
-
-## Documentation
-
-- [GitHub Repository](https://github.com/ruralinnovation/cori.data.bds)
-- [Full README](https://github.com/ruralinnovation/cori.data.bds/blob/main/README.md)
-- [Introduction Vignette](https://github.com/ruralinnovation/cori.data.bds/blob/main/vignettes/introduction.Rmd)
-
----
-
-**Contact:** Drew Rosebush (drew.rosebush@ruralinnovation.us)
-
-For bug reports or feature requests, please open an issue on [GitHub](https://github.com/ruralinnovation/cori.data.bds/issues).
+::: callout-note
+**Data attribution:** Business Dynamics Statistics are produced by the
+U.S. Census Bureau. When citing analysis using this package, reference:
+U.S. Census Bureau, Business Dynamics Statistics,
+[www.census.gov/programs-surveys/bds](https://www.census.gov/programs-surveys/bds).
+:::

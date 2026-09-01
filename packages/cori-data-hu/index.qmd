@@ -1,19 +1,30 @@
 ---
-title: "cori.data.hu"
-description: "Access and analyze U.S. Census Bureau Housing Unit Estimates at the national, state, and county level from 2020 to present"
-author: "Drew Rosebush"
-date: "2026-08-26"
-categories: ["R Package", "Housing"]
-tags: ["Housing Units", "Census", "Housing Stock", "County-Level", "S3", "Tidy Data"]
+title: cori.data.hu
+description: Access and analyze U.S. Census Bureau Housing Unit Estimates at the
+  national, state, and county level from 2000 to present. Measures total housing
+  stock — occupied and vacant — as part of CORI's housing supply data ecosystem.
+author: Drew Rosebush
+date: '2026-08-31'
+categories:
+  - R Package
+  - Housing
+tags:
+  - Housing Units
+  - Census
+  - Housing Stock
+  - County-Level
+  - S3
+  - Tidy Data
+  - Rural
 package:
-  name: "cori.data.hu"
-  githubUrl: "https://github.com/ruralinnovation/cori.data.hu"
-  installCommand: 'remotes::install_github("ruralinnovation/cori.data.hu")'
-  status: "development"
-  version: "0.1.0"
-  maintainer: "Drew Rosebush"
+  name: cori.data.hu
+  githubUrl: https://github.com/ruralinnovation/cori.data.hu
+  installCommand: remotes::install_github("ruralinnovation/cori.data.hu")
+  status: development
+  version: 0.1.0
+  maintainer: Drew Rosebush
   featured: false
-usesDatasets: ["census-housing-units"]
+usesDatasets: []
 usesResources: []
 execute:
   echo: true
@@ -26,110 +37,118 @@ editor:
 
 ## Overview
 
-The `cori.data.hu` package provides access to the U.S. Census Bureau's
-**National, State, and County Housing Unit Totals** — annual estimates
-of the total number of housing units in existence, published under the
-Population Estimates Program. Data cover 2000 to present and measure
-housing **stock** (occupied and vacant units combined), built from the
-decennial census baseline plus annual permitted construction,
-non-permitted construction, mobile home shipments, and estimated
-housing loss — as distinct from construction activity or permitting
-flow.
+The `cori.data.hu` package provides access to U.S. Census Bureau
+Housing Unit Estimates at the county, state, and national level from
+2000 to the present. It measures the total housing stock — occupied and
+vacant units combined — built from the decennial Census baseline plus
+annual additions from permitted construction, non-permitted
+construction, mobile home shipments, and estimated housing loss.
 
-::: callout-note
-## What's in the package
+Housing units data differs from building permits data in an important
+way: permits measure new supply being added in a given year, while
+housing units measure the total stock available. Combined, the two
+datasets support analysis of how supply is changing relative to the
+existing base. All data are returned in the standard `cori.data` long format: one row
+per `geoid / year / variable`.
 
--   **Total housing stock** — Measures all existing units, not just new
-    construction; pairs with `cori.data.bps` for net-new activity
--   **S3-backed access** — Pre-processed data queryable via DuckDB
-    without downloading per-state source files
--   **Three anchored decade series** — 2000s, 2010s, 2020s, each reset
-    to its own decennial census baseline
--   **Methodology-aware** — README documents the components-of-change
-    model and known limitations for longitudinal use
-:::
-
-## Installation
+## Installation & Quick Start
 
 ```{r}
 #| eval: false
-
 remotes::install_github("ruralinnovation/cori.data.hu")
 ```
 
-## Quick start
-
 ```{r}
 #| eval: false
-
 library(cori.data.hu)
 
-# Tidy long-format access
-df <- get_housing_units(geography = "county")
-
-# Variable documentation
+# All available variables
 get_hu_codebook()
+
+# Total housing units — all counties, all years
+get_housing_units(geography = "county")
+
+# Housing units per 1,000 population for New Hampshire counties
+get_housing_units(
+  variables = "housing_units_per_1k_people",
+  geoids    = c("33009", "33011"),
+  years     = 2010:2024
+)
 ```
 
-## Core functions
+## What This Data Tells Us About Rural
 
-`get_housing_units()` is the tidy-format entry point:
+Housing is the physical substrate of rural economic development — the
+asset that determines whether a community can translate economic momentum
+into population and workforce growth. A community may have strong
+broadband, an active entrepreneurial ecosystem, employment anchors, and
+quality of life assets that attract interest from remote workers and
+returnees — and still be unable to grow if there is nowhere for people
+to live. In this sense, housing stock is not background infrastructure;
+it is the capacity of a place to receive and retain people.
+
+## Introduction
+
+*Adapted from the [Introduction
+vignette](https://github.com/ruralinnovation/cori.data.hu/blob/main/vignettes/introduction.Rmd)
+on GitHub.*
+
+`cori.data.hu` provides annual housing unit estimates from the U.S.
+Census Bureau's National, State, and County Housing Unit Totals,
+Data cover 2000–present
+and measure the total housing stock built from the decennial Census
+baseline plus annual construction and loss estimates.
+
+**Source:** U.S. Census Bureau, Population Estimates Program
+**Coverage:** 2000–present, updated annually (release typically May)
+**Geography:** County (5-digit FIPS), state (2-digit FIPS), national
+(`"00"`)
+
+### Variables
 
 ```{r}
 #| eval: false
+get_hu_codebook() |>
+  dplyr::select(variable, label, unit, notes) |>
+  knitr::kable()
+```
 
+### Reading data
+
+All data are returned in long format: one row per `geoid / year /
+variable`.
+
+```{r}
+#| eval: false
 df <- get_housing_units(geography = "county")
+dplyr::glimpse(df)
+```
 
-# Housing units per 1,000 population for New Hampshire counties
+Filter to specific variables, years, or counties:
+
+```{r}
+#| eval: false
 nh_hu <- get_housing_units(
   variables = "housing_units_per_1k_people",
   geoids    = grep("^33", unique(df$geoid), value = TRUE),
   years     = 2010:2024
 )
+dplyr::glimpse(nh_hu)
 ```
 
-`read_hu_from_s3()` reads pre-processed data directly from S3 via
-DuckDB:
+### Rural vs. Nonrural
 
 ```{r}
 #| eval: false
-
-read_hu_from_s3()
-```
-
-### Components-of-change methodology
-
-The Census Bureau builds housing unit estimates using:
-
-```
-2020 Census Housing Units
-  + New Residential Construction  (permitted × completion rate + non-permitted)
-  + New Mobile Homes              (Manufactured Homes Survey)
-  - Housing Units Lost            (AHS-based loss rates + FEMA disaster losses)
-= July 1 Annual Housing Unit Estimate
-```
-
-A "Vintage" designation covers the estimate window, e.g. Vintage 2024
-covers April 1, 2020 – July 1, 2024.
-
-## Common use cases
-
-### Rural vs. nonrural comparison
-
-Housing stock per capita diverges between rural and nonrural counties:
-
-```{r}
-#| eval: false
-
-library(dplyr)
+library(cori.charts)
+library(ggplot2)
 library(ruraldefinitions)
+library(dplyr)
 
-df <- get_housing_units(
-  geography = "county",
-  variables = "housing_units_per_1k_people"
-)
+load_fonts()
 
 rural_avg <- df |>
+  filter(variable == "housing_units_per_1k_people") |>
   left_join(select(cbsa_2023, geoid, is_rural), by = "geoid") |>
   filter(!is.na(is_rural), !is.na(value), !is.na(agg_var)) |>
   group_by(year, is_rural) |>
@@ -137,100 +156,90 @@ rural_avg <- df |>
     value = sum(value * agg_var, na.rm = TRUE) / sum(agg_var, na.rm = TRUE),
     .groups = "drop"
   )
+
+ggplot(rural_avg, aes(x = year, y = value, color = is_rural)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2.5) +
+  scale_color_manual(
+    values = c("Rural" = "#2F6E9B", "Nonrural" = "#7EBDC2"),
+    labels = c("Rural" = "Rural counties", "Nonrural" = "Nonrural counties")
+  ) +
+  scale_x_continuous(breaks = seq(2000, 2024, by = 5)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = 0.1)) +
+  theme_cori() +
+  theme(legend.position = "bottom") +
+  labs(
+    title    = "Rural counties carry more housing units per capita than nonrural",
+    subtitle = "Population-weighted average housing units per 1,000 population, 2000\u20132024",
+    x        = NULL, y = NULL, color = NULL,
+    caption  = "Source: CORI analysis of U.S. Census Bureau Housing Unit Estimates."
+  )
 ```
 
-CORI's own analysis using this pattern found rural counties carry more
-housing units per capita than nonrural counties across the full
-2000–2024 series.
-
-### County spotlight
+### County Spotlight: Grafton County, NH
 
 ```{r}
 #| eval: false
-
 grafton <- get_housing_units(
   variables = "housing_units_per_1k_people",
-  geoids    = c("33009", "33", "00")  # county, state, national
-)
+  geoids    = c("33009", "33", "00")
+) |>
+  mutate(
+    group = case_when(
+      geoid == "33009" ~ "Grafton County, NH",
+      geoid == "33"    ~ "New Hampshire",
+      geoid == "00"    ~ "United States"
+    ),
+    group = factor(group, levels = c("Grafton County, NH", "New Hampshire", "United States"))
+  )
+
+ggplot(grafton, aes(x = year, y = value,
+                    color = group, linetype = group, linewidth = group)) +
+  geom_line(na.rm = TRUE) +
+  geom_point(size = 2.5, na.rm = TRUE) +
+  scale_color_manual(values = c(
+    "Grafton County, NH" = "#2F6E9B",
+    "New Hampshire"      = "#7EBDC2",
+    "United States"      = "#9DA7B0"
+  )) +
+  scale_linetype_manual(values = c(
+    "Grafton County, NH" = "solid",
+    "New Hampshire"      = "dashed",
+    "United States"      = "dotted"
+  )) +
+  scale_linewidth_manual(values = c(
+    "Grafton County, NH" = 1.2,
+    "New Hampshire"      = 0.8,
+    "United States"      = 0.8
+  )) +
+  scale_x_continuous(breaks = seq(2000, 2024, by = 5)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = 0.1)) +
+  theme_cori() +
+  theme(legend.position = "bottom") +
+  labs(
+    title    = "Housing units per 1,000 residents \u2014 Grafton County, NH",
+    subtitle = "Compared to New Hampshire and the United States, 2000\u20132024",
+    x        = NULL, y = NULL, color = NULL, linetype = NULL, linewidth = NULL,
+    caption  = paste0(
+      "Source: CORI analysis of U.S. Census Bureau Housing Unit Estimates.\n",
+      "Population denominator from Census Population Estimates Program via cori.data.pep."
+    )
+  )
 ```
 
-## Data coverage
+## Related
 
-| Dimension | Coverage |
-|---|---|
-| **Geography** | National, state, county (5-digit FIPS) |
-| **Time period** | 2000–present, as three independent decade series (2000s, 2010s, 2020s), each anchored to its own decennial census baseline |
-| **Vintage** | Annual (typically released each May) |
-| **Update frequency** | Annual |
-| **Source** | Census Bureau Population Estimates Program |
-
-## Known limitations
-
-::: callout-important
-## Cross-decade comparisons
-
-Do **not** compute net change across the 2009→2010 or 2019→2020
-boundaries. Each decade series is anchored to its own decennial census
-baseline — the 2010 and 2020 values are fresh Census counts, not
-continuations of the prior series' estimate. Subtracting across these
-resets produces a methodological artifact, not a real change in
-housing stock. For year-over-year change analysis, restrict to a
-single decade series or use `cori.data.bps` permit data as a proxy for
-net new construction.
-:::
-
-Additional limitations:
-
--   **No structure type breakdown** in the public release — pair with
-    BPS data for single-family vs. multifamily distinctions
--   **No vacancy or occupancy status** — pair with ACS for vacancy rates
--   **Loss rates are static** — derived from 2009/2011 AHS, unchanged
-    across all vintages; demolition patterns may be underestimated in
-    active redevelopment markets
--   **Non-permitted construction not distributed to the West** —
-    methodology gap for Western counties without permit offices
--   **County is the smallest public geography** — subcounty (city/town)
-    estimates exist internally at Census but are not released
--   **Estimates, not counts** — all values are modeled; the decennial
-    census is the only direct count
-
-## Related resources
-
-### Datasets
-
--   Census Housing Unit Estimates *(slug: `census-housing-units` — node
-    pending)* — Source dataset documentation
-
-### Related packages
-
--   [cori.data.bps](/packages/cori-data-bps/) — Building permits, a
-    proxy for net-new construction within a decade series
--   [cori.data.pep](/packages/cori-data-pep/) — Population estimates
-    for per-capita denominators
-
-### External links
-
--   [Census Housing Unit Estimates Dataset Page](https://www.census.gov/data/datasets/time-series/demo/popest/2020s-total-housing-units.html)
--   [Vintage 2024 Methodology (PDF)](https://www2.census.gov/programs-surveys/popest/technical-documentation/methodology/2020-2024/2024-hu-meth.pdf)
--   [Vintage 2020 Methodology (PDF)](https://www2.census.gov/programs-surveys/popest/technical-documentation/methodology/2010-2020/2020-hu-meth_final.pdf)
--   [Building Permits Survey](https://www.census.gov/construction/bps/)
--   [Survey of Construction](https://www.census.gov/construction/nrc/about_the_surveys/soc.html)
--   [Manufactured Homes Survey](https://www.census.gov/programs-surveys/mhs.html)
--   [American Housing Survey](https://www.census.gov/programs-surveys/ahs/)
+-   **Package:** [cori.data](/packages/cori-data/) — meta-package that
+    includes `cori.data.hu`
+-   **Package:** [cori.data.bps](/packages/cori-data-bps/) — building
+    permits measure new supply added annually; pairs with HU for stock
+    vs. flow analysis
+-   **Package:** [cori.data.pep](/packages/cori-data-pep/) — population
+    denominators used to compute housing units per capita
 
 ::: callout-note
-## Dangling references
-
-The following slugs are referenced by this package but do not yet have
-nodes in Dataverse. They are intentionally preserved as future content
-needs:
-
--   `dataset/census-housing-units`
+**Data attribution:** Housing Unit Estimates are produced by the U.S.
+Census Bureau. When citing analysis using this package, reference: U.S.
+Census Bureau, Housing Unit Estimates,
+[www.census.gov/programs-surveys/popest](https://www.census.gov/programs-surveys/popest).
 :::
-
----
-
-**Contact:** Drew Rosebush (drew.rosebush@ruralinnovation.us)
-
-For bug reports or feature requests, please open an issue on
-[GitHub](https://github.com/ruralinnovation/cori.data.hu/issues).

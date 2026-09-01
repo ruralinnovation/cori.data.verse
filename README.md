@@ -8,6 +8,10 @@ This project combines **Quarto** for content authoring with **Next.js** for the 
 npm install
 ```
 
+```r
+devtools::install()
+```
+
 ### Adding New Content (Quarto Markdown)
 
 Content lives in top-level directories (`datasets/`, `packages/`, `projects/`, `charts/`, `posts/`, `resources/`). Each content item is a folder containing an `index.qmd` file.
@@ -63,6 +67,12 @@ npm run render      # Run the targets pipeline
 npm run build       # Build the Next.js static site
 npm run start       # Serve the built site locally (so you can review and commit)
 ```
+
+```bash
+npm run render && npm run build && npm run start ### chaining together, this process takes a while 
+```
+
+To view the built local website, paste `http://localhost:3001/` in the browser.
 
 ## Content Types
 
