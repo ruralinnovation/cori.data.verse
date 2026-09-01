@@ -1,19 +1,32 @@
 ---
-title: "ruraldefinitions"
-description: "R package for accessing federal rural definitions at multiple geographic levels"
-author: "Drew Rosebush"
-date: "2026-08-26"
-categories: ["R Package", "Rural Classification"]
-tags: ["USDA", "Census", "RUCA", "Rural Definitions", "Geography"]
+title: ruraldefinitions
+description: R package aggregating federal rural definitions and making them accessible
+  to R programmers. County-level definitions are bundled as package data; tract-level
+  definitions are loaded from S3 via get_definition(). Supports CBSA, RUCC, NCHS,
+  UIC, RUCA, and CORI rural classifications across multiple vintages.
+author: Drew Rosebush
+date: '2026-08-31'
+categories:
+  - R Package
+  - Rural Development
+tags:
+  - Rural
+  - CBSA
+  - RUCC
+  - RUCA
+  - Geographic Crosswalk
+  - County-Level
+  - Rural Definitions
 package:
-  name: "ruraldefinitions"
-  githubUrl: "https://github.com/ruralinnovation/ruraldefinitions"
-  installCommand: 'remotes::install_github("ruralinnovation/ruraldefinitions")'
-  status: "stable"
-  version: "1.0.0"
-  maintainer: "Drew Rosebush"
+  name: ruraldefinitions
+  githubUrl: https://github.com/ruralinnovation/ruraldefinitions
+  installCommand: remotes::install_github("ruralinnovation/ruraldefinitions")
+  status: development
+  version: 0.2.0
+  maintainer: Drew Rosebush
   featured: true
-usesDatasets: []
+usesDatasets:
+  - usda-county-typology
 usesResources: []
 execute:
   echo: true
@@ -26,242 +39,247 @@ editor:
 
 ## Overview
 
-The `ruraldefinitions` package aggregates seven federal rural
-classification systems and makes them accessible to R programmers.
-County- and block-level definitions are loaded directly into the
-package as data; tract-level definitions (RUCA, CORI) are downloaded
-from S3 on demand via the package's single exported function,
-`get_definition()`.
+The `ruraldefinitions` package aggregates federal rural classification
+systems and makes them accessible in R without manual downloads or
+crosswalk construction. County-level definitions are bundled directly as
+package data — accessible immediately after loading the package. Tract-
+and block-level definitions are available via `get_definition()`, which
+reads from an S3 bucket.
 
-::: callout-note
-## What's in the package
+The package supports seven classification systems across multiple
+vintages: the CORI definition, CBSA metropolitan/micropolitan
+delineations, USDA Rural-Urban Commuting Area (RUCA) codes, USDA
+Rural-Urban Continuum Codes (RUCC), USDA Urban Influence Codes (UIC),
+National Center for Health Statistics (NCHS) classification, and the
+Census Bureau's block-level rural definition. Every other `cori.data.*`
+package uses `ruraldefinitions` to attach rural/nonrural flags to
+analysis datasets.
 
--   **One-stop access** — seven major federal rural definitions in one
-    package
--   **Standardized format** — every definition shares the same
-    columns: `geoid`, `name`, `year`, `rural_def`, `is_rural`
--   **Historical depth** — vintages spanning 1974–2024 across the
-    seven systems
--   **Three geographic levels** — county, tract, and block
--   **Expert guidance** — built-in recommendations for which
-    definition to use, by geography level
-:::
-
-## Installation
-
-::: panel-tabset
-## GitHub
+## Installation & Quick Start
 
 ```{r}
 #| eval: false
-
 remotes::install_github("ruralinnovation/ruraldefinitions")
 ```
 
-## AWS S3 access
-
-For non-R users, CSV files for every definition and vintage are
-available directly from S3 — see the table below for per-file links.
-:::
-
-## Quick start
-
 ```{r}
 #| eval: false
-
 library(ruraldefinitions)
 
-# County- and block-level definitions are pre-loaded package data
-head(cbsa_2023)
-head(rucc_2023)
+# County-level definitions — available directly as package data
+head(cbsa_2023)       # CBSA 2023 (CORI standard for county analysis)
+head(rucc_2023)       # USDA Rural-Urban Continuum Codes 2023
+head(nchs_2023)       # NCHS Urban-Rural Classification 2023
+head(uic_2024)        # USDA Urban Influence Codes 2024
 
-# Tract-level definitions download from S3 on first use
-cori_2020 <- get_definition("cori", 2020)
-ruca_2010 <- get_definition("ruca", 2010)
+# Tract-level definitions — loaded from S3
+cori_def  <- get_definition("cori", 2020)   # CORI hybrid definition
+ruca_def  <- get_definition("ruca", 2020)   # USDA RUCA codes
 
-# Every definition shares the same columns:
-# geoid | name | year | rural_def | is_rural ("Rural" / "Nonrural")
-```
-
-## Available definitions
-
-| Name | Year(s) | Geography | Access |
-|---|---|---|---|
-| **Census** | 2010, 2020 | Block | Pre-loaded package data |
-| **RUCA** | 1990, 2000, 2010, 2020 | Tract | `get_definition()`, downloads from S3 |
-| **CORI** | 2010, 2020 | Tract | `get_definition()`, downloads from S3 |
-| **CBSA** | 2018, 2020, 2023 | County | Pre-loaded package data |
-| **NCHS** | 1990, 2006, 2013, 2023 | County | Pre-loaded package data |
-| **RUCC** | 1974, 1983, 1993, 2003, 2013, 2023 | County | Pre-loaded package data |
-| **UIC** | 1993, 2003, 2013, 2024 | County | Pre-loaded package data |
-
-## Selecting a definition
-
-::: callout-tip
-## Choosing the right definition
-
-**For county-level analysis:** use the **CBSA** ("Nonmetro") definition
-— it aligns with OMB standards and is best for state/regional
-comparisons.
-
-**For tract-level analysis:** use the **CORI** definition — it
-captures rural tracts within otherwise-metropolitan counties, which
-county-level definitions alone miss.
-
-Read more in CORI's piece on [defining rural
-America](https://ruralinnovation.us/blog/defining-rural-america/) or
-the Urban Institute's [Do No Harm
-Guide](https://www.urban.org/research/publication/do-no-harm-guide-crafting-equitable-data-narratives)
-on crafting equitable data narratives.
-:::
-
-## Definition details
-
-**CORI** classifies Census tracts as rural if they sit within a
-nonmetropolitan county (OMB CBSA definition) or score 4 or higher on
-USDA's Rural-Urban Commuting Area (RUCA) codes. Two vintages are
-available: CORI 2010 (RUCA 2010 + CBSA 2018) and CORI 2020 (RUCA 2020 +
-CBSA 2023), each anchored to its own Census boundaries.
-
-**RUCA (Rural-Urban Commuting Area Codes)** classifies Census tracts
-by economic integration — population density, urbanization, and
-commuting patterns. Published by USDA. RUCA 2010 and 2020 are **not**
-directly comparable, due to changes in the Census Bureau's urban-area
-delineation criteria and updates to the urban-core classification
-threshold between vintages.
-
-**CBSA (Core-Based Statistical Areas)** designates counties as
-metropolitan, micropolitan, or noncore by population size and the
-presence of urban centers; micropolitan and noncore counties count as
-nonmetropolitan. Defined by OMB, updated roughly decennially with
-periodic mid-decade revisions — the 2018 vintage is one such
-mid-decade update.
-
-**NCHS (National Center for Health Statistics)** subdivides the OMB
-definition into four metropolitan and two nonmetropolitan categories;
-metropolitan counties of 1 million+ population are further split into
-central (e.g. inner cities) and fringe (e.g. suburbs).
-
-**RUCC (Rural-Urban Continuum Codes)** distinguishes metropolitan
-counties by population size and nonmetropolitan counties by degree of
-urbanization and proximity to a metro area. Published by USDA.
-
-**UIC (Urban Influence Codes)** classifies counties by population
-size, degree of urbanization, and adjacency to metropolitan areas.
-Published by USDA.
-
-**Census** defines rural as Census blocks not located within an urban
-area, using population-size and housing-density thresholds.
-
-## Common use cases
-
-### Basic rural classification
-
-```{r}
-#| eval: false
-
+# Attach rural flag to any county-level dataset
 library(dplyr)
-
-rural_tracts <- get_definition("cori", 2020)
-
-rural_only <- rural_tracts |> filter(is_rural == "Rural")
-
-rural_tracts |> count(rural_def, is_rural)
+my_data |>
+  left_join(select(cbsa_2023, geoid, is_rural), by = "geoid")
 ```
 
-### Comparing definitions
+## What This Data Tells Us About Rural
+
+"Rural" is not a single definition. The federal government uses multiple
+classification systems — CBSA metropolitan/micropolitan delineations,
+USDA Rural-Urban Continuum Codes, NCHS Urban-Rural Classification, USDA
+Urban Influence Codes — each designed for different purposes and drawing
+the rural/nonrural boundary in different places. A county classified as
+rural under one system may not be under another. Researchers who select
+a definition without considering what it measures risk drawing
+conclusions that reflect the classification rather than the underlying
+reality.
+
+CORI's standard for county-level economic analysis is the CBSA-based
+definition (OMB metropolitan/micropolitan delineations), which classifies
+counties as rural if they fall outside a Core-Based Statistical Area.
+This definition is appropriate for most economic analysis because it
+reflects labor market integration — counties inside CBSAs have economic
+ties to urban cores that counties outside do not. It is not the only
+valid choice: USDA's Rural-Urban Continuum Codes offer a gradient rather
+than a binary, capturing the range from completely rural to adjacent to
+large metro; the NCHS classification is designed specifically for health
+research contexts.
+
+The choice of definition is a methodological decision with real
+consequences. CORI's research documents patterns that differ between
+rural and nonrural counties — in employment composition, broadband
+coverage, business formation, and capital access — but the magnitude and
+the set of counties involved vary depending on which definition is
+applied. Making that choice explicit and defensible is part of credible
+rural analysis.
+
+One additional dimension the data makes visible: the misconception that
+rural communities are homogeneously white renders people of color
+invisible in data, policy, and practice. Rural communities include
+significant Black, Hispanic, Native American, and Asian populations whose
+experiences and economic assets are not captured in analyses that treat
+rural as a monolithic category. Rural classifications are most useful
+when paired with demographic data, not used as a substitute for it.
+
+## Available Definitions
+
+County-level definitions are bundled as package data and available
+immediately. Tract-level definitions are accessed via `get_definition()`.
+
+| Name | Year(s) | Geographic Unit | Notes |
+|---|---|---|---|
+| CORI | 2010, 2020 | Tract | RUCA + CBSA hybrid — CORI's standard for tract-level analysis |
+| CBSA | 2018, 2020, 2023 | County | OMB metro/micro delineations — CORI's standard for county-level analysis |
+| RUCC | 1974–2023 | County | USDA gradient from metro to most rural |
+| NCHS | 1990–2023 | County | Designed for health research contexts |
+| UIC | 1993–2024 | County | USDA classification by urbanization and metro adjacency |
+| RUCA | 1990–2020 | Tract | USDA commuting-based tract classification |
+| Census | 2010, 2020 | Block | Census Bureau block-level definition |
+
+## Selecting a Definition
+
+For county-level economic analysis, CORI recommends `cbsa_2023`. If you
+have access to tract data and need to capture rural tracts within metro
+counties, use the CORI definition via `get_definition("cori", 2020)`.
 
 ```{r}
 #| eval: false
+# CORI standard: county-level rural flag
+rural_xwalk <- cbsa_2023 |>
+  dplyr::select(geoid, is_rural)
 
-ruca_2010 <- get_definition("ruca", 2010)
-cori_2020 <- get_definition("cori", 2020)
-
-comparison <- ruca_2010 |>
-  left_join(cori_2020, by = "geoid", suffix = c("_ruca", "_cori")) |>
-  count(is_rural_ruca, is_rural_cori)
+# Tract-level: includes rural tracts inside metro counties
+cori_tract <- get_definition("cori", 2020)
 ```
 
-### Historical analysis
+CORI's published guidance on definition selection:
+- [Defining Rural America](https://ruralinnovation.us/blog/defining-rural-america/)
+- [Do No Harm Guide](https://www.urban.org/research/publication/do-no-harm-guide-crafting-equitable-data-narratives)
+  — Urban Institute writeup on crafting equitable data narratives
+
+## Definition Maps
+
+*Adapted from the [Rural Definitions Maps
+vignette](https://github.com/ruralinnovation/ruraldefinitions/blob/main/vignettes/rural-definitions-maps.Rmd)
+on GitHub. See the full vignette for maps of all six definitions.*
+
+The following examples show how to map rural definitions using `sf` and
+`tigris`. All maps use the same county and state geometries loaded once
+and reused.
 
 ```{r}
 #| eval: false
-
-# Pre-loaded data across vintages
-historical <- rucc_2023 |>
-  select(geoid, rural_def_2023 = rural_def) |>
-  left_join(
-    rucc_2013 |> select(geoid, rural_def_2013 = rural_def),
-    by = "geoid"
-  )
-
-# Counties that changed classification
-changed <- historical |> filter(rural_def_2023 != rural_def_2013)
-```
-
-### Mapping a definition
-
-```{r}
-#| eval: false
-
+library(ruraldefinitions)
+library(cori.charts)
+library(dplyr)
+library(ggplot2)
 library(sf)
 library(tigris)
-library(ggplot2)
 
-counties <- counties(cb = TRUE, resolution = "20m") |>
-  mutate(geoid = GEOID)
+load_fonts()
+options(tigris_use_cache = TRUE)
 
-counties |>
-  left_join(cbsa_2023, by = "geoid") |>
-  ggplot(aes(fill = is_rural)) +
-  geom_sf(linewidth = 0.05) +
-  labs(title = "Core-Based Statistical Areas (CBSA), 2023")
+# Load geometries once
+counties_sf <- tigris::counties(cb = TRUE, year = 2023) |>
+  tigris::shift_geometry() |>
+  filter(GEOID <= "57") |>
+  sf::st_transform(crs = 5070)
+
+states_sf <- tigris::states(cb = TRUE, year = 2023) |>
+  tigris::shift_geometry() |>
+  filter(GEOID <= "57") |>
+  sf::st_transform(crs = 5070)
+
+bbox <- sf::st_bbox(states_sf)
 ```
 
-## Data structure
+### CBSA 2023 — CORI's county standard
 
-Every definition shares the same structure:
+```{r}
+#| eval: false
+colors_cbsa <- c(
+  "Metro"    = cori_colors[["Dark Purple"]],
+  "Micro"    = "#086656",
+  "Non-CBSA" = cori_colors[["Emerald"]]
+)
 
+map_cbsa <- counties_sf |>
+  left_join(cbsa_2023, by = c("GEOID" = "geoid")) |>
+  mutate(rural_def = factor(rural_def, levels = names(colors_cbsa))) |>
+  group_by(rural_def) |>
+  summarise(geometry = sf::st_union(geometry), .groups = "drop")
+
+ggplot() +
+  geom_sf(data = map_cbsa, aes(fill = rural_def), color = NA) +
+  geom_sf(data = states_sf, fill = NA, color = "black", linewidth = 0.3) +
+  scale_fill_manual(name = NULL, values = colors_cbsa, na.value = "#ffffff") +
+  coord_sf(xlim = c(bbox["xmin"], bbox["xmax"]),
+           ylim = c(bbox["ymin"], bbox["ymax"]), expand = FALSE) +
+  labs(
+    title   = "Core-Based Statistical Areas (CBSA), 2023",
+    subtitle = "County-level OMB metropolitan/micropolitan delineation",
+    caption = "Source: U.S. Office of Management and Budget, 2023 delineations."
+  ) +
+  theme_cori_map() +
+  theme(legend.position = "top", legend.direction = "horizontal")
 ```
-geoid       - Geographic identifier (FIPS code)
-name        - Definition name (e.g., "CORI", "RUCA")
-year        - Year of classification
-rural_def   - Detailed classification (e.g., "Metropolitan", "Micropolitan")
-is_rural    - Binary: "Rural" or "Nonrural"
+
+### CORI 2020 — tract-level hybrid definition
+
+```{r}
+#| eval: false
+state_fips <- tigris::fips_codes |>
+  dplyr::distinct(state_code) |>
+  dplyr::filter(state_code <= "56") |>
+  dplyr::pull(state_code)
+
+tracts_sf <- purrr::map_dfr(
+  state_fips,
+  ~tigris::tracts(state = .x, cb = TRUE, year = 2020, progress_bar = FALSE)
+) |>
+  tigris::shift_geometry() |>
+  sf::st_transform(crs = 5070)
+
+cori_raw <- get_definition("cori", 2020)
+
+colors_cori <- c(
+  "Metro"                      = cori_colors[["Dark Purple"]],
+  "Nonmetro/RUCA 4+ carveouts" = cori_colors[["Emerald"]]
+)
+
+map_cori <- tracts_sf |>
+  left_join(cori_raw, by = c("GEOID" = "geoid")) |>
+  filter(!is.na(rural_def)) |>
+  mutate(
+    display = case_when(
+      rural_def == "Metro county" ~ "Metro",
+      rural_def %in% c("Nonmetro county",
+                       "Rural tract in metro county") ~ "Nonmetro/RUCA 4+ carveouts"
+    ),
+    display = factor(display, levels = names(colors_cori))
+  ) |>
+  group_by(display) |>
+  summarise(geometry = sf::st_union(geometry), .groups = "drop")
+
+ggplot() +
+  geom_sf(data = map_cori, aes(fill = display), color = NA) +
+  geom_sf(data = states_sf, fill = NA, color = "black", linewidth = 0.3) +
+  scale_fill_manual(name = NULL, values = colors_cori, na.value = "#ffffff") +
+  coord_sf(xlim = c(bbox["xmin"], bbox["xmax"]),
+           ylim = c(bbox["ymin"], bbox["ymax"]), expand = FALSE) +
+  labs(
+    title    = "CORI Rural Definition, 2020",
+    subtitle = "Nonmetro counties (CBSA 2023) plus rural tracts (RUCA 4+) in metro counties",
+    caption  = "Source: Center on Rural Innovation."
+  ) +
+  theme_cori_map() +
+  theme(legend.position = "top", legend.direction = "horizontal")
 ```
 
-## Performance considerations
+## Related
 
-::: callout-tip
-## Loading strategy
-
--   **County and block data** — pre-loaded, instant access
--   **Tract data** — downloads from S3 (~1–2 MB) on first use; cache
-    locally to avoid repeated downloads
-:::
-
-## Related resources
-
-### External links
-
--   [USDA ERS Rural Classifications](https://www.ers.usda.gov/topics/rural-economy-population/rural-classifications/)
--   [Census Urban/Rural Classification](https://www.census.gov/programs-surveys/geography/guidance/geo-areas/urban-rural.html)
--   [RUCA Data](https://www.ers.usda.gov/data-products/rural-urban-commuting-area-codes/)
--   [RUCC Data](https://www.ers.usda.gov/data-products/rural-urban-continuum-codes/)
--   [UIC Data](https://www.ers.usda.gov/data-products/urban-influence-codes/)
--   [NCHS Urban-Rural Classification](https://www.cdc.gov/nchs/data-analysis-tools/urban-rural.html)
--   [CORI: Defining Rural America](https://ruralinnovation.us/blog/defining-rural-america/)
--   [Urban Institute: Do No Harm Guide](https://www.urban.org/research/publication/do-no-harm-guide-crafting-equitable-data-narratives)
-
-## Documentation
-
--   [GitHub Repository](https://github.com/ruralinnovation/ruraldefinitions)
--   [Full README](https://github.com/ruralinnovation/ruraldefinitions/blob/main/README.md)
--   [Vignette: Rural Definitions Maps](https://github.com/ruralinnovation/ruraldefinitions/blob/main/vignettes/rural-definitions-maps.Rmd)
-
----
-
-**Contact:** Drew Rosebush (drew.rosebush@ruralinnovation.us)
-
-For bug reports or feature requests, please open an issue on
-[GitHub](https://github.com/ruralinnovation/ruraldefinitions/issues).
+-   **Package:** [cori.data](/packages/cori-data/) — meta-package that
+    includes `ruraldefinitions`
+-   **Dataset:** [USDA County Typology](/datasets/usda-county-typology/)
+    — further characterizes rural counties by economic and demographic
+    type

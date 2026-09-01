@@ -1,19 +1,32 @@
 ---
-title: "cori.data.bps"
-description: "Access and analyze U.S. Census Bureau Building Permits Survey (BPS) data covering new residential units authorized from 2000 to present"
-author: "Drew Rosebush"
-date: "2026-08-26"
-categories: ["R Package", "Housing"]
-tags: ["BPS", "Building Permits", "Housing", "County-Level", "S3", "Tidy Data"]
+title: cori.data.bps
+description: Access and analyze U.S. Census Bureau Building Permits Survey (BPS)
+  data covering new residential units authorized from 2000 to present. Tracks
+  housing supply growth at the county, state, and national level as an indicator
+  of local market conditions and development capacity.
+author: Drew Rosebush
+date: '2026-08-31'
+categories:
+  - R Package
+  - Housing
+tags:
+  - BPS
+  - Building Permits
+  - Housing
+  - County-Level
+  - S3
+  - Tidy Data
+  - Rural
 package:
-  name: "cori.data.bps"
-  githubUrl: "https://github.com/ruralinnovation/cori.data.bps"
-  installCommand: 'remotes::install_github("ruralinnovation/cori.data.bps")'
-  status: "development"
-  version: "0.1.0"
-  maintainer: "Drew Rosebush"
+  name: cori.data.bps
+  githubUrl: https://github.com/ruralinnovation/cori.data.bps
+  installCommand: remotes::install_github("ruralinnovation/cori.data.bps")
+  status: development
+  version: 0.1.0
+  maintainer: Drew Rosebush
   featured: false
-usesDatasets: ["census-building-permits"]
+usesDatasets:
+  - census-building-permits
 usesResources: []
 execute:
   echo: true
@@ -27,232 +40,222 @@ editor:
 ## Overview
 
 The `cori.data.bps` package provides access to U.S. Census Bureau
-Building Permits Survey (BPS) data covering new residential units
-authorized from 2000 to present, at the county, state, and national
-level.
+Building Permits Survey (BPS) data at the county, state, and national
+level from 2000 to the present. BPS tracks new residential units
+authorized by building permits across all structure types — single-unit,
+two-to-four unit, and five-or-more unit — providing an annual measure of
+how housing supply is growing in response to local conditions.
 
-Data are returned in long format: one row per `geoid / year / variable`.
+Building permits are the earliest observable signal of housing supply
+responding to conditions on the ground — and in communities where
+housing is a binding constraint on growth, that signal matters. Permit
+counts are normalized by population using `cori.data.pep` and returned
+in the standard `cori.data` long format: one row per `geoid / year /
+variable`.
 
-::: callout-note
-## What's in the package
-
--   **Single entry point** — one function, `get_building_permits()`,
-    covers geography, year, and variable filtering
--   **Population-weighted rates** — an `agg_var` column carries the
-    population denominator so per-capita rates can be correctly
-    weighted when aggregating
--   **S3-backed access** — pre-processed data queried via DuckDB
-    without downloading full Census source files
--   **Long panel** — annual data from 2000 to present
-:::
-
-## Installation
+## Installation & Quick Start
 
 ```{r}
 #| eval: false
-
 remotes::install_github("ruralinnovation/cori.data.bps")
 ```
 
-**Census API key** (required):
 ```{r}
 #| eval: false
-
-# Get one at: http://api.census.gov/data/key_signup.html
-Sys.setenv(CENSUS_API_KEY = "your_api_key_here")
-```
-
-**S3 access** (for reading processed data):
-```{r}
-#| eval: false
-
-# cori.data.bps depends on cori.data.s3 for S3 reads.
-# Falls back to CORI's credential-vending endpoint if no
-# local AWS credentials are configured.
-remotes::install_github("ruralinnovation/cori.data.s3")
-```
-
-## Quick start
-
-```{r}
-#| eval: false
-
 library(cori.data.bps)
 
-# See available variables
+# All available variables
 get_bps_codebook()
 
-# County-level building permits
-df <- get_building_permits(geography = "county")
+# All counties, all years
+get_building_permits(geography = "county")
 
-# State-level data for specific years
-state_df <- get_building_permits(geography = "state", years = 2010:2024)
-```
-
-## Core function
-
-`get_building_permits()` is the single entry point for this package:
-
-```{r}
-#| eval: false
-
-# Returns: geoid | year | variable | value | agg_var
+# New Hampshire counties, permits per 1k population, 2010 onward
 get_building_permits(
-  geography = "county",
-  years     = NULL,
-  geoids    = NULL,
-  variables = NULL,
-  vintage   = "latest"
-)
-```
-
-| Parameter | Description |
-|---|---|
-| `geography` | One of `"county"`, `"state"`, or `"nation"` |
-| `years` | Integer vector of years to return (default: all available) |
-| `geoids` | FIPS codes to return (overrides `geography` when supplied) |
-| `variables` | Variables to return (default: all) |
-| `vintage` | Data vintage, e.g. `"2024"` (default: `"latest"`) |
-
-## Key variables
-
-| Variable | Description | Unit |
-|---|---|---|
-| `building_permits` | New residential units authorized | units |
-| `units_per_1k_people` | Units authorized per 1,000 population | units per 1,000 persons |
-
-The `agg_var` column carries `population / 1,000` — the correct
-denominator for population-weighted averaging of the rate variable.
-"Total" includes single-family, 2-family, 3-to-4-family, and
-5-plus-family units.
-
-Use `get_bps_codebook()` for complete variable documentation.
-
-## Filtering and selection
-
-### Filter by geography
-
-```{r}
-#| eval: false
-
-# Specific counties by FIPS
-nh_counties <- get_building_permits(
-  geoids = c("33009", "33011", "33013"),
-  years  = 2010:2024
-)
-
-# Compare county, state, and national
-grafton <- get_building_permits(
-  geoids = c("33009", "33", "00")
-)
-```
-
-### Select specific variables
-
-```{r}
-#| eval: false
-
-rates <- get_building_permits(
-  geography = "county",
   variables = "units_per_1k_people",
-  years     = 2015:2024
+  geoids    = c("33009", "33011"),
+  years     = 2010:2024
 )
 ```
 
-## Common use cases
+## What This Data Tells Us About Rural
 
-### Population-weighted averages
+Housing supply is a foundational asset for rural economic development —
+and in many communities, a binding constraint on growth strategies that
+are otherwise well-designed. CORI's place-based community research has
+found communities with genuine competitive assets — skilled institutions,
+entrepreneurial infrastructure, strong broadband — where housing
+shortfall functions as a ceiling on everything else. Workers cannot
+relocate to communities where housing is unavailable or unaffordable,
+and population retention becomes harder when housing stock does not keep
+pace with demand.
 
-The `agg_var` column enables correct population-weighted averaging
-rather than a naive mean across counties:
+Building permit data captures the rate at which housing supply is
+responding to conditions on the ground. An increase in permit activity
+indicates that supply is growing in response to demand, and that local
+regulatory and market conditions allow it. Where permit activity lags
+population or employment growth, the data surfaces a constraint that
+deserves attention alongside other economic development investments.
+
+## Introduction
+
+*Adapted from the [Introduction
+vignette](https://github.com/ruralinnovation/cori.data.bps/blob/main/vignettes/introduction.Rmd)
+on GitHub.*
+
+`cori.data.bps` provides annual building permit data from the U.S.
+Census Bureau's Building Permits Survey. Data cover 2000–present and
+measure new residential units authorized by building permits across all
+structure types.
+
+**Source:** U.S. Census Bureau, Building Permits Survey
+**Coverage:** 2000–present, updated annually (release typically May)
+**Geography:** County (5-digit FIPS), state (2-digit FIPS), national
+(`"00"`)
+
+### Variables
 
 ```{r}
 #| eval: false
-
-library(dplyr)
-
-df <- get_building_permits(geography = "county")
-
-df |>
-  filter(variable == "units_per_1k_people") |>
-  group_by(year) |>
-  summarise(
-    weighted_avg = sum(value * agg_var, na.rm = TRUE) / sum(agg_var, na.rm = TRUE)
-  )
+get_bps_codebook() |>
+  dplyr::select(variable, label, unit, notes) |>
+  knitr::kable()
 ```
 
-### Rural vs. nonrural comparison
+### Reading data
+
+All data are returned in long format: one row per `geoid / year /
+variable`.
 
 ```{r}
 #| eval: false
+df <- get_building_permits(geography = "county")
+dplyr::glimpse(df)
+```
 
-library(dplyr)
+Filter to specific variables, years, or geographies:
+
+```{r}
+#| eval: false
+nh_bps <- get_building_permits(
+  variables = "units_per_1k_people",
+  geoids    = grep("^33", unique(df$geoid), value = TRUE),
+  years     = 2010:2024
+)
+dplyr::glimpse(nh_bps)
+```
+
+### Rural vs. Nonrural
+
+Housing permit activity diverges between rural and nonrural counties.
+The chart below shows population-weighted average units permitted per
+1,000 people by rural status using the CBSA 2023 rural definition.
+
+```{r}
+#| eval: false
+library(cori.charts)
+library(ggplot2)
 library(ruraldefinitions)
+library(dplyr)
+
+load_fonts()
 
 rural_avg <- df |>
   filter(variable == "units_per_1k_people") |>
   left_join(select(cbsa_2023, geoid, is_rural), by = "geoid") |>
+  filter(!is.na(is_rural), !is.na(value), !is.na(agg_var)) |>
   group_by(year, is_rural) |>
   summarise(
     value = sum(value * agg_var, na.rm = TRUE) / sum(agg_var, na.rm = TRUE),
     .groups = "drop"
   )
+
+ggplot(rural_avg, aes(x = year, y = value, color = is_rural)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2.5) +
+  scale_color_manual(
+    values = c("Rural" = "#2F6E9B", "Nonrural" = "#7EBDC2"),
+    labels = c("Rural" = "Rural counties", "Nonrural" = "Nonrural counties")
+  ) +
+  scale_x_continuous(breaks = seq(2000, 2024, by = 5)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = 0.1)) +
+  theme_cori() +
+  theme(legend.position = "bottom") +
+  labs(
+    title    = "Nonrural counties consistently authorize more housing per capita",
+    subtitle = "New residential units authorized per 1,000 population, 2000\u20132024",
+    x        = NULL, y = NULL, color = NULL,
+    caption  = "Source: CORI analysis of U.S. Census Bureau Building Permits Survey."
+  )
 ```
 
-CORI's own analysis using this pattern found nonrural counties
-consistently authorize more housing per capita than rural counties
-across the full 2000–2024 series.
-
-### County spotlight
-
-The same `geoids` filter works across geography levels in a single
-call, useful for comparing a county against its state and the nation:
+### County Spotlight: Grafton County, NH
 
 ```{r}
 #| eval: false
-
 grafton <- get_building_permits(
   variables = "units_per_1k_people",
-  geoids    = c("33009", "33", "00")  # county, state, national
-)
+  geoids    = c("33009", "33", "00")
+) |>
+  mutate(
+    group = case_when(
+      geoid == "33009" ~ "Grafton County, NH",
+      geoid == "33"    ~ "New Hampshire",
+      geoid == "00"    ~ "United States"
+    ),
+    group = factor(group, levels = c("Grafton County, NH", "New Hampshire", "United States"))
+  )
+
+ggplot(grafton, aes(x = year, y = value,
+                    color = group, linetype = group, linewidth = group)) +
+  geom_line(na.rm = TRUE) +
+  geom_point(size = 2.5, na.rm = TRUE) +
+  scale_color_manual(values = c(
+    "Grafton County, NH" = "#2F6E9B",
+    "New Hampshire"      = "#7EBDC2",
+    "United States"      = "#9DA7B0"
+  )) +
+  scale_linetype_manual(values = c(
+    "Grafton County, NH" = "solid",
+    "New Hampshire"      = "dashed",
+    "United States"      = "dotted"
+  )) +
+  scale_linewidth_manual(values = c(
+    "Grafton County, NH" = 1.2,
+    "New Hampshire"      = 0.8,
+    "United States"      = 0.8
+  )) +
+  scale_x_continuous(breaks = seq(2000, 2024, by = 5)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = 0.1)) +
+  theme_cori() +
+  theme(legend.position = "bottom") +
+  labs(
+    title    = "Grafton County, NH\nNew residential units authorized per 1,000 residents",
+    subtitle = "Compared to New Hampshire and the United States, 2000\u20132024",
+    x        = NULL, y = NULL, color = NULL, linetype = NULL, linewidth = NULL,
+    caption  = paste0(
+      "Source: CORI analysis of U.S. Census Bureau Building Permits Survey.\n",
+      "Population denominator from Census Population Estimates Program via cori.data.pep."
+    )
+  )
 ```
 
-## Data coverage
+## Related
 
-| Dimension | Coverage |
-|---|---|
-| **Source** | U.S. Census Bureau, Building Permits Survey |
-| **Time period** | 2000–present |
-| **Update frequency** | Annual (release typically May) |
-| **Geography** | National (`"00"`), state (2-digit FIPS), county (5-digit FIPS) |
-| **Structure types** | Single-family, 2-family, 3-to-4-family, 5-plus-family (total combines all) |
+-   **Dataset:** [Census Building Permits](/datasets/census-building-permits/)
+-   **Package:** [cori.data](/packages/cori-data/) — meta-package that
+    includes `cori.data.bps`
+-   **Package:** [cori.data.pep](/packages/cori-data-pep/) — population
+    denominators used to compute permits per 1,000 people
+-   **Package:** [cori.data.hu](/packages/cori-data-hu/) — total housing
+    stock; pairs with BPS to distinguish new supply from existing stock
+-   **Project:** [Rural Economic
+    Outlook](/projects/rural-economic-outlook/) — BPS is an input to
+    CORI's housing supply analysis
 
-## Related resources
-
-### Datasets
-
--   [Census Building Permits Survey](/datasets/census-building-permits/) —
-    Source dataset documentation
-
-### Related packages
-
--   [cori.data.pep](/packages/cori-data-pep/) — Population estimates,
-    the source of the `agg_var` denominator used for per-capita rates
-
-### External links
-
--   [Census Building Permits Survey](https://www.census.gov/construction/bps/)
--   [BPS Methodology](https://www.census.gov/construction/bps/methodology.html)
-
-## Documentation
-
--   [GitHub Repository](https://github.com/ruralinnovation/cori.data.bps)
--   [Full README](https://github.com/ruralinnovation/cori.data.bps/blob/main/README.md)
--   [Introduction Vignette](https://github.com/ruralinnovation/cori.data.bps/blob/main/vignettes/introduction.Rmd)
-
----
-
-**Contact:** Drew Rosebush (drew.rosebush@ruralinnovation.us)
-
-For bug reports or feature requests, please open an issue on
-[GitHub](https://github.com/ruralinnovation/cori.data.bps/issues).
+::: callout-note
+**Data attribution:** Building Permits Survey data are produced by the
+U.S. Census Bureau. When citing analysis using this package, reference:
+U.S. Census Bureau, Building Permits Survey,
+[www.census.gov/construction/bps](https://www.census.gov/construction/bps).
+:::

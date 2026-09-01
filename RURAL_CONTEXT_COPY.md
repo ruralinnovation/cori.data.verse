@@ -119,22 +119,7 @@ to build complementary capacity alongside them.
 
 ## cori.data.bfs
 
-🔶 Partial evidence
-
-Business applications — measured as Employer Identification Number (EIN) filings — are
-a leading indicator of entrepreneurial activity. They signal intent before establishment,
-and as such are one of the earliest observable markers of entrepreneurial momentum in a
-local economy. CORI's research across community profiles found application rates tracking
-closely with later establishment growth in communities that had invested in their
-entrepreneurial support infrastructure.
-
-Rural business application rates surged during and after the pandemic, reflecting both
-genuine entrepreneurial opportunity — remote workers and returnees starting businesses
-in communities they chose — and structural adaptation as rural communities responded to
-changing economic conditions. This responsiveness is itself evidence of rural economic
-resilience: the same assets that anchored legacy industries — affordable space, community
-networks, lower operating costs — create conditions where new business formation can
-take hold.
+🔶 Partial evidence — trimmed to grounded copy only
 
 Business applications are best interpreted as a leading indicator of future establishment
 counts rather than a measure of current economic strength. Not all applications convert
@@ -180,21 +165,6 @@ Broadband Map (NBM) provides the most current county-level picture of where
 infrastructure exists and at what speeds, making it possible to track the closing of
 the rural broadband gap over time.
 
-The more complex story is what happens after infrastructure arrives. CORI's research
-consistently finds a gap between availability and adoption across rural communities —
-even communities with strong fiber coverage often show remote work adoption rates well
-below state averages. Infrastructure is necessary but activating it requires
-complementary conditions: employer policies, workforce awareness, device access,
-affordability, and the presence of job types that can be performed remotely.
-
-CORI's research surfaces an additional nuance: higher broadband coverage is associated
-with lower establishment entry rates in some rural contexts. One interpretation is that
-broadband expands the labor market options available to rural workers — enabling access
-to remote employment nationally — which reduces the economic pressure to start local
-businesses. This does not make broadband investment misguided; it means broadband's
-economic effects operate through multiple channels simultaneously, some of which work
-in different directions.
-
 Research shows that high-speed internet improves economic outcomes in rural communities
 through increased business activity and broader economic development measures including
 productivity, jobs, and income. The NBM data makes it possible to track where rural
@@ -237,15 +207,15 @@ assets a community is gaining and which it is at risk of losing.
 
 ## cori.data.hu
 
-❌ TBD
+✅ Asset framing
 
-Housing units data tracks the total stock of housing at the county level over time.
-Combined with population and building permits data, it supports analysis of housing
-availability and supply-demand dynamics.
-
-**TBD:** Insufficient grounding in current CORI research to write a substantive
-interpretive section. Revisit after reviewing data-erc and data_cori_econ_dev_pipeline
-for housing units usage patterns.
+Housing is the physical substrate of rural economic development — the asset that
+determines whether a community can translate economic momentum into population and
+workforce growth. A community may have strong broadband, an active entrepreneurial
+ecosystem, employment anchors, and quality of life assets that attract interest from
+remote workers and returnees — and still be unable to grow if there is nowhere for
+people to live. In this sense, housing stock is not background infrastructure; it is
+the capacity of a place to receive and retain people.
 
 ---
 
