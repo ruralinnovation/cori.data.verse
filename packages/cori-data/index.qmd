@@ -1,8 +1,8 @@
 ---
 title: "cori.data"
-description: "CORI meta-package that installs and attaches all cori.data.* companion packages in a single call"
-author: "John Hall"
-date: "2026-08-26"
+description: "CORI's rural data ecosystem — a family of R packages providing unified access to employment, population, business, housing, and broadband data across rural America"
+author: "Mapping & Data Analytics Team"
+date: "2026-08-27"
 categories: ["R Package", "Data Infrastructure"]
 tags: ["Meta-Package", "Rural Data", "Tidy Data", "Ecosystem"]
 package:
@@ -26,23 +26,20 @@ editor:
 
 ## Overview
 
-> Rural data, made accessible.
+`cori.data` is the meta-package for CORI's rural data ecosystem — a
+growing collection of R packages providing unified access to employment,
+population, business, housing, and broadband data across rural America.
+Installing it pulls in every companion package; loading it attaches them
+all, so `get_employment()`, `get_population()`, `get_definition()`, and
+more are available without separate `library()` calls.
 
-`cori.data` is the meta-package for the `cori.data.*` family. It has
-no functions of its own — installing it pulls in every companion
-package via its `Depends:`/`Remotes:` declarations; loading it attaches
-them all, so `get_employment()`, `get_population()`,
-`get_definition()`, and dozens more become available without separate
-`library()` calls for each one.
+Not all federal data sources are designed with rural communities in mind.
+CORI's data team has done the methodological work — identifying the right
+sources, applying consistent rural classifications, and packaging data in
+a format that works across rural geographies — so analysts can focus on
+the research question, not the data infrastructure.
 
-[`cori.data.s3`](/packages/cori-data-s3/) is the shared S3/cloud-access
-layer underneath the family — credential management, a DuckDB S3
-connection helper, and S3 object functions every companion package
-builds on. Reads require no local AWS setup; the package falls back to
-temporary, read-only credentials from CORI's credential-vending
-endpoint automatically.
-
-## Installation
+## Installation & Quick Start
 
 ```{r}
 #| eval: false
@@ -50,28 +47,73 @@ endpoint automatically.
 remotes::install_github("ruralinnovation/cori.data")
 ```
 
-Because `cori.data` declares every companion package under
-`Depends:`/`Remotes:`, `remotes::install_github()` resolves and
-installs the full family in this one call — no separate installer
-function is needed.
+```{r}
+#| eval: false
 
-## The ecosystem
+library(cori.data)
+
+# Employment, population, and business dynamics —
+# all joinable on geoid + year, ready in minutes
+get_employment(geography = "county", years = 2019:2023)
+get_population(geography = "county", years = 2019:2023)
+get_business_dynamics(geography = "county", years = 2019:2023)
+```
+
+## The Ecosystem
 
 | Package | What it measures | Geography | Years |
 |---|---|---|---|
+| [cori.data.qcew](/packages/cori-data-qcew/) | Employment & wages (BLS QCEW) | county, state | 1990–present |
 | [cori.data.bds](/packages/cori-data-bds/) | Business dynamics (Census BDS) | county, state, nation | 1978–present |
-| [cori.data.bfs](/packages/cori-data-bfs/) | Business applications (Census BFS) | county, state, nation | 2005–present |
+| [cori.data.pep](/packages/cori-data-pep/) | Population (Census PEP) | county, state, nation | 2000–present |
+| [cori.data.bfs](/packages/cori-data-bfs/) | Business applications (Census BFS) | county, state, nation | 2004–present |
 | [cori.data.bps](/packages/cori-data-bps/) | Building permits (Census BPS) | county, state, nation | 2000–present |
 | [cori.data.hu](/packages/cori-data-hu/) | Housing units (Census HU) | county, state, nation | 2000–present |
 | [cori.data.fcc](/packages/cori-data-fcc/) | Broadband coverage (FCC NBM) | county | 2022–present |
-| [cori.data.pep](/packages/cori-data-pep/) | Population (Census PEP) | county, state, nation | 2000–present |
-| [cori.data.qcew](/packages/cori-data-qcew/) | Employment & wages (BLS QCEW) | county, state | 1990–present |
 | [ruraldefinitions](/packages/ruraldefinitions/) | Rural classifications (OMB, USDA ERS, NCHS) | county | multiple vintages |
 
-## A consistent interface
+## What This Data Tells Us About Rural
 
-Every data package speaks the same language. Once you learn one, you
-know them all:
+Rural economies are diverse, complex, and deeply shaped by the assets
+and advantages they have accumulated over time — natural resources,
+agricultural land, industrial infrastructure, geographic position,
+community institutions, and workforce traditions. Some rural communities
+are thriving, leveraging those assets in new ways as remote work,
+entrepreneurship, and targeted investment open new pathways. Others are
+navigating structural transitions as legacy industries shift. What they
+share is a foundation of real assets whose value in the modern economy
+depends on the conditions surrounding them.
+
+Understanding which assets a community holds, how those assets connect
+to current economic conditions, and what they might support going
+forward requires data that spans multiple dimensions simultaneously.
+Employment trends read alongside business formation rates, population
+dynamics, broadband coverage, and sector composition tell a richer
+story than any single source alone. Across CORI's research, communities
+with strong asset bases across multiple dimensions tend to show more
+resilient economic trajectories than those concentrated in a single
+advantage — and human capital, quality of life, and the capacity to
+retain and attract working-age residents consistently emerge as
+important complements to physical infrastructure.
+
+The ecosystem exists because these questions require data that is
+consistent, joinable, and contextualized for rural analysis — and
+because the methodological decisions that make cross-source rural
+analysis tractable (which rural definition to apply, how to weight
+aggregations across counties of very different sizes, which sector
+taxonomy to use) are embedded in the packages rather than left to each
+researcher to reinvent.
+
+## Getting Started
+
+*Adapted from the [Getting Started
+vignette](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/getting-started.Rmd)
+on GitHub.*
+
+### A consistent interface
+
+Every package uses the same four parameters. Learn the pattern once and
+it works everywhere:
 
 ```{r}
 #| eval: false
@@ -80,141 +122,213 @@ library(cori.data.qcew)
 library(cori.data.pep)
 library(cori.data.bds)
 
-# Employment by county, last 5 years
+# geography = "county", "state", or "nation"
+# geoids    = character vector of FIPS codes (overrides geography)
+# years     = integer vector of years
+# variables = which variables to return (NULL = all)
+
 get_employment(geography = "county", years = 2019:2023)
-
-# Population by county, last 5 years
 get_population(geography = "county", years = 2019:2023)
-
-# Business dynamics by county, last 5 years
 get_business_dynamics(geography = "county", years = 2019:2023)
 
-# Or filter to specific places with FIPS codes
+# Filter to specific places with FIPS codes
 get_employment(geoids = c("33009", "54011", "30001"), years = 2019:2023)
 ```
 
-All functions return tidy (long) format data — one row per
-`geoid × year × variable`, ready for `dplyr`, `ggplot2`, and `tidyr`.
+All functions return **tidy (long) format** data — one row per
+`geoid × year × variable`:
 
-## Rural classifications
-
-`ruraldefinitions` provides rural classifications across multiple
-vintages and methodologies. County- and block-level definitions are
-loaded as package data; tract-level definitions (RUCA, CORI) are
-downloaded from S3 on demand via `get_definition()`:
-
-```{r}
-#| eval: false
-
-library(ruraldefinitions)
-
-# CBSA-based rural/nonrural (the CORI standard for county analysis) —
-# pre-loaded package data, not a function call
-rural <- cbsa_2023
-# Returns: geoid | name | year | rural_def | is_rural ("Rural" / "Nonrural")
-
-# Other pre-loaded county-level definitions
-rucc_2023  # USDA Rural-Urban Continuum Codes
-nchs_2023  # NCHS Urban-Rural Classification Scheme
-uic_2024   # USDA Urban Influence Codes
-
-# Tract-level definitions download from S3 on first use
-cori_2020 <- get_definition("cori", 2020)
+```
+geoid   year  variable      value
+33009   2023  employment    28450
+33009   2022  employment    27810
+54011   2023  employment    12340
 ```
 
-## Cross-package analysis
-
-The real power of the ecosystem comes from combining packages — an
-employment rate built from two different sources and stratified by
-rural status:
+### Your first pull
 
 ```{r}
 #| eval: false
 
 library(cori.data.qcew)
-library(cori.data.pep)
-library(ruraldefinitions)
 library(dplyr)
 
-# Employment rate = covered employment / working-age population (16+)
-emp <- get_employment(geography = "county", years = 2010:2023)
-pop <- get_population(geography = "county", years = 2010:2023,
-                      variables = "population_16plus")
+emp <- get_employment(geography = "county", years = 2019:2023)
 
-emp_rate <- emp |>
+glimpse(emp)
+
+# Which counties had the most employment in 2023?
+emp |>
+  filter(year == 2023) |>
+  slice_max(value, n = 10)
+```
+
+### Rural classifications
+
+The `ruraldefinitions` package provides county-level rural/nonrural
+classifications across several methodologies. CORI's standard for
+county analysis is the CBSA-based definition:
+
+```{r}
+#| eval: false
+
+library(ruraldefinitions)
+
+# CBSA-based (the CORI standard) — pre-loaded, no function call needed
+rural <- cbsa_2023
+# Returns: geoid | name | year | rural_def | is_rural ("Rural" / "Nonrural")
+
+# Other available county-level definitions
+rucc_2023  # USDA Rural-Urban Continuum Codes
+nchs_2023  # NCHS Urban-Rural Classification Scheme
+uic_2024   # USDA Urban Influence Codes
+```
+
+## Working with Tidy Data
+
+*Adapted from the [Working with Tidy
+Data](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/tidy-data.Rmd)
+vignette on GitHub.*
+
+The most powerful analyses come from combining packages — employment
+with population, business formation with building permits, broadband
+with wages. What makes that combination frictionless is a shared data
+contract: every function in every package returns the same structure,
+with the same column names, at the same geographic identifiers. Learn
+these patterns once and they work across the entire ecosystem.
+
+### Filtering by variable
+
+```{r}
+#| eval: false
+
+bd <- get_business_dynamics(geography = "county", years = 2018:2023)
+
+# Single variable
+estabs <- bd |> filter(variable == "establishments")
+
+# Multiple variables
+rates <- bd |> filter(variable %in% c("estab_entry_rate", "estab_exit_rate"))
+```
+
+### Pivoting to wide format
+
+```{r}
+#| eval: false
+
+bd_wide <- get_business_dynamics(geography = "county", years = 2022:2023) |>
+  pivot_wider(names_from = variable, values_from = value)
+
+# Now: geoid | year | establishments | estab_entries | estab_entry_rate | ...
+```
+
+### Joining across packages
+
+Because every package returns the same `geoid + year` identifiers,
+joining across packages is a simple `left_join()`:
+
+```{r}
+#| eval: false
+
+# Employment + population + business dynamics in one county profile
+emp <- get_employment(geography = "county", years = 2023) |>
   filter(variable == "employment") |>
-  select(geoid, year, employment = value) |>
-  left_join(
-    pop |> filter(variable == "population_16plus") |>
-      select(geoid, year, pop_16plus = value),
-    by = c("geoid", "year")
-  ) |>
-  mutate(emp_rate = employment / pop_16plus)
+  select(geoid, employment = value)
 
-# Add rural classification and summarize
-emp_summary <- emp_rate |>
-  left_join(cbsa_2023 |> select(geoid, is_rural), by = "geoid") |>
+pop <- get_population(geography = "county", years = 2023) |>
+  filter(variable == "population") |>
+  select(geoid, population = value)
+
+estab <- get_business_dynamics(geography = "county", years = 2023) |>
+  filter(variable == "establishments") |>
+  select(geoid, establishments = value)
+
+county_profile <- emp |>
+  left_join(pop,   by = "geoid") |>
+  left_join(estab, by = "geoid") |>
+  mutate(
+    emp_per_capita   = employment    / population,
+    estab_per_capita = establishments / population
+  )
+```
+
+### Summarizing by rural status
+
+With a rural classification joined in, aggregating to rural/nonrural
+summaries is straightforward — and produces comparisons that are
+meaningful for rural research:
+
+```{r}
+#| eval: false
+
+library(ruraldefinitions)
+
+rural <- cbsa_2023 |> select(geoid, is_rural)
+
+emp_summary <- get_employment(geography = "county", years = 2018:2023) |>
+  filter(variable == "employment") |>
+  left_join(rural, by = "geoid") |>
   filter(!is.na(is_rural)) |>
   group_by(year, is_rural) |>
   summarize(
-    avg_emp_rate = weighted.mean(emp_rate, employment, na.rm = TRUE),
+    total_employment = sum(value, na.rm = TRUE),
+    n_counties       = n_distinct(geoid),
     .groups = "drop"
   )
 ```
 
-## Design principles
+### Visualizing with cori.charts
 
-All packages in the family follow the same design principles: tidy
-output, consistent parameters (`geography`, `geoids`, `years`,
-`variables`), plain-English variable names, and no infrastructure
-knowledge required to get data.
+Tidy data maps directly to `ggplot2` aesthetics — and `cori.charts`
+provides CORI-themed formatting:
 
-## Terms of use
+```{r}
+#| eval: false
 
-Data in this ecosystem are curated from U.S. federal agency sources and
-provided "as is" without warranty of any kind. CORI processes and
-packages these data to improve accessibility for rural research but
-cannot guarantee their accuracy, completeness, or timeliness, and
-cannot vouch for analyses derived from these data after retrieval.
+library(ggplot2)
+library(cori.charts)
+load_fonts()
 
-The following notices are required by the underlying data providers'
-terms of service:
+get_business_dynamics(geography = "nation", years = 2000:2023) |>
+  filter(variable %in% c("estab_entry_rate", "estab_exit_rate")) |>
+  ggplot(aes(x = year, y = value, color = variable)) +
+  geom_line(linewidth = 1.5) +
+  scale_color_cori(
+    palette = "ctg2buor",
+    labels  = c("estab_entry_rate" = "Entry rate",
+                "estab_exit_rate"  = "Exit rate")
+  ) +
+  scale_y_continuous(
+    labels = scales::label_percent(accuracy = 0.1, scale = 1)
+  ) +
+  theme_cori() +
+  labs(
+    title   = "National establishment entry and exit rates, 2000–2023",
+    x       = NULL,
+    y       = NULL,
+    color   = NULL,
+    caption = "Source: CORI analysis of Census Bureau Business Dynamics Statistics"
+  )
+```
 
--   **Census Bureau:** This product uses the Census Bureau Data API but
-    is not endorsed or certified by the Census Bureau.
--   **BLS:** BLS.gov cannot vouch for the data or analyses derived from
-    these data after the data have been retrieved from BLS.gov.
--   **FCC:** Broadband availability data from the FCC Broadband Data
-    Collection are in the public domain (17 U.S.C. § 105).
+## Related
 
-Full terms of service:
+**Packages in this ecosystem:**
+- [cori.data.qcew](/packages/cori-data-qcew/) — Employment & wages
+- [cori.data.bds](/packages/cori-data-bds/) — Business dynamics
+- [cori.data.pep](/packages/cori-data-pep/) — Population estimates
+- [cori.data.fcc](/packages/cori-data-fcc/) — Broadband coverage
+- [ruraldefinitions](/packages/ruraldefinitions/) — Rural classifications
 
--   [Census Bureau API Terms of Service](https://www.census.gov/data/developers/about/terms-of-service.html)
--   [BLS Terms of Service](https://www.bls.gov/developers/termsOfService.htm)
--   [FCC National Broadband Map — License and Attribution](https://broadbandmap.fcc.gov/about)
 
-## Contributing
+**Further reading:**
+- [Employment Rate vignette](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/employment-rate.Rmd) — cross-package analysis combining QCEW + PEP
+- [Sector Analysis vignette](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/sector-analysis.Rmd) — CORI super-sectors and rural economic composition
+- [Weighted Averages vignette](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/weighted-averages.Rmd) — why `agg_var` matters
 
-CORI is a small team building tools for rural researchers and welcomes
-collaborators. Open an issue on the
-[`cori.data` GitHub repo](https://github.com/ruralinnovation/cori.data)
-or any of the companion package repositories for bugs, features, or
-data the ecosystem should add.
-
-## Documentation
-
--   [GitHub Repository](https://github.com/ruralinnovation/cori.data)
--   [Full README](https://github.com/ruralinnovation/cori.data/blob/main/README.md)
--   [Getting Started Vignette](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/getting-started.Rmd)
--   [Vignette: Tidy Data](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/tidy-data.Rmd)
--   [Vignette: Weighted Averages](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/weighted-averages.Rmd)
--   [Vignette: Sector Analysis](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/sector-analysis.Rmd)
--   [Vignette: Employment Rate](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/employment-rate.Rmd)
--   [Vignette: Broadband](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/broadband.Rmd)
-
----
-
-**Contact:** John Hall (john.hall@ruralinnovation.us)
-
-For bug reports or feature requests, please open an issue on
-[GitHub](https://github.com/ruralinnovation/cori.data/issues).
+::: callout-note
+Data in this ecosystem are curated from U.S. federal agency sources.
+This product uses the Census Bureau Data API but is not endorsed or
+certified by the Census Bureau. BLS.gov cannot vouch for data or
+analyses derived from these data after retrieval from BLS.gov.
+:::
