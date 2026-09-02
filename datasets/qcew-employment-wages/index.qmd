@@ -1,0 +1,175 @@
+---
+title: "Quarterly Census of Employment and Wages (QCEW)"
+description: "County-level employment and wage data covering roughly 95% of U.S.
+  wage and salary employment, primarily derived from unemployment insurance
+  administrative records. A core federal source for local labor market analysis
+  at the county level."
+author: "Mapping & Data Analytics Team"
+date: "2026-09-01"
+categories: ["Dataset", "Labor Market"]
+tags: ["QCEW", "BLS", "Employment", "Wages", "County-Level", "Administrative Data"]
+dataset:
+  name: "Quarterly Census of Employment and Wages (QCEW)"
+  source: "Bureau of Labor Statistics, U.S. Department of Labor"
+  sourceUrl: "https://www.bls.gov/cew/"
+  accessMethod: "Direct Download"
+  updateFrequency: "Quarterly (annual summaries available)"
+  geographicLevel: "County, State, National"
+  dataFormat: ["CSV"]
+  featured: true
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+The Quarterly Census of Employment and Wages (QCEW) is the standard
+source for local labor market analysis in the United States. Produced by the Bureau of Labor Statistics, QCEW is primarily derived
+from unemployment insurance (UI) administrative records submitted by
+employers to state agencies — not a household or establishment sample
+survey. Two supplemental surveys add to the administrative foundation:
+the Annual Refiling Survey (ARS) contacts roughly one-third of private
+businesses annually to verify business activity and location, and the
+Multiple Worksite Report (MWR) requires multi-establishment employers to
+report quarterly employment and wage data by worksite. Because its
+primary source is administrative rather than sampled, QCEW is not
+subject to sampling error and covers roughly 95% of all U.S. jobs. Data are available at
+the county, state, and national level from 1990 to the present, with
+quarterly releases and annual summaries by NAICS industry.
+
+QCEW captures three core dimensions of local labor markets: total
+employment, average annual wages, and the count of establishments
+reporting wages. The sector breakdowns — available across the full
+NAICS hierarchy — make it possible to examine not just how much
+employment exists in a place, but where it is concentrated and how
+wages vary across industries.
+
+## What This Data Tells Us About Rural America
+
+QCEW provides the baseline picture of a local labor market: where
+covered jobs are located, how much those jobs pay, and which industries
+account for that employment. It measures jobs at covered establishments,
+not the employment status of residents — a distinction that matters in
+communities with significant commuting or remote work. For questions
+about the resident workforce, pair QCEW with ACS. Together, QCEW pairs
+naturally with BDS, which tracks how the business and employment base is
+changing beneath those levels.
+
+Because its primary source is unemployment insurance administrative
+records rather than a probability sample, QCEW has broad coverage of
+wage and salary employment. For rural analysis, this is particularly
+valuable: sample-based employment estimates can become less precise in
+small counties where sample sizes are thin.
+
+What the data reveals about rural communities is not a single pattern
+but a range of conditions. Some rural counties show employment
+concentrated in a small number of industries, while others have a more
+distributed employment base across sectors. QCEW makes these differences
+visible and provides a basis for examining how sector concentration
+relates to wage levels and exposure to industry-specific economic shocks.
+
+Wages in rural communities tend to be lower on average than in metro
+areas, but the gap varies substantially by industry. QCEW allows
+analysts to identify higher-wage sectors within rural economies and
+examine whether communities are gaining or losing covered employment in
+those sectors over time.
+
+## Coverage
+
+- **Geography:** County, State, National
+- **Time range:** 1990–present (NAICS-based; data available before 1990
+  under the prior SIC classification system)
+- **Update frequency:** Employment data available monthly; wages and
+  establishment counts available quarterly and annually. Full quarterly
+  industry detail published within 6 months of each quarter's end.
+- **Industry detail:** Down to 6-digit NAICS at the county and state
+  level, subject to disclosure restrictions
+- **Universe:** Employers covered by state unemployment insurance (UI)
+  laws and federal workers covered by the Unemployment Compensation for
+  Federal Employees (UCFE) program (~95% of U.S. wage and salary
+  employment)
+
+::: callout-note
+**Notable exclusions:** QCEW does not cover proprietors, the
+unincorporated self-employed, unpaid family members, certain farm and
+domestic workers, or railroad workers (covered by a separate railroad UI
+system). Workers who received no wages during the pay period due to work
+stoppages, temporary layoffs, illness, or unpaid leave are also
+excluded. Certain federal national security agencies are excluded for
+security reasons. See [Table A — Coverage Exclusions](https://www.bls.gov/cew/overview.htm)
+on the BLS QCEW overview page for the complete list.
+:::
+
+## Key Variables
+
+**Employment**
+
+- Average annual employment (total and by NAICS sector)
+- Employment by ownership (private, federal, state, local government)
+
+**Wages**
+
+- Total quarterly and annual wages
+- Average annual pay per worker (nominal dollars)
+- Average weekly wages
+
+QCEW wages are broadly defined — they include bonuses, stock options,
+severance pay, tips, and the cash value of meals and lodging, making
+them a more complete measure of total labor compensation than base pay
+alone. Employer-side benefit contributions (health insurance, workers'
+compensation, pension) are not included; amounts withheld from worker
+paychecks for taxes and union dues are.
+
+**Sector breakdowns**
+
+Available at multiple NAICS levels. CORI's `cori.data.qcew` package
+exposes two classification systems: the 11 BLS supersectors and CORI's
+own three-way aggregation — Tradable Goods, Tradable Services, and Local
+Services — designed for rural economic analysis.
+
+## Accessing the Data
+
+### Via CORI R Package
+
+The [`cori.data.qcew`](/packages/cori-data-qcew/) package provides
+tidy access to QCEW data at the county, state, and national level. It
+includes CORI's three-way supersector classification (Tradable Goods,
+Tradable Services, Local Services) and an employment concentration
+measure (HHI) that makes it easier to assess how dependent a rural
+economy is on a small number of industries — moving beyond employment
+counts toward structural analysis.
+
+```r
+library(cori.data.qcew)
+
+get_employment(geography = "county", years = 2018:2023)
+get_wage_salary(geography = "county", years = 2018:2023)
+get_sector_employment(geography = "county", sector_type = "CORI")
+```
+
+### Direct from Source
+
+Annual and quarterly CSV files are available for bulk download from the
+[BLS QCEW data page](https://www.bls.gov/cew/downloadfiles.htm). Files
+are organized by year, geography, and ownership type. See the [BLS QCEW overview](https://www.bls.gov/cew/overview.htm) for
+full documentation of concepts, definitions, and coverage.
+
+## Related
+
+- **Package:** [cori.data.qcew](/packages/cori-data-qcew/) — CORI's
+  tidy access layer with supersector classification and HHI
+- **Package:** [cori.data](/packages/cori-data/) — meta-package
+  including `cori.data.qcew`
+- **Dataset:** [Census Business Dynamics Statistics](/datasets/census-bds/)
+  — QCEW shows the structure and level of covered employment; BDS shows
+  how the business and employment base is changing beneath those levels
+- **Dataset:** [American Community Survey](/datasets/american-community-survey/)
+  — resident workforce characteristics that complement QCEW's
+  establishment-based employment picture
+- **Project:** [Rural Economic Outlook](/projects/rural-economic-outlook/)
+  — QCEW is a core input to CORI's multi-dataset economic analysis

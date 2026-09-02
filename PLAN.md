@@ -484,14 +484,14 @@ Add to every page:
 ### Step 3 — Datasets
 Write from scratch to v1 template. Each page: Overview, What This Data Tells Us, Coverage, Key Variables, Accessing the Data, Related.
 
-- [ ] `qcew-employment-wages`
-- [ ] `fcc-broadband`
-- [ ] `census-bds` — draft exists, revise to template
-- [ ] `census-population-estimates`
-- [ ] `usda-county-typology`
-- [ ] `american-community-survey`
-- [ ] `census-bfs` (if time permits)
-- [ ] `census-building-permits` (if time permits)
+- [x] `qcew-employment-wages`
+- [x] `fcc-broadband`
+- [x] `census-bds` — revised from v2 draft to v1 template
+- [x] `census-population-estimates`
+- [ ] ~~`usda-county-typology`~~ — cut; better surfaced as context within ruraldefinitions than as a standalone dataset
+- [x] `american-community-survey`
+- [x] `census-bfs`
+- [ ] ~~`census-building-permits`~~ — cut for v1
 
 ### Step 4 — Projects
 - [ ] Confirm which project findings are public-facing ready
@@ -741,4 +741,4 @@ Sections deferred from v1 templates — revisit after conference:
 
 ---
 
-*Last updated: 2026-09-01*
+*Last updated: 2026-09-02*

@@ -1,0 +1,172 @@
+---
+title: "Census Business Formation Statistics (BFS)"
+description: "Monthly and annual counts of business applications (EIN filings)
+  at the county, state, and national level. A leading indicator of entrepreneurial
+  intent that provides an early signal of business formation activity before
+  it appears in BDS or QCEW."
+author: "Mapping & Data Analytics Team"
+date: "2026-09-02"
+categories: ["Dataset", "Entrepreneurship"]
+tags: ["BFS", "Census", "Business Formation", "EIN", "County-Level",
+  "Leading Indicator", "Administrative Data"]
+dataset:
+  name: "Census Business Formation Statistics (BFS)"
+  source: "U.S. Census Bureau"
+  sourceUrl: "https://www.census.gov/econ/bfs/index.html"
+  methodologyUrl: "https://www.census.gov/econ/bfs/technicaldocumentation/methodology.html"
+  accessMethod: "Direct Download"
+  updateFrequency: "Monthly (national and state); Annual (county)"
+  geographicLevel: "County, State, National"
+  dataFormat: ["CSV", "Excel"]
+  featured: false
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+The Business Formation Statistics (BFS) track applications for Employer
+Identification Numbers (EINs) on IRS Form SS-4 as a leading indicator
+of entrepreneurial intent. An EIN application is a signal of business
+initiation — not proof that a new employer business was created. BFS
+captures the earliest observable administrative step in the business
+formation process, before applications become establishments, before
+establishments create jobs, and before those jobs show up in
+employment and wage data.
+
+Understanding BFS in relation to the other datasets is key to using it
+well: BFS shows where people are initiating businesses; BDS reveals
+whether those applications become employer establishments and what job
+dynamics follow; QCEW provides the resulting employment and wage picture.
+Together, they describe the full progression from entrepreneurial intent
+to labor market outcome.
+
+The program's primary county-level series is the **Business Application
+Series (BA)**, which captures a broad subset of EIN applications
+associated with business initiation — excluding tax liens, estates,
+trusts, certain financial filings, and applications in industries with
+low transition rates to employer businesses. At the national and state level, BFS also publishes a
+**High-Propensity Business Applications (HBA)** series — restricted to
+applications more likely to become employer businesses — and **Projected
+Business Formations (PBF)**, which estimates conversion rates within
+four and eight quarters. These finer series are not available at the
+county level.
+
+## What This Data Tells Us About Rural America
+
+Business formation statistics — tracking EIN applications as a leading
+indicator of entrepreneurial intent — provide an early signal of
+economic momentum that establishment counts and employment data can only
+confirm after the fact. For rural communities, this leading-indicator
+quality is particularly valuable: because business applications occur
+before employer business formation and employment, changes in application
+activity can provide earlier visibility into changing entrepreneurial
+conditions than establishment and employment measures alone.
+
+The pandemic-era surge in rural business applications also illustrates
+why formation activity needs to be evaluated alongside subsequent
+business formation and survival. A rise in applications does not
+necessarily translate into durable establishment growth. Comparing BFS
+with BDS can help identify where strong application activity was followed
+by actual business formation and job creation — and where it was not.
+
+## Coverage
+
+- **Geography:** County, State, National
+- **Time range:** Monthly data begin July 2004; annual county Business
+  Application data begin 2005
+- **Update frequency:** Monthly national and state data; annual county
+  data typically released approximately six months after the reference
+  year
+- **Universe:** EIN applications on IRS Form SS-4, excluding tax liens,
+  estates, trusts, agriculture (NAICS 11), and public administration
+  (NAICS 92)
+
+::: callout-note
+**County data is BA only:** The Census county-level file contains the
+Business Application (BA) series only. High-propensity (HBA) and
+Projected Business Formation (PBF) series — which estimate how many
+applications become employer businesses — are available at the national
+and state level but not at the county level. County-level BFS tells us
+where people are applying to start businesses; it does not provide
+county-level estimates of which applications ultimately become employer
+businesses.
+:::
+
+::: callout-important
+**Mind the noise.** County-level BFS application counts are subject to
+disclosure-avoidance procedures including differential privacy, with
+geometric noise added to counts and subsequent calibration to state
+totals. Small year-to-year changes in county application counts should
+be interpreted with caution, particularly in very small counties. See
+the [BFS methodology
+page](https://www.census.gov/econ/bfs/methodology.html) for details on
+the disclosure avoidance approach applied to county data.
+:::
+
+## Key Variables
+
+Counts and rates answer different questions. Counts show the scale of
+business application activity in a county; rates allow comparison of
+entrepreneurial activity across communities of very different sizes.
+
+- **Total business applications (BA)** — count of EIN applications
+  meeting BFS coverage criteria; the primary county-level measure of
+  business initiation activity
+- **Applications per 1,000 population** — population-normalized rate
+  for comparing application intensity across counties
+
+## Accessing the Data
+
+### Via CORI R Package
+
+The [`cori.data.bfs`](/packages/cori-data-bfs/) package provides tidy
+annual county-level access to BFS business application counts, with
+population normalization via `cori.data.pep`.
+
+```r
+library(cori.data.bfs)
+
+# All counties, all years
+get_business_applications(geography = "county")
+
+# Specific counties, recent years
+get_business_applications(
+  geoids = c("33009", "33011"),
+  years  = 2010:2024
+)
+```
+
+### Direct from Source
+
+Monthly national and state data, and annual county files, are available
+from the [BFS data page](https://www.census.gov/econ/bfs/data.html).
+See the [BFS methodology
+page](https://www.census.gov/econ/bfs/technicaldocumentation/methodology.html)
+for documentation of the EIN application filtering process, the
+high-propensity classification methodology, and the projected formations
+estimation approach.
+
+## Related
+
+- **Package:** [cori.data.bfs](/packages/cori-data-bfs/) — CORI's
+  tidy county-level access layer
+- **Package:** [cori.data](/packages/cori-data/) — meta-package
+  including `cori.data.bfs`
+- **Dataset:** [Census Business Dynamics
+  Statistics](/datasets/census-bds/) — provides observed establishment
+  births, deaths, and job flows; pairing BFS with BDS helps assess
+  whether increases in application activity are followed by actual
+  employer business formation and job creation
+- **Dataset:** [QCEW Employment &
+  Wages](/datasets/qcew-employment-wages/) — provides current employment
+  and wage levels, allowing researchers to connect earlier application
+  trends to changes in the local labor market
+- **Project:** [Rural Economic
+  Outlook](/projects/rural-economic-outlook/) — BFS is an input to
+  CORI's multi-dataset economic analysis

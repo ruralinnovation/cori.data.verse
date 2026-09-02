@@ -1,0 +1,208 @@
+---
+title: "American Community Survey (ACS)"
+description: "Annual demographic, economic, social, and housing survey of ~3.5
+  million U.S. households. A primary federal source for community-level
+  characteristics not captured by administrative data — educational attainment,
+  income, housing costs, work-from-home rates, self-employment, and more."
+author: "Mapping & Data Analytics Team"
+date: "2026-09-02"
+categories: ["Dataset", "Demographics", "Labor Market", "Housing"]
+tags: ["ACS", "Census", "Demographics", "Survey", "County-Level", "Tract-Level",
+  "Income", "Education", "Housing"]
+dataset:
+  name: "American Community Survey (ACS)"
+  source: "U.S. Census Bureau"
+  sourceUrl: "https://www.census.gov/programs-surveys/acs"
+  methodologyUrl: "https://www.census.gov/programs-surveys/acs/methodology.html"
+  accessMethod: "Census API and Data Portal"
+  updateFrequency: "Annual (1-year and 5-year estimates)"
+  geographicLevel: "County, Tract, Block Group, Place"
+  dataFormat: ["API", "CSV"]
+  featured: true
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+The American Community Survey is the Census Bureau's annual nationwide
+survey of U.S. households, reaching roughly 3.5 million addresses each
+year with a mandatory questionnaire covering demographics, housing,
+economics, and social characteristics. The ACS contributes a people-and-households layer to rural analysis that
+administrative data cannot. Where datasets like QCEW and BDS describe
+jobs, establishments, employment, and wages, ACS adds the characteristics
+of the people and households behind those measures: education, income,
+occupation, housing, commuting patterns, internet access, and
+work-from-home rates. For any analysis that asks not just "how many
+jobs" but "who holds them, at what pay, and under what conditions," ACS
+is where the answer lives.
+
+The survey produces two main products. **1-year estimates** cover
+geographies with populations of 65,000 or more and are released each
+fall for the prior calendar year — current, but limited in geographic
+reach. **5-year estimates** aggregate five years of survey data and are
+available for all geographies including small counties, census tracts,
+block groups, and places — making them the essential product for rural
+analysis, where most counties fall below the 1-year threshold. The
+trade-off is currency: 5-year estimates represent a rolling average, not
+a snapshot of a single year.
+
+## What This Data Tells Us About Rural America
+
+The ACS provides the broadest cross-section of socioeconomic conditions
+at the county level — covering educational attainment, income,
+employment by occupation, housing costs, work-from-home rates,
+self-employment, and race and ethnicity. It is the primary federal
+source for the demographic and household-level context that labor market
+and business data alone cannot supply.
+
+For rural analysis, ACS is particularly valuable for measures that
+reflect the quality and accessibility of economic opportunity, not just
+its quantity. Educational attainment shapes the workforce available to
+attract and grow businesses. ACS measures self-employment but does not
+distinguish opportunity entrepreneurship from necessity entrepreneurship
+— drawing that distinction requires reading ACS alongside employment and
+wage data. The share of workers working from home, paired with FCC
+broadband coverage data, helps researchers explore whether infrastructure
+availability is translating into workforce flexibility. These are
+dimensions of economic conditions that QCEW and BDS cannot see.
+
+The ACS can be accessed through [`tidycensus`](https://walker-data.com/tidycensus/),
+an easy-to-use R package developed and maintained by Kyle Walker that provides a clean
+interface to the Census Data API. Because an excellent tool already
+exists, CORI does not maintain a separate ACS package. The Data Verse surfaces ACS as a key rural data
+resource because understanding what it measures and how to use it well
+in a rural context is part of what this resource is for.
+
+## Coverage
+
+- **Geography:** Nation, State, County, Census Tract, Block Group,
+  Place, ZCTA, and more
+- **Time range:** 1-year estimates: 2005–present; 5-year estimates:
+  2009–present
+- **Update frequency:** Annual; 1-year estimates typically released each
+  September, 5-year estimates typically each December
+- **Universe:** Varies by table; most tables cover the U.S. civilian
+  noninstitutionalized population. Group quarters population is included
+  for many subjects.
+
+::: callout-note
+**1-year vs. 5-year for rural analysis:** 1-year estimates are only
+available for geographies with 65,000+ residents — which excludes most
+rural counties. For county-level rural analysis, **5-year estimates are
+the correct product**. They cover all counties and geographies but
+represent a rolling 5-year average rather than a single year, so
+year-over-year changes should be interpreted carefully given overlapping
+sample periods.
+:::
+
+::: callout-important
+**Mind the margins of error.** ACS estimates are based on a sample
+survey, so every estimate carries a margin of error. Uncertainty is
+generally greater for smaller geographies and smaller population groups.
+When comparing rural communities or measuring change over time, consider
+the margin of error rather than treating the point estimate as an exact
+count. Kyle Walker's [margins of error
+vignette](https://walker-data.com/tidycensus/articles/margins-of-error.html)
+is an excellent primer on working with ACS uncertainty in R.
+:::
+
+## Key Variables
+
+The ACS covers hundreds of variables. The most analytically valuable
+for rural economic analysis fall into four groups:
+
+**Demographics**
+
+- Age and sex distribution
+- Race, Hispanic origin, and ethnicity
+- Nativity and place of birth; year of entry
+- Disability status
+- Language spoken at home
+
+**Education**
+
+- Educational attainment (less than high school through graduate degree)
+- School enrollment
+
+**Employment, Income, and Economic Characteristics**
+
+- Employment status and labor force participation
+- Occupation and industry of employment
+- Self-employment (incorporated and unincorporated)
+- Remote work / work-from-home status
+- Median household income; per capita income; poverty rate
+- Earnings by sex and occupation
+
+**Housing**
+
+- Housing tenure (owner vs. renter)
+- Median home value; median gross rent
+- Housing cost burden (share of income spent on housing)
+- Vacancy rate and vacancy type
+- Internet access and subscription type
+- Units in structure; year built
+
+## Accessing the Data
+
+`tidycensus` is the go-to R package for ACS data — and one of the best
+data access tools in the R ecosystem, full stop. Written by Kyle Walker,
+it wraps the Census Data API with a clean, consistent interface that
+returns tidy data frames with geography attached, handles variable
+lookups, and supports both 1-year and 5-year estimates across all
+available geographies. If you are doing ACS analysis in R, start here.
+
+```r
+# install.packages("tidycensus")
+library(tidycensus)
+
+# Load ACS variable list for a given year
+vars <- load_variables(2023, "acs5", cache = TRUE)
+
+# Pull median household income for all counties (5-year estimates)
+income <- get_acs(
+  geography = "county",
+  variables = "B19013_001",   # median household income
+  year      = 2023,
+  survey    = "acs5"
+)
+
+# Pull multiple variables with geometry attached
+edu <- get_acs(
+  geography = "county",
+  variables = c(
+    ba_plus  = "B15003_022",  # bachelor's degree
+    total    = "B15003_001"   # total population 25+
+  ),
+  year      = 2023,
+  survey    = "acs5",
+  geometry  = TRUE            # returns sf object with county boundaries
+)
+```
+
+The Census Data API is also accessible directly for users who prefer
+Python, SQL, or other environments. See the [ACS data
+portal](https://www.census.gov/programs-surveys/acs/data.html) for
+bulk downloads and the [ACS methodology
+page](https://www.census.gov/programs-surveys/acs/methodology.html) for
+full documentation of survey design, sampling, and accuracy.
+
+## Related
+
+- **Dataset:** [Census Population Estimates
+  Program](/datasets/census-population-estimates/) — annual population
+  totals that provide the denominator for ACS-derived per-capita rates
+- **Dataset:** [FCC Broadband Service
+  Data](/datasets/fcc-broadband/) — infrastructure availability that
+  pairs with ACS internet adoption and remote work measures
+- **Dataset:** [QCEW Employment &
+  Wages](/datasets/qcew-employment-wages/) — administrative employment
+  data that complements ACS's household-level labor force picture
+- **Package:** [ruraldefinitions](/packages/ruraldefinitions/) —
+  rural/nonrural classifications for filtering and comparing ACS
+  estimates across county types
