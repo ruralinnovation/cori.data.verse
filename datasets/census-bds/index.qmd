@@ -116,14 +116,14 @@ allowing users to distinguish changes in the number of establishments
 from changes in the number of jobs — and to decompose both into what
 came from new, expanding, contracting, and closing establishments.
 
-**Business dynamics** (`get_business_dynamics()`)
+**Business dynamics** ([`get_business_dynamics()`](#accessing-the-data))
 
 - `establishments` — total establishment count
 - `estab_entries`, `estab_entry_rate` — new establishments opening
 - `estab_exits`, `estab_exit_rate` — establishments closing
 - `firms`, `firm_deaths` — firm counts and closures
 
-**Employment dynamics** (`get_employment_dynamics()`)
+**Employment dynamics** ([`get_employment_dynamics()`](#accessing-the-data))
 
 - `employees` — total employment
 - `job_creation`, `job_creation_births`, `job_creation_continuers` —
