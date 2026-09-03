@@ -12,12 +12,14 @@ Depends:
   cori.data,
   cori.data.bds,
   cori.data.fcc,
+  cori.data.s3,
   ruraldefinitions
 Remotes:
   ruralinnovation/cori.charts,
   ruralinnovation/cori.data,
   ruralinnovation/cori.data.bds,
   ruralinnovation/cori.data.fcc,
+  ruralinnovation/cori.data.s3,
   ruralinnovation/ruraldefinitions
 Imports:
   yaml,
@@ -29,7 +31,6 @@ Suggests:
   ggplot2,
   tidygraph,
   targets,
-  cori.db,
   paws.storage,
   testthat (>= 3.0.0)
 Roxygen: list(markdown = TRUE)

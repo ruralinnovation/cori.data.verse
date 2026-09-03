@@ -13,7 +13,7 @@ if (!require("cori.data.verse")) {
 tar_option_set(
   packages = c(
     "quarto",
-    "cori.db",
+    "cori.data",
     "cori.data.verse",
     "here",
     "jsonlite", 
@@ -22,23 +22,24 @@ tar_option_set(
 )
 
 #' Prompt for confirmation before writing to the production S3 prefix.
-confirm_production_write <- function(prefix) {
+confirm_production_write <- function(bucket, prefix) {
   if (!startsWith(prefix, "prod/")) return(TRUE)
   if (!interactive()) {
     message("Non-interactive session: skipping production sync (prod/ prefix)")
     return(FALSE)
   }
-  answer <- readline(
-    "You are on 'main'. Sync to PRODUCTION (s3://cori.data.verse/prod/content/)? [y/N] "
-  )
+  answer <- readline(sprintf(
+    "You are on 'main'. Sync to PRODUCTION (s3://%s/%s)? [y/N] ",
+    bucket, prefix
+  ))
   tolower(trimws(answer)) == "y"
 }
 
 list(
-  tar_target(s3_bucket, "cori.agent.kb"),
+  tar_target(s3_bucket, "cori.data.verse"),
   tar_target(s3_prefix, get_s3_prefix(),
              cue = tar_cue(mode = "always")),
-  tar_target(confirmed, confirm_production_write(s3_prefix),
+  tar_target(confirmed, confirm_production_write(s3_bucket, s3_prefix),
              cue = tar_cue(mode = "always")),
   tar_target(
     render_result,

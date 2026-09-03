@@ -1,26 +1,29 @@
 ---
 title: cori.data.fcc
-description: Functions to get and process FCC data.
-author: Olivier Leroy
-date: '2026-05-05'
+description: Access FCC National Broadband Map (NBM) and Form 477 data at the county
+  and census block level. Includes CORI-processed S3-backed datasets and tools for
+  analyzing broadband infrastructure availability across rural and nonrural geographies.
+author: John Hall
+date: '2026-08-31'
 categories:
   - R Package
   - Broadband
 tags:
-  - broadband
-  - fcc
-  - nbm
-  - national-broadband-map
-  - form-477
-  - census-block
-  - isp
+  - FCC
+  - NBM
+  - Broadband
+  - National Broadband Map
+  - Block-Level
+  - County-Level
+  - S3
+  - Rural
 package:
   name: cori.data.fcc
   githubUrl: https://github.com/ruralinnovation/cori.data.fcc
-  installCommand: devtools::install_github("ruralinnovation/cori.data.fcc")
+  installCommand: remotes::install_github("ruralinnovation/cori.data.fcc")
   status: stable
   version: 1.0.0
-  maintainer: Olivier Leroy
+  maintainer: John Hall
   featured: false
 usesDatasets:
   - fcc-broadband
@@ -36,108 +39,228 @@ editor:
 
 ## Overview
 
-The goal of cori.data.fcc is to facilitate the discovery, analysis, and use of FCC public data releases. The package provides S3-backed access to National Broadband Map (NBM) data — both raw parquet files by county and a CORI-opinionated Census-block-level summary — as well as Form 477 broadband deployment data spanning multiple years. A built-in data dictionary and ISP provider reference table round out the package.
+The `cori.data.fcc` package provides access to two FCC broadband
+datasets: the **National Broadband Map (NBM)**, launched in November
+2022, and the legacy **Form 477** data covering December 2014 through
+December 2021. Together they offer a continuous picture of broadband
+infrastructure availability across the United States — from the
+census-block-level reporting of Form 477 to the location-level precision
+of the NBM.
 
-::: callout-note
-## Why Use This Package
+The NBM is the primary dataset for current analysis. It captures what
+internet services are available at individual broadband serviceable
+locations (BSLs) — residential and business addresses — as reported by
+ISPs twice yearly. CORI makes the NBM available at two analytical levels:
+raw location-level data by county (`get_nbm_county_raw()`), and a
+census-block summary (`get_nbm_bl()`) that aggregates service counts by
+technology type and speed threshold. The block-level summary is the
+standard entrypoint for county- and community-level broadband analysis.
 
-- **S3-backed NBM access via DuckDB** - Raw NBM parquet files queryable by county without local download, powered by DuckDB.
-- **CORI-opinionated block layer** - 21-column Census-block summary with technology type breakdowns (fiber, cable, copper, fixed wireless, etc.) and BEAD location counts.
-- **FRN-based coverage queries** - Retrieve all Census blocks served by a specific ISP using their FCC Registration Number.
-- **Form 477 multi-year data** - State-level broadband deployment records from 2014 onward.
-- **Integrated data dictionary** - 50-row codebook covering f477, nbm_block, and nbm_raw field descriptions.
-- **ISP provider reference** - fcc_provider data frame with 4,456 records linking provider names, FRNs, and numeric provider IDs.
-:::
+Form 477 provides historical context — particularly for tracking how
+rural broadband coverage has changed over the decade prior to the NBM.
+CORI's ingestion focuses on fixed broadband (excluding satellite) and
+applies consistent versioning decisions to produce a comparable
+longitudinal dataset.
 
-## Installation
-
-::: panel-tabset
-### GitHub
+## Installation & Quick Start
 
 ```{r}
 #| eval: false
-
-devtools::install_github("ruralinnovation/cori.data.fcc")
+remotes::install_github("ruralinnovation/cori.data.fcc")
 ```
-:::
-
-## Quick Start
 
 ```{r}
 #| eval: false
-
 library(cori.data.fcc)
 
-# Get CORI-opinionated NBM block-level data for a county
-nbm_bl <- get_nbm_bl(geoid_co = "47051")
+# Census block-level NBM summary for a county
+nbm_bl <- get_nbm_bl(geoid_co = "33009")
 
-# Get raw NBM parquet data for a county
-guilford_cty <- get_nbm_county_raw(geoid_co = "37081")
+# County-level NBM summary
+nbm_co <- get_nbm_county("33009")
 
-# Get all blocks served by a specific ISP (by FRN)
-skymesh <- get_frn_nbm_bl("0027136753")
+# Raw location-level NBM data
+nbm_raw <- get_nbm_county_raw(geoid_co = "33009")
 
-# Get Form 477 data for a state
-f477_vt <- get_f477("VT")
+# Form 477 — state data across all available years
+f477_nh <- get_f477("NH")
+
+# Data dictionary
+get_fcc_dictionary("nbm_block")
 ```
 
-## Core Functions
+## What This Data Tells Us About Rural
 
-::: panel-tabset
+Broadband infrastructure is a foundational asset for rural participation
+in the modern economy — enabling remote work, business formation,
+telehealth, and education in communities that geography once isolated
+from these opportunities. The FCC National Broadband Map provides the
+current county-level picture of where infrastructure exists and at what
+speeds, making it possible to track the closing of the rural broadband
+gap over time.
 
-### Data Access
+Research shows that high-speed internet improves economic outcomes in
+rural communities through increased business activity and broader
+economic development measures including productivity, jobs, and income.
+The NBM data makes it possible to track where rural broadband investment
+is occurring, where gaps persist, and how coverage has evolved over time.
 
-| Function | Description |
-|----------|-------------|
-| `get_nbm_bl()` | CORI-opinionated NBM Census-block summary by county (21 columns) |
-| `get_nbm_county()` | NBM county-level aggregated data |
-| `get_nbm_county_raw()` | Raw NBM parquet data for a county and release via S3 |
-| `get_frn_nbm_bl()` | All Census blocks where a given FRN reported service |
-| `get_f477()` | Form 477 broadband deployment data by state |
+## National Broadband Map (NBM)
 
-### Utility
+*Adapted from the [NBM
+vignette](https://github.com/ruralinnovation/cori.data.fcc/blob/main/vignettes/NBM.Rmd)
+on GitHub.*
 
-| Function | Description |
-|----------|-------------|
-| `get_nbm_available()` | List available NBM releases in the S3 store |
-| `get_nbm_release()` | NBM release metadata |
-| `dl_nbm()` | Download NBM source files |
-| `check_frn()` | Validate an FCC Registration Number (FRN) |
-| `get_fcc_dictionary()` | 50-row codebook across all package datasets |
+### What is the NBM?
 
+The FCC's National Broadband Map captures broadband availability at the
+level of individual broadband serviceable locations (BSLs) — every
+residential and business address where fixed internet service is or can
+be installed. For each location, the NBM records which providers serve
+it, what technologies they use, and their maximum advertised download and
+upload speeds.
+
+The NBM publishes two major releases per year (June and December), with
+interim updates every two weeks to incorporate challenge data. CORI
+ingests each release into S3 and maintains the full history so analyses
+can be compared across time.
+
+### What is a Broadband Serviceable Location (BSL)?
+
+A BSL is defined as "a business or residential location in the United
+States at which fixed broadband internet access service is, or can be,
+installed." The exact coordinates of each location are part of the
+underlying Fabric dataset maintained by CostQuest Associates — within
+the Broadband Availability data, locations are linked to a 2020 Census
+block.
+
+### Accessing NBM data
+
+The package provides three levels of access:
+
+**1. County-level summary** — aggregated counts per county per release:
+
+```{r}
+#| eval: false
+nbm_co <- get_nbm_county("33009")
+dplyr::glimpse(nbm_co)
+```
+
+**2. Census block-level** — CORI-opinionated aggregation with technology
+type and speed threshold counts (21 columns), one row per block:
+
+```{r}
+#| eval: false
+nbm_bl <- get_nbm_bl(geoid_co = "33009")
+dplyr::glimpse(nbm_bl)
+```
+
+**3. Raw location-level** — the full NBM records for all locations in a
+county as reported by ISPs:
+
+```{r}
+#| eval: false
+nbm_raw <- get_nbm_county_raw(geoid_co = "33009")
+dplyr::glimpse(nbm_raw)
+```
+
+The block-level summary (`get_nbm_bl()`) is the recommended starting
+point for county and community analysis — it aggregates to technology
+type and speed thresholds most relevant for rural broadband gap work
+(25/3, 100/20, 100/100 Mbps).
+
+### Checking available releases
+
+```{r}
+#| eval: false
+# List all available NBM release dates
+get_nbm_release()
+
+# See what files are available
+get_nbm_available()
+```
+
+### Looking up providers by FRN
+
+The FCC Registration Number (FRN) uniquely identifies each ISP. To find
+all census blocks served by a specific provider:
+
+```{r}
+#| eval: false
+# Blocks served by a specific provider
+get_frn_nbm_bl("0027136753")
+
+# Validate an FRN format
+check_frn("0027136753")
+```
+
+A reference table of provider names, FRNs, and provider IDs is bundled
+as `fcc_provider` (4,456 records).
+
+### Data dictionary
+
+```{r}
+#| eval: false
+get_fcc_dictionary("nbm_block")  # block-level variables
+get_fcc_dictionary("nbm_raw")    # raw NBM variables
+```
+
+::: callout-note
+**Attribution:** Broadband availability data from the FCC Broadband Data
+Collection is offered free and not subject to copyright restriction. When
+using this data, please attribute as: *Source data: FCC Broadband Data
+Collection.* The underlying Fabric location data is owned by CostQuest
+Associates, Inc. See the [NBM about
+page](https://broadbandmap.fcc.gov/about) for full licensing terms.
 :::
 
-## Data Sources
+## Form 477
 
-| Dataset | Role |
-|---------|------|
-| [FCC Broadband](/datasets/fcc-broadband/) | Primary |
+*Adapted from the [Form 477
+vignette](https://github.com/ruralinnovation/cori.data.fcc/blob/main/vignettes/f477.Rmd)
+on GitHub.*
 
-## Use Cases at CORI
+Form 477 is the FCC's legacy broadband reporting program, covering
+December 2014 through December 2021. Providers were required to file
+twice yearly on where they offered internet access service at speeds
+exceeding 200 kbps, at the census block level (2010 vintage). Unlike the
+NBM, Form 477 reported at the block level rather than the location level
+— a provider needed only to indicate they served at least one location in
+a block, not what share of the block was covered.
 
-This package is used in:
+CORI's ingestion keeps only the final version of each filing period
+(assumed to be the most consistent release) and focuses on fixed
+broadband only, excluding satellite. The data is provided as-is — values
+are not filtered or corrected, leaving those judgments to the analyst.
 
-- Analyzing broadband availability at the Census-block level for a county or region.
-- Identifying BEAD-eligible locations using CORI-processed NBM data.
-- Querying coverage footprint for a specific ISP by FRN.
-- Tracking broadband deployment trends over time using Form 477 filings.
-- Building broadband gap analyses using technology-type breakdowns.
+```{r}
+#| eval: false
+# Form 477 for New Hampshire — all available years
+f477_nh <- get_f477("NH")
+dplyr::glimpse(f477_nh)
 
-::: callout-tip
-## Optimization Tips
+# Data dictionary
+get_fcc_dictionary("f477")
+```
 
-Ensure the latest versions of duckdb and waldo are installed before use. The raw NBM data (parquet via S3) can be large — queries against get_nbm_county_raw() on dense counties may return over one million rows.
+Form 477 is most useful for historical analysis — understanding broadband
+coverage before the NBM era, or examining pre/post-NBM coverage trends
+in rural counties over a decade of change.
+
+::: callout-note
+**Attribution:** Broadband data from FCC Form 477 is offered free and
+not subject to copyright restriction. Please attribute as: *Source data:
+FCC Form 477.*
 :::
 
-::: callout-warning
-## Known Limitations
+## Related
 
-The package accesses data stored in CORI S3 storage; AWS credentials or network access may be required. NBM data reflects ISP-reported coverage and is subject to the known limitations of self-reported broadband availability data.
-:::
-
-## Documentation
-
-- [GitHub Repository](https://github.com/ruralinnovation/cori.data.fcc)
-- [Full README](https://github.com/ruralinnovation/cori.data.fcc/blob/main/README.md)
-- [Function Documentation](https://github.com/ruralinnovation/cori.data.fcc/tree/main/man)
-
+-   **Dataset:** [FCC Broadband](/datasets/fcc-broadband/) — source
+    dataset documentation
+-   **Package:** [cori.data](/packages/cori-data/) — meta-package that
+    includes `cori.data.fcc`
+-   **Project:** [Rural Economic
+    Outlook](/projects/rural-economic-outlook/) — broadband coverage is
+    a core input to CORI's multi-dataset economic analysis
+-   **Post:** [Democratizing analytics on FCC's (big)
+    data](/posts/12_fcc-data/) — more on how CORI uses this data

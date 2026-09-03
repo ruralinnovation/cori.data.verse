@@ -1,0 +1,563 @@
+---
+title: cori.data.qcew
+description: Access and analyze Bureau of Labor Statistics Quarterly Census of Employment
+  and Wages (QCEW) data at the county, state, and national level from 1990 to present.
+  Covers total employment, average annual pay, sector composition, and employment
+  concentration using CORI's tradable goods / tradable services / local services
+  classification.
+author: Drew Rosebush
+date: '2026-08-31'
+categories:
+  - R Package
+  - Labor Market
+tags:
+  - QCEW
+  - BLS
+  - Employment
+  - Wages
+  - County-Level
+  - S3
+  - Tidy Data
+  - Rural
+package:
+  name: cori.data.qcew
+  githubUrl: https://github.com/ruralinnovation/cori.data.qcew
+  installCommand: remotes::install_github("ruralinnovation/cori.data.qcew")
+  status: development
+  version: 0.1.0
+  maintainer: Drew Rosebush
+  featured: false
+usesDatasets:
+  - qcew-employment-wages
+usesResources: []
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+The `cori.data.qcew` package provides access to Bureau of Labor
+Statistics Quarterly Census of Employment and Wages (QCEW) data at the
+county, state, and national level from 1990 to the present. Derived from
+unemployment insurance records rather than a survey, QCEW covers roughly
+95% of all U.S. employment — the standard source for local labor market
+analysis, and more reliable than survey-based estimates in the small
+rural counties where sample sizes are thin.
+
+Beyond access, the package adds two analytical layers over the raw
+federal source. The first is CORI's supersector classification — a
+three-way grouping of BLS's 11 NAICS supersectors into Tradable Goods,
+Tradable Services, and Local Services, loosely following the methodology
+in Eckert (2018). This classification distinguishes industries that bring
+external income into a community from those that primarily serve local
+demand, which is central to understanding a rural economy's long-run wage
+trajectory. The second is an employment concentration measure (HHI) that
+reveals how economically diversified a county is across sectors — a
+structural indicator that employment headcounts alone cannot provide.
+
+All functions return tidy long-format data consistent with the
+`cori.data` ecosystem: `geoid | year | variable | value`, with an
+`agg_var` employment-weight column on rate and share variables for
+correct aggregation across geographies of different sizes.
+
+## Installation & Quick Start
+
+```{r}
+#| eval: false
+remotes::install_github("ruralinnovation/cori.data.qcew")
+```
+
+```{r}
+#| eval: false
+library(cori.data.qcew)
+
+# See all available variables and which functions return them
+get_qcew_codebook()
+
+# Total employment — all counties, all years
+get_employment(geography = "county")
+
+# Average annual pay — specific counties
+get_wage_salary(geoids = c("33009", "33011"), years = 2010:2023)
+
+# Employment by CORI supersector
+get_sector_employment(geography = "county", years = 2018:2023,
+                      sector_type = "CORI", value_type = "share")
+
+# Employment concentration (HHI)
+get_employment_concentration(geography = "county", years = 2023)
+```
+
+Check the current data vintage:
+
+```{r}
+#| eval: false
+latest_qcew_vintage()
+```
+
+## What This Data Tells Us About Rural
+
+Employment is the most fundamental indicator of a local economy's health
+— and one of the most easily misread in a rural context. Aggregate
+employment counts can grow while wages stagnate, or decline while
+productivity rises. In CORI's community research, many rural counties
+show GDP per capita growth alongside employment that has not recovered to
+prior peaks — a pattern that reflects a smaller, more productive
+workforce rather than a stagnant one. The headline number and the
+underlying story can point in different directions.
+
+What the QCEW data adds beyond simple employment counts is sector
+composition. CORI's three-way classification — tradable goods, tradable
+services, and local services — is particularly useful for rural analysis.
+Local services (retail, healthcare, food service) meet local demand and
+scale with population; they are essential to community function but do
+not drive wage growth or export earnings. Tradable goods and services —
+manufacturing, agriculture, finance, tech, professional services — bring
+external income into a community and shape its long-run wage trajectory.
+Rural counties with strong tradable sectors reflect economies whose
+historical asset base remains economically active. Those shifting toward
+tradable services are often communities building new competitive
+advantages alongside inherited ones.
+
+Industry concentration is a structural feature of many rural economies,
+reflecting the historic dominance of particular assets — a major
+employer, an agricultural commodity, a natural resource. Concentration
+can be a strength (scale, specialization, deep supply chains) and a
+source of vulnerability (exposure if that industry contracts). The QCEW
+data makes this composition visible at the county level and trackable
+over time, supporting both the identification of strengths and the
+analysis of diversification opportunities.
+
+Average annual pay reflects both the composition of employment and wages
+within sectors. Understanding the wage structure of a rural economy —
+not just its size — is essential for reading its trajectory and its
+capacity to retain talent.
+
+## Introduction
+
+*Adapted from the [Introduction
+vignette](https://github.com/ruralinnovation/cori.data.qcew/blob/main/vignettes/introduction.Rmd)
+on GitHub.*
+
+### What is this data?
+
+The Bureau of Labor Statistics Quarterly Census of Employment and Wages
+(QCEW) covers virtually all U.S. jobs — roughly 95% of all employment
+— through the unemployment insurance system. Unlike surveys, QCEW is a
+near-census of covered employment and wages, making it the standard
+source for local labor market analysis.
+
+Data is available at the **county and state level** from **1990 to the
+present**.
+
+### Sector breakdowns
+
+Two sector classification systems are available via `sector_type`:
+
+-   **`"BLS"`** (default) — 11 NAICS supersectors from the source data
+-   **`"CORI"`** — 3 custom supersectors: Tradable Goods, Tradable
+    Services, and Local Services
+
+```{r}
+#| eval: false
+# BLS sector employment counts
+bls_emp <- get_sector_employment(
+  geography   = "county",
+  years       = 2018:2023,
+  sector_type = "BLS",
+  value_type  = "count"
+)
+
+# CORI super-sector employment shares
+cori_share <- get_sector_employment(
+  geography   = "county",
+  years       = 2018:2023,
+  sector_type = "CORI",
+  value_type  = "share"
+)
+```
+
+```{r}
+#| eval: false
+# Average pay by CORI super-sector
+cori_pay <- get_sector_wages(
+  geography   = "county",
+  years       = 2018:2023,
+  sector_type = "CORI"
+)
+```
+
+**Note on CORI counts:** CORI supersector employment counts are not
+stored directly. To derive approximate counts from shares, multiply
+`value` by `agg_var`:
+
+```{r}
+#| eval: false
+library(dplyr)
+
+cori_share |>
+  mutate(approx_employment = value * agg_var)
+```
+
+### Filtering by geography
+
+```{r}
+#| eval: false
+# Specific counties
+emp <- get_employment(geoids = c("33009", "33011"), years = 2010:2023)
+
+# Specific states
+pay <- get_wage_salary(geoids = c("33", "50", "23"), years = 2015:2023)
+```
+
+### Rural vs. non-rural comparison
+
+```{r}
+#| eval: false
+library(dplyr)
+
+county_emp <- get_employment(geography = "county", years = 2010:2023)
+
+rural_definition <- ruraldefinitions::cbsa_2023 |> select(geoid, is_rural)
+
+county_comparison <- county_emp |>
+  left_join(rural_definition, by = "geoid") |>
+  filter(!is.na(is_rural), year == 2023) |>
+  group_by(year, is_rural) |>
+  summarize(total_employment = sum(value, na.rm = TRUE), .groups = "drop")
+
+print(county_comparison)
+```
+
+### Understanding agg_var
+
+Functions that return rates or shares include an `agg_var` column — the
+employment weight used for proper aggregation across geographies. To
+compute an employment-weighted average pay across a set of counties:
+
+```{r}
+#| eval: false
+pay <- get_wage_salary(geography = "county", years = 2023)
+
+pay |>
+  summarize(
+    weighted_avg_pay = sum(value * agg_var, na.rm = TRUE) /
+                       sum(agg_var, na.rm = TRUE)
+  )
+```
+
+## Rural vs. Nonrural Employment Trends
+
+*Adapted from the [Rural vs. Nonrural Employment Trends
+vignette](https://github.com/ruralinnovation/cori.data.qcew/blob/main/vignettes/rural-employment-trends.Rmd)
+on GitHub.*
+
+This vignette compares employment trends between rural and nonrural
+counties since the Great Recession using `get_employment()`, the
+`ruraldefinitions` package, and `cori.charts` for visualization.
+
+```{r}
+#| eval: false
+library(cori.data.qcew)
+library(cori.charts)
+library(ruraldefinitions)
+library(ggrepel)
+library(dplyr)
+library(ggplot2)
+
+load_fonts()
+```
+
+### Rural vs. nonrural employment since the Great Recession
+
+Pull county-level annual employment for all years since 2007:
+
+```{r}
+#| eval: false
+emp_raw <- get_employment(
+  geography = "county",
+  years     = 2007:2024
+)
+```
+
+Keep only 5-digit county geoids and attach the rural/nonrural flag from
+`ruraldefinitions::cbsa_2023`:
+
+```{r}
+#| eval: false
+emp_co <- emp_raw |>
+  filter(nchar(geoid) == 5) |>
+  left_join(
+    cbsa_2023 |> select(geoid, is_rural),
+    by = "geoid"
+  )
+```
+
+Index employment to 2007 levels within each group to show relative
+change:
+
+```{r}
+#| eval: false
+chrt_dta <- emp_co |>
+  filter(!is.na(is_rural)) |>
+  group_by(is_rural, year) |>
+  reframe(tot_emp = sum(value)) |>
+  group_by(is_rural) |>
+  mutate(
+    index_value = tot_emp / tot_emp[year == 2007],
+    year        = as.numeric(year)
+  )
+```
+
+Quick stats for the most recent year-over-year change:
+
+```{r}
+#| eval: false
+latest_yr <- max(chrt_dta$year)
+
+chrt_dta |>
+  filter(year >= (latest_yr - 1)) |>
+  arrange(is_rural, year) |>
+  group_by(is_rural) |>
+  mutate(pct_change = (tot_emp - lag(tot_emp)) / lag(tot_emp)) |>
+  filter(year == latest_yr) |>
+  select(is_rural, pct_change)
+```
+
+```{r}
+#| eval: false
+label_df <- chrt_dta |> filter(year == max(year))
+
+# NOTE: chart title uses "fragile" — revisit framing before publishing
+fig_line <- chrt_dta |>
+  ggplot(aes(x = year, y = index_value, color = is_rural, group = is_rural)) +
+  annotate("rect", xmin = 2007, xmax = 2009, ymin = .9, ymax = 1.2,
+           fill = "grey90", alpha = 0.5) +
+  geom_line(linewidth = 1.5) +
+  geom_text_repel(
+    data          = label_df,
+    aes(label     = is_rural),
+    nudge_x       = 1.5,
+    direction     = "y",
+    hjust         = 0,
+    segment.color = NA,
+    size          = 5
+  ) +
+  scale_y_continuous(
+    labels = scales::label_percent(accuracy = 1),
+    limits = c(.9, 1.2),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  scale_x_continuous(
+    expand   = expansion(mult = c(0, 0)),
+    n.breaks = 5,
+    labels   = scales::label_number(accuracy = 1)
+  ) +
+  scale_color_manual(
+    values = c(
+      "Rural"    = cori_palettes$ctg2ruralnonrural[[1]],
+      "Nonrural" = cori_palettes$ctg2ruralnonrural[[2]]
+    )
+  ) +
+  theme_cori() +
+  theme(
+    legend.position = "none",
+    axis.ticks.x    = element_line(color = "#d0d2ce", linewidth = .25),
+    plot.title      = element_text(color = cori_colors[["Dark Green"]])
+  ) +
+  labs(
+    title    = "Rural employment set back twice since the Great Recession",
+    subtitle = "Relative change in employment since 2007",
+    x        = NULL,
+    y        = NULL,
+    caption  = paste0(
+      "Source: CORI analysis of BLS Quarterly Census of Employment and Wages.\n",
+      "Note: Indexed to 2007 levels. Rural = nonmetro counties per CBSA 2023 definition."
+    )
+  )
+
+fig_line
+```
+
+### Regional breakdown
+
+To see how rural employment trends differ by Census region:
+
+```{r}
+#| eval: false
+region_xwalk <- tigris::states() |>
+  sf::st_drop_geometry() |>
+  select(GEOID, REGION) |>
+  mutate(
+    region = case_when(
+      REGION == "1" ~ "Northeast",
+      REGION == "2" ~ "Midwest",
+      REGION == "3" ~ "South",
+      REGION == "4" ~ "West"
+    )
+  )
+
+regional_rural <- emp_co |>
+  filter(!is.na(is_rural), is_rural == "Rural") |>
+  mutate(st_fips = substr(geoid, 1, 2)) |>
+  left_join(region_xwalk, by = c("st_fips" = "GEOID")) |>
+  filter(!is.na(region)) |>
+  group_by(region, year) |>
+  reframe(tot_emp = sum(value)) |>
+  group_by(region) |>
+  mutate(
+    index_value = tot_emp / tot_emp[year == 2007],
+    year        = as.numeric(year)
+  )
+```
+
+```{r}
+#| eval: false
+region_colors <- c(
+  "West"      = cori_palettes$ctg4mid[[1]],
+  "South"     = cori_palettes$ctg4mid[[2]],
+  "Midwest"   = cori_palettes$ctg4mid[[3]],
+  "Northeast" = cori_palettes$ctg4mid[[4]]
+)
+
+label_df <- regional_rural |> filter(year == max(year))
+
+regional_rural |>
+  ggplot(aes(x = year, y = index_value, color = region)) +
+  annotate("rect", xmin = 2007, xmax = 2009, ymin = -Inf, ymax = Inf,
+           fill = "grey90", alpha = 0.5) +
+  geom_hline(yintercept = 1, color = "grey70", linetype = "dashed") +
+  geom_line(linewidth = 1.5) +
+  geom_text_repel(
+    data          = label_df,
+    aes(label     = region),
+    nudge_x       = 0.5,
+    direction     = "y",
+    hjust         = 0,
+    segment.color = NA,
+    size          = 4.5,
+    show.legend   = FALSE
+  ) +
+  scale_color_manual(values = region_colors) +
+  scale_x_continuous(
+    limits = c(2007, max(regional_rural$year) + 3),
+    expand = expansion(mult = c(0.02, 0)),
+    labels = scales::label_number(accuracy = 1, big.mark = "")
+  ) +
+  scale_y_continuous(
+    labels = scales::label_percent(accuracy = 1),
+    expand = expansion(mult = c(0, .1))
+  ) +
+  theme_cori() +
+  theme(
+    legend.position = "none",
+    axis.ticks.x    = element_line(color = "#d0d2ce", linewidth = .25),
+    plot.title      = element_text(color = cori_colors[["Dark Green"]])
+  ) +
+  labs(
+    title    = "Rural employment by Census region: West leads recovery",
+    subtitle = "Relative change in rural employment since the Great Recession",
+    x        = NULL,
+    y        = NULL,
+    caption  = paste0(
+      "Source: CORI analysis of BLS Quarterly Census of Employment and Wages.\n",
+      "Note: Indexed to 2007 levels. Rural = nonmetro counties per CBSA 2023 definition."
+    )
+  )
+```
+
+### Industry concentration: HHI
+
+The Herfindahl-Hirschman Index (`employment_hhi`) measures how
+concentrated a county's employment is across industries. Higher values
+indicate fewer industries dominating local employment — a sign of lower
+diversification. Comparing rural and nonrural counties in the Midwest
+illustrates how this plays out within a single region.
+
+```{r}
+#| eval: false
+library(ggbeeswarm)
+
+midwest_fips <- c("17", "18", "19", "20", "26", "27", "29",
+                  "31", "38", "39", "46", "55")
+
+emp_raw <- get_employment(geography = "county", years = 2024) |>
+  filter(nchar(geoid) == 5, substr(geoid, 1, 2) %in% midwest_fips) |>
+  select(geoid, employment = value)
+
+hhi_raw <- get_employment_concentration(geography = "county", years = 2024) |>
+  select(geoid, employment_hhi = value)
+
+midwest_co <- emp_raw |>
+  left_join(hhi_raw, by = "geoid") |>
+  left_join(cbsa_2023 |> select(geoid, is_rural), by = "geoid") |>
+  filter(!is.na(is_rural), !is.na(employment_hhi))
+```
+
+```{r}
+#| eval: false
+fig_swarm <- midwest_co |>
+  ggplot(aes(x = employment_hhi, y = is_rural,
+             size = employment, color = is_rural)) +
+  geom_beeswarm(cex = 0.6, groupOnX = FALSE, alpha = 0.4) +
+  scale_x_continuous(
+    labels = scales::label_comma(),
+    expand = expansion(mult = c(0.02, 0.02))
+  ) +
+  scale_color_manual(
+    values = c(
+      "Rural"    = cori_palettes$ctg2ruralnonrural[[1]],
+      "Nonrural" = cori_palettes$ctg2ruralnonrural[[2]]
+    ),
+    guide = "none"
+  ) +
+  scale_size(
+    range  = c(0.5, 6),
+    labels = scales::label_comma(scale_cut = scales::cut_short_scale()),
+    guide  = guide_legend(
+      title          = "Employment",
+      title.position = "left",
+      title.theme    = element_text(margin = margin(r = 8), size = 11),
+      label.theme    = element_text(margin = margin(r = 5), size = 11)
+    )
+  ) +
+  theme_cori() +
+  labs(
+    title    = "Rural Midwest counties have more concentrated economies",
+    subtitle = "Employment HHI by rural status, Midwest counties (2024)",
+    x        = "Employment HHI (higher = more concentrated)",
+    y        = NULL,
+    caption  = paste0(
+      "Source: CORI analysis of BLS Quarterly Census of Employment and Wages.\n",
+      "Note: Each dot is one county, sized by total employment. ",
+      "Rural = nonmetro per CBSA 2023 definition."
+    )
+  )
+
+fig_swarm
+```
+
+## Related
+
+-   **Dataset:** [QCEW Employment &
+    Wages](/datasets/qcew-employment-wages/) — source dataset
+    documentation
+-   **Package:** [cori.data](/packages/cori-data/) — meta-package that
+    includes `cori.data.qcew`
+-   **Package:** [ruraldefinitions](/packages/ruraldefinitions/) —
+    rural/nonrural county classifications used throughout
+-   **Project:** [Rural Economic
+    Outlook](/projects/rural-economic-outlook/) — QCEW is a core input
+    to CORI's multi-dataset economic analysis
+
+::: callout-note
+**Data attribution:** QCEW data is produced by the U.S. Bureau of Labor
+Statistics. When citing analysis using this package, reference: U.S.
+Bureau of Labor Statistics, Quarterly Census of Employment and Wages,
+[www.bls.gov/cew](https://www.bls.gov/cew/).
+:::

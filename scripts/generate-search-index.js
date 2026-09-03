@@ -42,6 +42,14 @@ const CONTENT_TYPES = [
 ];
 
 /**
+ * Compare two content titles for alphabetical (A-Z) ordering.
+ * Mirrors compareByTitle() in src/utils/content.ts so listings and search agree.
+ */
+function compareByTitle(a, b) {
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+}
+
+/**
  * Read frontmatter from a .qmd or .md file.
  * For .md files, prefer the .metadata.json sidecar written by R's write_metadata_sidecars().
  */
@@ -137,13 +145,8 @@ function buildIndex() {
     }
   }
 
-  // Sort by date descending, then title ascending
-  allItems.sort((a, b) => {
-    const da = a.date ? new Date(a.date).getTime() : 0;
-    const db = b.date ? new Date(b.date).getTime() : 0;
-    if (db !== da) return db - da;
-    return a.title.localeCompare(b.title);
-  });
+  // Sort by title ascending
+  allItems.sort((a, b) => compareByTitle(a.title, b.title));
 
   const index = {
     items: allItems,

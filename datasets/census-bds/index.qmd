@@ -1,17 +1,22 @@
 ---
 title: "Census Business Dynamics Statistics (BDS)"
-description: "Annual measures of business entry, exit, and job creation by firm age and size"
+description: "Annual measures of establishment entry, exit, and job flows from
+  1978 to present, derived from longitudinal business records. One of the primary
+  federal sources for tracking entrepreneurial dynamism, firm lifecycle, and the
+  churn beneath aggregate employment levels."
 author: "Mapping & Data Analytics Team"
-date: "2026-02-02"
+date: "2026-09-02"
 categories: ["Dataset", "Entrepreneurship"]
-tags: ["Census", "Business Dynamics", "Job Creation", "County-Level"]
+tags: ["BDS", "Census", "Business Dynamics", "Establishments", "County-Level",
+  "Administrative Data"]
 dataset:
-  name: "Business Dynamics Statistics (BDS)"
+  name: "Census Business Dynamics Statistics (BDS)"
   source: "U.S. Census Bureau"
   sourceUrl: "https://www.census.gov/programs-surveys/bds.html"
+  methodologyUrl: "https://www.census.gov/programs-surveys/bds/documentation/methodology.html"
   accessMethod: "Census API and Bulk Download"
   updateFrequency: "Annual"
-  geographicLevel: "County, MSA, State, National"
+  geographicLevel: "County, State, National"
   dataFormat: ["CSV", "API"]
   featured: true
 execute:
@@ -25,292 +30,176 @@ editor:
 
 ## Overview
 
-The Business Dynamics Statistics (BDS) provides annual measures of business openings and closings, job creation and destruction, and employment changes by firm age and size. Built from the Census Bureau's Longitudinal Business Database (LBD), BDS tracks the universe of employer businesses with paid employees.
+The Census Bureau's Business Dynamics Statistics (BDS) track
+establishment births, deaths, and employment flows across the U.S.
+economy from 1978 to the present. While most labor market data answers
+"how many jobs exist," BDS answers "where those jobs came from" —
+distinguishing new establishments from expansions, and closures from
+contractions. This granularity makes BDS one of the primary federal sources for
+studying entrepreneurial dynamism, firm lifecycle, and the underlying
+churn of a local economy. QCEW tells us what the labor market looks like;
+BDS helps explain how the business and employment base is changing
+beneath the surface.
 
-BDS is essential for understanding entrepreneurship, business dynamism, and the role of young firms in job creation. It uniquely measures **firm age** (not just establishment age), enabling analysis of startup ecosystems and firm lifecycle dynamics.
+BDS is derived from the Census Bureau's Longitudinal Business Database
+(LBD), which links IRS employer records, Social Security Administration
+payroll data, and Economic Census information to track individual firms
+and establishments over time. The longitudinal linkage makes it possible
+to measure establishment age and distinguish new firms from establishments
+associated with existing firms — an important capability for county-level
+analysis that sets BDS apart from most other federal business data
+sources.
 
 ::: callout-note
-## Why BDS is Essential
-
-- **Universe data** - Administrative records, not survey (no sampling error)
-- **Firm age tracking** - Unique ability to distinguish true startups from branch openings
-- **Job flow measures** - Gross creation/destruction reveal churn, not just net change
-- **Historical depth** - National data back to 1977 (county data from 2007)
+**Firm vs. establishment:** A firm is a business organization that may
+operate at one or more locations. An establishment is a single physical
+business location. BDS tracks both, allowing users to distinguish
+business formation from the opening, closing, or expansion of individual
+locations.
 :::
+
+## What This Data Tells Us About Rural America
+
+The Business Dynamics Statistics provide a window into the
+entrepreneurial vitality of local economies that employment headcounts
+alone cannot offer. By tracking establishment entry, exit, and survival
+alongside job creation and destruction at the county level, BDS reveals
+whether a community's business base is renewing itself, contracting, or
+consolidating — dynamics that have significant implications for long-run
+economic resilience.
+
+Rural communities tend to have smaller and more concentrated business
+ecosystems than their metro counterparts, which makes BDS particularly
+informative. In communities where a small number of establishments
+account for a large share of employment, business exit can be
+consequential in ways that aggregate county-level employment data
+absorbs only with a lag. BDS makes the churning process beneath the
+headline visible: a community holding steady employment while losing
+established firms and gaining new ones is in a fundamentally different
+position than one where the same employers have persisted for decades.
+
+Establishments 1–5 years old account for a disproportionate share of
+job creation relative to more established establishments, a pattern
+visible in rural communities as well. Examining job creation by establishment age helps
+researchers understand whether new and young businesses are contributing
+meaningfully to local employment growth, and whether that contribution
+is changing over time. BDS is a useful measure of whether
+entrepreneurial momentum is building or stalling, though it describes
+current dynamics rather than predicting future outcomes. Business formation and employment growth are
+not always tightly coupled in the short run — new businesses take time
+to scale — making multi-year trend analysis more informative than any
+single year snapshot.
 
 ## Coverage
 
-::: columns
-::: {.column width="50%"}
-**Geographic Coverage**
+- **Geography:** County, State, National
+- **Time range:** 1978–present (county data available from 1978; earlier
+  years at smaller geographies may have more disclosure suppression)
+- **Update frequency:** Annual; typically released approximately 18
+  months after the reference year
+- **Universe:** U.S. employer businesses — firms and establishments with
+  paid employees. Does not cover the nonemployer universe (self-employed
+  with no employees).
 
-- County
-- Metropolitan Statistical Area (MSA)
-- State
-- National
-:::
-
-::: {.column width="50%"}
-**Temporal Coverage**
-
-- 1977-present (national; county from 2007)
-- Annual updates
-- Released ~2 years after reference year
-- Universe: All employer businesses
-:::
+::: callout-note
+**Notable exclusions:** BDS covers employer businesses only and does not
+include self-employed individuals or non-employer businesses. Sector
+coverage is not uniform across all industries. See the [BDS methodology
+page](https://www.census.gov/programs-surveys/bds/documentation/methodology.html)
+for the full coverage description.
 :::
 
 ## Key Variables
 
-### Business Counts
+BDS separates **business dynamics** from **employment dynamics**,
+allowing users to distinguish changes in the number of establishments
+from changes in the number of jobs — and to decompose both into what
+came from new, expanding, contracting, and closing establishments.
 
-- **Establishments** - Total number of business establishments
-- **Firms** - Number of separate business entities
-- **Establishment Entry Rate** - % of establishments that are new entrants (<1 year)
-- **Establishment Exit Rate** - % of establishments that closed in last 12 months
+**Business dynamics** ([`get_business_dynamics()`](#accessing-the-data))
 
-### Employment
+- `establishments` — total establishment count
+- `estab_entries`, `estab_entry_rate` — new establishments opening
+- `estab_exits`, `estab_exit_rate` — establishments closing
+- `firms`, `firm_deaths` — firm counts and closures
 
-- **Total Employment** - Jobs at all establishments
-- **Employment by Firm Age** - Jobs at firms 0-5, 6-10, 11+ years old
-- **Employment by Firm Size** - Jobs at firms with <20, 20-499, 500+ employees
+**Employment dynamics** ([`get_employment_dynamics()`](#accessing-the-data))
 
-### Job Flows
+- `employees` — total employment
+- `job_creation`, `job_creation_births`, `job_creation_continuers` —
+  gross jobs added (from new and expanding establishments)
+- `job_destruction`, `job_destruction_deaths`,
+  `job_destruction_continuers` — gross jobs lost (from closing and
+  contracting establishments)
+- `job_creation_rate`, `job_destruction_rate`, `net_job_creation_rate`
+  — rates relative to average employment
 
-- **Job Creation** - Gross jobs created (new businesses + expanding businesses)
-- **Job Destruction** - Gross jobs lost (closing businesses + contracting businesses)
-- **Net Job Creation** - Job creation minus job destruction
-- **Job Creation Rate** - Job creation as % of average employment
+**Dimensional breakdowns**
 
-### Firm Age Dynamics (CORI Focus)
+Three mutually exclusive breakdowns are available via `_by_sector`,
+`_by_age`, and `_by_size` function variants:
 
-- **Share of Job Creation from Young Firms (0-5 years)** - % of all new jobs from startups
-- **Share from Mid-Age Firms (6-10 years)** - % from scaling businesses
-- **Share from Mature Firms (11+ years)** - % from established businesses
+- **By NAICS sector** — identifies where business dynamism is occurring;
+  20 major 2-digit sectors at county level, finer detail at state and
+  national level
+- **By establishment age** — distinguishes startup and young-firm
+  dynamics from mature-firm dynamics; age 0 through 26+ years
+- **By firm size** — reveals whether dynamics are concentrated among
+  smaller or larger employers; three mutually exclusive categories:
+  1–19, 20–499, and 500+ employees
 
-## Access
+::: callout-important
+**Mind the suppression.** BDS protects the confidentiality of
+individual businesses, so some county-level estimates may be suppressed
+— particularly for small industries or geographies. Suppression can
+affect comparisons and trend analysis in very small rural communities.
+Unlike ACS, BDS is not a sample survey; suppression reflects
+confidentiality protection, not sampling uncertainty.
+:::
 
-### Census API
+## Accessing the Data
 
-::: panel-tabset
-## censusapi Package
+### Via CORI R Package
 
-```{r}
-#| eval: false
+The [`cori.data.bds`](/packages/cori-data-bds/) package provides tidy
+access to BDS at the county, state, and national level across all
+available years.
 
-# Using census API
-library(censusapi)
-
-bds_data <- getCensus(
-  name = "timeseries/bds/firms",
-  vars = c("firm", "estabs", "emp", "job_creation"),
-  region = "county:*",
-  time = "2020"
-)
-```
-
-## Bulk Download
-
-Annual CSV files:
-
-- [BDS Data Tables](https://www.census.gov/data/datasets/time-series/econ/bds/bds-datasets.html)
-
-## CORI Packages
-
-```{r}
-#| eval: false
-
-# Using cori.data.bds package
+```r
 library(cori.data.bds)
 
-bds_county <- get_bds(
-  geography = "county",
-  years = 2007:2023
-)
-```
-:::
+# Aggregate business dynamics — county level
+get_business_dynamics(geography = "county", years = 2018:2023)
 
-## Data Structure
+# Employment dynamics by establishment age
+get_employment_dynamics_by_age(geography = "county", years = 2018:2023)
 
-**Standard Format:**
-
-- One row per geography per firm characteristic per year
-- GEOID: 5-digit county FIPS code
-- Firm age/size bins as separate rows or columns
-
-**Typical Variables:**
-
-```
-geoid, year, establishments, estab_entry_rate, estab_exit_rate,
-employment, job_creation, job_destruction, net_job_creation,
-share_job_created_0_5_years, share_job_created_6_10_years,
-share_job_created_11_plus_years
+# Business dynamics by sector — state level
+get_business_dynamics_by_sector(geography = "state", years = 2018:2023)
 ```
 
-## Methodology
+### Direct from Source
 
-### Longitudinal Business Database (LBD)
+Annual CSV files are available from the [BDS data
+page](https://www.census.gov/programs-surveys/bds/data.html). Data are
+also accessible via the Census API. See the [BDS methodology
+page](https://www.census.gov/programs-surveys/bds/documentation/methodology.html)
+for full documentation of concepts, variable definitions, and coverage.
 
-BDS is derived from the LBD, which links:
+## Related
 
-- **IRS business tax returns** - Employer Identification Numbers (EINs)
-- **Social Security Administration payroll records** - Quarterly employment
-- **Economic Census** - Industry classifications
-
-### Firm vs. Establishment
-
-::: columns
-::: {.column width="50%"}
-**Establishment**
-
-A single physical location (e.g., one retail store)
-:::
-
-::: {.column width="50%"}
-**Firm**
-
-A business entity that may own multiple establishments (e.g., retail chain)
-:::
-:::
-
-**BDS measures firm age**, not establishment age. This captures:
-
-- True startups (new firms, not just new branches)
-- Firm lifecycle dynamics
-- Entrepreneurial activity vs. corporate expansion
-
-### Entry and Exit Rates
-
-```
-Entry Rate = (New establishments in year t) / (Establishments in year t) × 100
-
-Exit Rate = (Establishments that closed in last 12 months) / (Establishments in year t-1) × 100
-```
-
-### Job Creation and Destruction
-
-```
-Job Creation = Σ(employment growth at expanding/new establishments)
-Job Destruction = Σ(employment decline at contracting/closing establishments)
-Net Job Creation = Job Creation - Job Destruction
-```
-
-## Use Cases
-
-### In CORI Projects
-
-| Project | Use Case |
-|---------|----------|
-| [Rural Economic Outlook](/projects/rural-economic-outlook/) | Business dynamism trends 2007-2023 |
-| Entrepreneurship Analysis | Entry/exit rates in rural vs. metro |
-| Young Firm Job Creation | Role of startups (0-5 years) in employment growth |
-| Economic Resilience | How quickly counties replace lost jobs |
-| Sectoral Dynamics | Job creation by industry |
-
-### Common Applications
-
-- Entrepreneurship ecosystem assessment
-- Economic development strategy
-- Recession recovery analysis (job flows during downturns)
-- Comparison with venture capital investment
-- Understanding "startup cities" vs. "steady-state" economies
-
-## Strengths & Limitations
-
-::: columns
-::: {.column width="50%"}
-### Strengths
-
-- Universe data (no sampling error)
-- Firm age tracking (unique)
-- Job flow measures
-- Historical depth (1977+)
-- Consistent methodology
-:::
-
-::: {.column width="50%"}
-### Limitations
-
-- Lagged release (~2 years)
-- County data starts 2007
-- Excludes non-employers
-- Disclosure suppression
-- Limited industry detail at county level
-:::
-:::
-
-## Important Notes
-
-### Young Firms and Job Creation
-
-::: callout-tip
-## Research Findings
-
-Research (Haltiwanger, Jarmin, Miranda) shows:
-
-- **Young firms (0-5 years) create disproportionate share of new jobs**
-- After controlling for firm age, firm size has little effect on job creation rates
-- **Startups have high failure rates** but survivors grow rapidly
-
-BDS enables this analysis by separating firm age from firm size.
-:::
-
-### Rural Entrepreneurship Patterns
-
-CORI analysis finds:
-
-- Rural areas often have **lower entry rates** but similar exit rates
-- Young firm job creation share varies widely across rural counties
-- Counties with strong young firm dynamics tend to have better economic momentum
-
-### Relationship to BFS
-
-BDS measures **employer businesses** (firms with paid employees), while [Census BFS](/datasets/census-bfs/) measures **business applications** (intent to start business).
-
-**Pipeline:** BFS applications → (18 months) → BDS employer firms
-
-## Related Datasets
-
-- [Census Business Formation Statistics](/datasets/census-bfs/) - Leading indicator of BDS entry
-- [QCEW Employment & Wages](/datasets/qcew-employment-wages/) - Quarterly employment data
-- [Census Nonemployer Statistics](/datasets/census-nonemployer/) - Self-employed data
-
-## R Packages
-
-### Recommended Packages
-
-```{r}
-#| eval: false
-
-# Install packages
-install.packages("censusapi")     # General Census API wrapper
-# remotes::install_github("ruralinnovation/cori.data.bds")  # CORI package
-```
-
-### Usage Example
-
-```{r}
-#| eval: false
-
-library(censusapi)
-
-# Get BDS data for counties
-bds_data <- getCensus(
-  name = "timeseries/bds/firms",
-  vars = c("firms", "estabs", "emp", "job_creation", "job_destruction"),
-  region = "county:*",
-  time = "2020"
-)
-```
-
-## Additional Resources
-
-- [BDS Data User Guide](https://www.census.gov/programs-surveys/bds/documentation/methodology.html)
-- [cori.data.bds R Package](https://github.com/ruralinnovation/cori.data.bds)
-- [Rural Economic Outlook Project](https://github.com/ruralinnovation/data-rural-economic-outlook)
-
----
-
-**Last Updated:** February 2, 2026
-**Data Coverage:** 1977-2023 (national), 2007-2023 (county)
-**Contact:** [data@ruralinnovation.us](mailto:data@ruralinnovation.us)
+- **Package:** [cori.data.bds](/packages/cori-data-bds/) — CORI's tidy
+  access layer with sector, age, and size breakdowns
+- **Package:** [cori.data](/packages/cori-data/) — meta-package
+  including `cori.data.bds`
+- **Dataset:** [Census Business Formation
+  Statistics](/datasets/census-bfs/) — EIN application counts provide a
+  more timely signal of business formation activity; BDS provides the
+  observed establishment entry and subsequent job dynamics
+- **Dataset:** [QCEW Employment &
+  Wages](/datasets/qcew-employment-wages/) — provides current quarterly
+  employment and wage levels; BDS explains how the business and
+  employment base is changing beneath those levels
+- **Project:** [Rural Economic
+  Outlook](/projects/rural-economic-outlook/) — BDS is a core input to
+  CORI's multi-dataset economic analysis

@@ -1,19 +1,32 @@
 ---
-title: "cori.data.bfs"
-description: "Access and analyze U.S. Census Bureau Business Formation Statistics (BFS) at county, state, and national level from 2005 to present"
-author: "Drew Rosebush"
-date: "2026-05-12"
-categories: ["R Package", "Entrepreneurship"]
-tags: ["BFS", "Business Formation", "Business Applications", "County-Level", "S3", "Tidy Data"]
+title: cori.data.bfs
+description: Access and analyze U.S. Census Bureau Business Formation Statistics
+  (BFS) at the county, state, and national level from 2005 to present. Measures
+  business applications — EIN filings — as a leading indicator of entrepreneurial
+  activity in rural and nonrural communities.
+author: Drew Rosebush
+date: '2026-08-31'
+categories:
+  - R Package
+  - Entrepreneurship
+tags:
+  - BFS
+  - Business Formation
+  - EIN
+  - County-Level
+  - S3
+  - Tidy Data
+  - Rural
 package:
-  name: "cori.data.bfs"
-  githubUrl: "https://github.com/ruralinnovation/cori.data.bfs"
-  installCommand: 'remotes::install_github("ruralinnovation/cori.data.bfs")'
-  status: "development"
-  version: "0.1.0"
-  maintainer: "Drew Rosebush"
+  name: cori.data.bfs
+  githubUrl: https://github.com/ruralinnovation/cori.data.bfs
+  installCommand: remotes::install_github("ruralinnovation/cori.data.bfs")
+  status: development
+  version: 0.1.0
+  maintainer: Drew Rosebush
   featured: false
-usesDatasets: ["census-bfs"]
+usesDatasets:
+  - census-bfs
 usesResources: []
 execute:
   echo: true
@@ -28,143 +41,241 @@ editor:
 
 The `cori.data.bfs` package provides access to U.S. Census Bureau
 Business Formation Statistics (BFS) at the county, state, and national
-level from 2005 to present. BFS data tracks the number of business
-applications filed with the IRS — a leading indicator of entrepreneurial
-activity that precedes actual business formation by 6–18 months.
+level from 2005 to the present. BFS measures business applications —
+Employer Identification Number (EIN) filings with the IRS — as a
+leading indicator of entrepreneurial activity. Because applications
+precede establishment by months or years, the data captures
+entrepreneurial momentum before it shows up in employment or business
+counts.
 
-Data are returned in long format: one row per `geoid / year / variable`.
+Because applications precede establishments by months or years, BFS is
+the earliest observable signal of whether entrepreneurial momentum is
+building in a community — particularly useful for tracking rural
+economies where establishment counts alone may show little movement. All
+data are returned in the standard `cori.data` long format: one row per
+`geoid / year / variable`.
 
-::: callout-note
-## Why Use This Package
-
--   **Leading indicator** — Business applications precede actual firm
-    births, making BFS the earliest available signal of entrepreneurship
-    activity
--   **S3-backed access** — Pre-processed data available via DuckDB
-    without downloading full Census source files
--   **Long panel** — Annual data from 2005 to present, refreshed each
-    year after Census release
--   **Consistent geoids** — Standard 5-digit FIPS for counties, 2-digit
-    for states, `"00"` for national
-:::
-
-## Installation
+## Installation & Quick Start
 
 ```{r}
 #| eval: false
-
 remotes::install_github("ruralinnovation/cori.data.bfs")
 ```
 
-## Quick Start
-
 ```{r}
 #| eval: false
-
 library(cori.data.bfs)
 
-# All data, latest vintage
-df <- read_bfs_from_s3()
-
-# Business applications for specific counties and years
-df <- read_bfs_from_s3(
-  variables = "business_applications",
-  geoids    = c("54011", "54025"),
-  years     = 2010:2024
-)
-
-# Variable documentation
+# All variables and their definitions
 get_bfs_codebook()
-```
 
-## Key Features
+# Total business applications — all counties, all years
+get_business_applications(geography = "county")
 
-### S3-Backed Data Access
-
-Pre-processed data is stored in S3 and queried via DuckDB, returning
-only the rows you need without downloading the full dataset:
-
-```{r}
-#| eval: false
-
-# Filter by geography, variables, and year range
-read_bfs_from_s3(
-  variables = "business_applications",
-  geoids    = c("54011"),
-  years     = 2015:2024
+# New Hampshire counties, 2010 onward
+get_business_applications(
+  geoids = c("33009", "33011"),
+  years  = 2010:2024
 )
 ```
 
-### Data Refresh (Admin)
+## What This Data Tells Us About Rural
 
-After Census releases new estimates (typically mid-year), refresh the
-S3 store:
+Business applications are best interpreted as a leading indicator of
+future establishment counts rather than a measure of current economic
+strength. Not all applications convert to employer businesses, and the
+conversion rate varies by community conditions, industry, and access to
+capital and support. Reading application trends alongside employment and
+wage data gives the fullest picture of whether entrepreneurial momentum
+is translating into durable economic change.
+
+## Introduction
+
+*Adapted from the [Introduction
+vignette](https://github.com/ruralinnovation/cori.data.bfs/blob/main/vignettes/introduction.Rmd)
+on GitHub.*
+
+`cori.data.bfs` provides annual business application counts from the
+U.S. Census Bureau's Business Formation Statistics. Data cover
+2005–present and measure total EIN
+applications filed with the IRS, excluding tax liens, estates, trusts,
+agriculture (NAICS 11), and public administration (NAICS 92).
+
+**Source:** U.S. Census Bureau, Business Formation Statistics\
+**Coverage:** 2005–present, updated annually\
+**Geography:** County (5-digit FIPS), state (2-digit FIPS), national (`"00"`)
+
+### Variables
 
 ```{r}
 #| eval: false
-
-write_bfs_processed_to_s3(years = 2005:2024)
+get_bfs_codebook() |>
+  dplyr::select(variable, label, unit, notes) |>
+  knitr::kable()
 ```
 
-## Core Functions
+### Reading data
 
-| Function | Category | Description |
-|---|---|---|
-| `read_bfs_from_s3()` | Data Access | Read processed BFS data from S3 via DuckDB |
-| `pull_bfs()` | Data Access | Pull raw data from Census source files |
-| `write_bfs_processed_to_s3()` | Admin | Process and write BFS data to S3 |
-| `get_bfs_codebook()` | Utility | Return variable definitions and metadata |
-| `latest_bfs_vintage()` | Utility | Return the most recent available vintage year |
+All data are returned in long format: one row per `geoid / year /
+variable`.
 
-## Data Coverage
+```{r}
+#| eval: false
+df <- get_business_applications(geography = "county")
+dplyr::glimpse(df)
+```
 
-| Dimension | Coverage |
-|---|---|
-| **Variables** | `business_applications` (BA series) |
-| **Geography** | National (`"00"`), State (2-digit FIPS), County (5-digit FIPS) |
-| **Time Period** | 2005–present |
-| **Update Frequency** | Annual (~6 months after year-end) |
-| **Source File** | `bfs_county_apps_annual.xlsx` (Census Bureau) |
+Filter to specific geographies, years, or variables:
 
-## Use Cases
+```{r}
+#| eval: false
+nh_bfs <- get_business_applications(
+  geoids = grep("^33", unique(df$geoid), value = TRUE),
+  years  = 2010:2024
+)
+dplyr::glimpse(nh_bfs)
+```
 
--   **Leading indicator analysis** — Track business application trends
-    6–18 months before firm births are recorded in BDS
--   **Rural entrepreneurship** — Compare rural vs. metro application
-    rates at county level
--   **Economic development** — Identify counties with accelerating or
-    decelerating startup formation
--   **Nowcasting** — Use latest BFS release to estimate upcoming BDS
-    figures before annual publication
+### Rural vs. Nonrural
 
-## Related Resources
+Business formation diverges between rural and nonrural counties. The
+chart below shows total business applications by rural status using the
+CBSA 2023 rural definition.
 
-### Datasets
+```{r}
+#| eval: false
+library(cori.charts)
+library(ggplot2)
+library(ruraldefinitions)
+library(dplyr)
 
--   [Census Business Formation Statistics](/datasets/census-bfs/) —
-    Source dataset documentation
--   [Census Business Dynamics Statistics](/datasets/census-bds/) —
-    Lagged companion measuring actual firm entry/exit
+load_fonts()
 
-### Related Packages
+rural_xwalk <- ruraldefinitions::cbsa_2023 |> select(geoid, is_rural)
 
--   [cori.data.bds](/packages/cori-data-bds/) — S3-backed access layer
-    for Business Dynamics Statistics (actual firm births/deaths)
+rural_avg <- df |>
+  left_join(rural_xwalk, by = "geoid") |>
+  filter(!is.na(is_rural)) |>
+  group_by(year, is_rural) |>
+  summarise(value = sum(value, na.rm = TRUE), .groups = "drop")
 
-### External Links
+ggplot(rural_avg, aes(x = year, y = value, color = is_rural)) +
+  annotate("rect", xmin = 2007.9, xmax = 2009.5,
+           ymin = -Inf, ymax = Inf, fill = "grey80", alpha = 0.4) +
+  annotate("rect", xmin = 2020, xmax = 2020.5,
+           ymin = -Inf, ymax = Inf, fill = "grey80", alpha = 0.4) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2.5) +
+  scale_color_manual(
+    values = c("Rural" = "#2F6E9B", "Nonrural" = "#7EBDC2"),
+    labels = c("Rural" = "Rural counties", "Nonrural" = "Nonrural counties")
+  ) +
+  scale_x_continuous(
+    breaks = seq(2005, 2024, by = 4),
+    expand = expansion(mult = c(0, 0.2))
+  ) +
+  scale_y_continuous(labels = scales::label_number(scale = 1e-3, suffix = "K")) +
+  theme_cori() +
+  theme(legend.position = "bottom") +
+  labs(
+    title    = "Rural business formation surged during the pandemic and has held",
+    subtitle = "Total business applications (BA series), 2005\u20132024",
+    x        = NULL,
+    y        = NULL,
+    color    = NULL,
+    caption  = paste0(
+      "Source: CORI analysis of U.S. Census Bureau Business Formation Statistics.\n",
+      "Shaded bands mark Great Recession (2008\u201309) and COVID-19 (2020). ",
+      "Rural classification: CORI CBSA 2023 definition."
+    )
+  )
+```
 
--   [Census BFS Homepage](https://www.census.gov/econ/bfs/)
--   [BFS Methodology](https://www.census.gov/econ/bfs/methodology.html)
--   [Source File](https://www.census.gov/econ/bfs/xlsx/bfs_county_apps_annual.xlsx)
+### County Spotlight: Grafton County, NH
 
-## Documentation
+```{r}
+#| eval: false
+library(cori.data.pep)
 
--   [GitHub Repository](https://github.com/ruralinnovation/cori.data.bfs)
--   [Full README](https://github.com/ruralinnovation/cori.data.bfs/blob/main/README.md)
+grafton_bfs <- get_business_applications(
+  geoids = c("33009", "33", "00"),
+  years  = 2005:2024
+)
 
----
+grafton_pop <- get_population(
+  geoids    = c("33009", "33", "00"),
+  variables = "population",
+  years     = 2005:2024
+) |>
+  select(geoid, year, population = value)
 
-**Contact:** Drew Rosebush (drew.rosebush@ruralinnovation.us)
+grafton <- grafton_bfs |>
+  left_join(grafton_pop, by = c("geoid", "year")) |>
+  mutate(
+    apps_per_1k = value / population * 1000,
+    group = case_when(
+      geoid == "33009" ~ "Grafton County, NH",
+      geoid == "33"    ~ "New Hampshire",
+      geoid == "00"    ~ "United States"
+    ),
+    group = factor(group, levels = c("Grafton County, NH", "New Hampshire", "United States"))
+  )
 
-For bug reports or feature requests, please open an issue on
-[GitHub](https://github.com/ruralinnovation/cori.data.bfs/issues).
+ggplot(grafton, aes(x = year, y = apps_per_1k,
+                    color = group, linetype = group, linewidth = group)) +
+  annotate("rect", xmin = 2007.9, xmax = 2009.5,
+           ymin = -Inf, ymax = Inf, fill = "grey80", alpha = 0.4) +
+  annotate("rect", xmin = 2020, xmax = 2020.5,
+           ymin = -Inf, ymax = Inf, fill = "grey80", alpha = 0.4) +
+  geom_line(na.rm = TRUE) +
+  geom_point(size = 2.5, na.rm = TRUE) +
+  scale_color_manual(values = c(
+    "Grafton County, NH" = "#2F6E9B",
+    "New Hampshire"      = "#7EBDC2",
+    "United States"      = "#9DA7B0"
+  )) +
+  scale_linetype_manual(values = c(
+    "Grafton County, NH" = "solid",
+    "New Hampshire"      = "dashed",
+    "United States"      = "dotted"
+  )) +
+  scale_linewidth_manual(values = c(
+    "Grafton County, NH" = 1.2,
+    "New Hampshire"      = 0.8,
+    "United States"      = 0.8
+  )) +
+  scale_x_continuous(breaks = seq(2005, 2024, by = 4)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = 0.1)) +
+  theme_cori() +
+  theme(legend.position = "bottom") +
+  labs(
+    title    = "Business applications per 1,000 residents \u2014 Grafton County, NH",
+    subtitle = "Compared to New Hampshire and the United States, 2005\u20132024",
+    x        = NULL, y = NULL, color = NULL, linetype = NULL, linewidth = NULL,
+    caption  = paste0(
+      "Source: CORI analysis of U.S. Census Bureau Business Formation Statistics.\n",
+      "Population denominator from Census Population Estimates Program via cori.data.pep.\n",
+      "Shaded bands mark Great Recession (2008\u201309) and COVID-19 (2020)."
+    )
+  )
+```
+
+## Related
+
+-   **Dataset:** [Census Business Formation Statistics](/datasets/census-bfs/)
+-   **Package:** [cori.data](/packages/cori-data/) — meta-package that
+    includes `cori.data.bfs`
+-   **Package:** [cori.data.bds](/packages/cori-data-bds/) — establishment
+    counts and job creation; pairs with BFS for the full formation-to-employment story
+-   **Package:** [cori.data.pep](/packages/cori-data-pep/) — population
+    denominators used in the county spotlight above
+-   **Project:** [Rural Economic
+    Outlook](/projects/rural-economic-outlook/) — BFS is a core input to
+    CORI's multi-dataset economic analysis
+
+::: callout-note
+**Data attribution:** Business Formation Statistics are produced by the
+U.S. Census Bureau. When citing analysis using this package, reference:
+U.S. Census Bureau, Business Formation Statistics,
+[www.census.gov/econ/bfs](https://www.census.gov/econ/bfs).
+:::

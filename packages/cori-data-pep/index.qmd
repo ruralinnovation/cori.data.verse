@@ -1,19 +1,33 @@
 ---
-title: "cori.data.pep"
-description: "Access and analyze U.S. Census Bureau Population Estimates Program (PEP) data at the county level from 2000 to present, including population totals and components of change"
-author: "Drew Rosebush"
-date: "2026-05-12"
-categories: ["R Package", "Demographics"]
-tags: ["PEP", "Population", "Migration", "County-Level", "S3", "Tidy Data", "Rural"]
+title: cori.data.pep
+description: Access and analyze U.S. Census Bureau Population Estimates Program
+  (PEP) data at the county level from 2000 to present, including population totals
+  and components of change (births, deaths, domestic and international migration).
+author: Drew Rosebush
+date: '2026-08-31'
+categories:
+  - R Package
+  - Demographics
+tags:
+  - PEP
+  - Population
+  - Demographics
+  - Components of Change
+  - Migration
+  - County-Level
+  - S3
+  - Tidy Data
+  - Rural
 package:
-  name: "cori.data.pep"
-  githubUrl: "https://github.com/ruralinnovation/cori.data.pep"
-  installCommand: 'remotes::install_github("ruralinnovation/cori.data.pep")'
-  status: "development"
-  version: "0.1.0"
-  maintainer: "Drew Rosebush"
+  name: cori.data.pep
+  githubUrl: https://github.com/ruralinnovation/cori.data.pep
+  installCommand: remotes::install_github("ruralinnovation/cori.data.pep")
+  status: development
+  version: 0.1.0
+  maintainer: Drew Rosebush
   featured: false
-usesDatasets: ["census-population-estimates", "census-pep-components"]
+usesDatasets:
+  - census-population-estimates
 usesResources: []
 execute:
   echo: true
@@ -27,161 +41,173 @@ editor:
 ## Overview
 
 The `cori.data.pep` package provides access to U.S. Census Bureau
-Population Estimates Program (PEP) data at the county level from 2000
-to present. It covers eight variables including total population,
-working-age population (16+), and a full decomposition of population
-change into natural change (births minus deaths) and net migration
-(domestic and international). Data span three Census vintages, handled
-internally by the package.
+Population Estimates Program (PEP) data at the county, state, and
+national level from 2000 to the present. The package covers both
+population totals and components of change — births, deaths, domestic
+migration, and international migration — enabling researchers to
+understand not just whether a community is growing or declining, but
+why.
 
-::: callout-note
-## Why Use This Package
+Disaggregating population change into its components — rather than
+reading net headcounts alone — is essential for understanding what is
+actually happening in a rural community: whether it is losing working-age
+residents while gaining retirees, or building through in-migration while
+natural change is negative. PEP is also the population denominator used
+across the `cori.data` ecosystem — `cori.data.bps` and `cori.data.bfs`
+both normalize their counts against PEP population estimates. All data
+are returned in the standard `cori.data` long format: one row per
+`geoid / year / variable`.
 
--   **Eight variables** — Total population, pop 16+, births, deaths,
-    natural change, domestic migration, international migration, net
-    migration
--   **Continuous panel from 2000** — Spans three decennial vintages
-    (2000–2009, 2010–2019, 2020–present), stitched into a single
-    consistent series
--   **S3-backed access** — Pre-processed data available via DuckDB for
-    fast county-level queries
--   **Standard long format** — One row per `geoid / year / variable`,
-    ready for tidy analysis
-:::
-
-## Installation
+## Installation & Quick Start
 
 ```{r}
 #| eval: false
-
 remotes::install_github("ruralinnovation/cori.data.pep")
 ```
 
-## Quick Start
-
 ```{r}
 #| eval: false
-
 library(cori.data.pep)
 
-# All data, latest vintage
-df <- read_pep_from_s3()
-
-# Total population and migration, specific years
-df <- read_pep_from_s3(
-  variables = c("population", "net_mig"),
-  years     = 2010:2024
-)
-
-# Specific counties
-df <- read_pep_from_s3(
-  variables = c("domestic_mig", "international_mig"),
-  geoids    = c("54011", "54025")
-)
-
-# Variable documentation
+# All available variables
 get_pep_codebook()
+
+# Total population — all counties, all years
+get_population(geography = "county", variables = "population")
+
+# Components of change for West Virginia counties
+get_population_change(
+  variables = c("domestic_migration", "international_migration", "net_migration"),
+  geoids    = grep("^54", unique(get_population(geography = "county")$geoid), value = TRUE),
+  years     = 2010:2025
+)
 ```
 
-## Key Features
+## What This Data Tells Us About Rural
 
-### Eight Population and Migration Variables
+Population change reflects how people are responding to conditions on
+the ground — economic opportunity, quality of life, housing access,
+community character. It is often treated as a simple headline indicator,
+but the headline number obscures as much as it reveals. A community
+losing population through out-migration while also seeing natural
+increase is in a different situation than one losing population through
+both channels simultaneously. A community attracting working-age
+in-migrants is building differently than one growing through retiree
+in-migration or international immigration, each of which carries
+different implications for the labor market, consumer base, and service
+demands.
 
-| Variable | Coverage | Description |
-|---|---|---|
-| `population` | 2000–present | Total resident population |
-| `pop_16plus` | 2007–present | Resident population age 16+ |
-| `births` | 2000–present | Annual births |
-| `deaths` | 2000–present | Annual deaths |
-| `natural_chg` | 2000–present | Natural change (births minus deaths) |
-| `domestic_mig` | 2000–present | Net domestic migration |
-| `international_mig` | 2000–present | Net international migration |
-| `net_mig` | 2000–present | Net migration (domestic + international) |
+The Population Estimates Program data supports exactly this kind of
+disaggregated reading. Components of change — births, deaths, domestic
+migration, international migration — allow researchers and community
+leaders to understand *why* population is moving, not just whether it
+is. CORI's community analysis found that net population numbers
+frequently masked offsetting flows: communities experiencing apparent
+stability were in some cases losing working-age residents while gaining
+older adults — a pattern with significant implications for workforce,
+entrepreneurship, and long-run fiscal capacity.
 
-### Multi-Vintage Coverage
+The in-migration of older adults is an underrecognized asset for rural
+communities. Research suggests that individuals migrating to rural areas
+later in life bring human, financial, and business capital — their
+experience and resources can stimulate local economies, support
+entrepreneurship, and deepen community networks. Population dynamics,
+read through the full components of change rather than the net headline,
+reveal which assets a community is gaining and which it is at risk of
+losing.
 
-Three Census PEP vintages are handled internally:
+## Introduction
 
-| Vintage | URL Source |
-|---|---|
-| 2000–2009 | Intercensal county estimates |
-| 2010–2019 | Vintage 2019 county estimates |
-| 2020–present | Latest vintage county estimates |
+*Adapted from the [Introduction
+vignette](https://github.com/ruralinnovation/cori.data.pep/blob/main/vignettes/introduction.Rmd)
+on GitHub.*
 
-### Data Refresh (Admin)
+`cori.data.pep` provides county-level population estimates from the U.S.
+Census Bureau's Population Estimates Program. Data cover 2000–present at
+annual frequency.
 
-After Census releases new estimates:
+### Variables
 
 ```{r}
 #| eval: false
-
-write_pep_processed_to_s3(years = 2000:2025)
+get_pep_codebook() |>
+  dplyr::select(variable, label, coverage = notes) |>
+  knitr::kable()
 ```
 
-## Core Functions
+### Reading data
 
-| Function | Category | Description |
-|---|---|---|
-| `read_pep_from_s3()` | Data Access | Read processed PEP data from S3 via DuckDB |
-| `pull_population()` | Data Access | Pull population totals from Census source files |
-| `pull_pop_16plus()` | Data Access | Pull population age 16+ from Census source files |
-| `pull_components()` | Data Access | Pull components of change from Census source files |
-| `write_pep_processed_to_s3()` | Admin | Process and write PEP data to S3 |
-| `get_pep_codebook()` | Utility | Return variable definitions and metadata |
-| `latest_pep_vintage()` | Utility | Return the most recent available vintage year |
+All data are returned in long format: one row per `geoid / year /
+variable`.
 
-## Data Coverage
+```{r}
+#| eval: false
+# Total population, all counties, all years
+pop <- get_population(geography = "county", variables = "population")
+dplyr::glimpse(pop)
+```
 
-| Dimension | Coverage |
-|---|---|
-| **Geography** | County (5-digit FIPS) |
-| **Time Period** | 2000–present |
-| **Update Frequency** | Annual (Census releases new vintage each year) |
-| **Source** | Census Bureau Population Estimates Program |
+Filter to specific variables, years, or counties:
 
-## Use Cases
+```{r}
+#| eval: false
+wv_mig <- get_population_change(
+  variables = c("domestic_migration", "international_migration", "net_migration"),
+  geoids    = grep("^54", unique(pop$geoid), value = TRUE),
+  years     = 2010:2025
+)
+dplyr::glimpse(wv_mig)
+```
 
--   **Population trend analysis** — Track rural population growth and
-    decline from 2000 to present
--   **Migration decomposition** — Separate domestic and international
-    migration to understand drivers of population change
--   **Natural change analysis** — Identify counties where deaths exceed
-    births (natural population decline)
--   **Per-capita denominators** — Provide population base for rate
-    calculations in other CORI analyses
--   **Workforce proxies** — Use `pop_16plus` as a working-age population
-    denominator for employment rate calculations
+### County Spotlight: Grafton County, NH
 
-## Related Resources
+```{r}
+#| eval: false
+library(ggplot2)
+library(cori.charts)
 
-### Datasets
+load_fonts()
 
--   [Census Population Estimates](/datasets/census-population-estimates/) —
-    Source dataset documentation (population totals)
--   [Census PEP Components of Change](/datasets/census-pep-components/) —
-    Source dataset documentation (births, deaths, migration)
+grafton_pop <- get_population(
+  variables = "population",
+  geoids    = "33009",
+  years     = 2000:2025
+)
 
-### Related Packages
+ggplot(grafton_pop, aes(x = year, y = value)) +
+  geom_line(color = cori_colors[["Emerald"]], linewidth = 1.2) +
+  geom_point(color = cori_colors[["Emerald"]], size = 2) +
+  scale_x_continuous(breaks = seq(2000, 2025, by = 5)) +
+  scale_y_continuous(labels = scales::label_comma()) +
+  theme_cori() +
+  labs(
+    title    = "Grafton County, NH population, 2000\u20132025",
+    subtitle = "Total resident population estimate",
+    x        = NULL,
+    y        = NULL,
+    caption  = "Source: CORI analysis of U.S. Census Bureau Population Estimates Program (PEP)."
+  )
+```
 
--   [ruraldefinitions](/packages/ruraldefinitions/) — Rural/nonrural
-    county classification for stratified population analysis
+## Related
 
-### External Links
+-   **Dataset:** [Census Population
+    Estimates](/datasets/census-population-estimates/)
+-   **Package:** [cori.data](/packages/cori-data/) — meta-package that
+    includes `cori.data.pep`
+-   **Package:** [cori.data.qcew](/packages/cori-data-qcew/) — employment
+    data; pairs with PEP for employment rate analysis
+-   **Package:** [cori.data.bps](/packages/cori-data-bps/) — building
+    permits use PEP population as denominator
+-   **Package:** [cori.data.bfs](/packages/cori-data-bfs/) — business
+    applications use PEP population as denominator
+-   **Project:** [Rural Economic
+    Outlook](/projects/rural-economic-outlook/) — PEP is a core input to
+    CORI's demographic analysis
 
--   [Census PEP Homepage](https://www.census.gov/programs-surveys/popest.html)
--   [Vintage 2024 County Data](https://www.census.gov/data/tables/time-series/demo/popest/2020s-counties-total.html)
--   [PEP Methodology](https://www.census.gov/programs-surveys/popest/technical-documentation/methodology.html)
-
-## Documentation
-
--   [GitHub Repository](https://github.com/ruralinnovation/cori.data.pep)
--   [Full README](https://github.com/ruralinnovation/cori.data.pep/blob/main/README.md)
--   [Vignette: Introduction](https://github.com/ruralinnovation/cori.data.pep/blob/main/vignettes/introduction.Rmd)
--   [Vignette: Rural Population Trends](https://github.com/ruralinnovation/cori.data.pep/blob/main/vignettes/rural-population-trends.Rmd)
-
----
-
-**Contact:** Drew Rosebush (drew.rosebush@ruralinnovation.us)
-
-For bug reports or feature requests, please open an issue on
-[GitHub](https://github.com/ruralinnovation/cori.data.pep/issues).
+::: callout-note
+**Data attribution:** Population Estimates Program data are produced by
+the U.S. Census Bureau. When citing analysis using this package,
+reference: U.S. Census Bureau, Population Estimates Program,
+[www.census.gov/programs-surveys/popest](https://www.census.gov/programs-surveys/popest).
+:::

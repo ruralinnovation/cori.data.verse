@@ -151,6 +151,14 @@ function readFrontmatter(filePath: string, slug: string): ContentMeta {
 }
 
 /**
+ * Compare two content titles for alphabetical (A-Z) ordering.
+ * Case-insensitive, with numeric-aware collation so "Table 2" precedes "Table 10".
+ */
+function compareByTitle(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+}
+
+/**
  * Get metadata for all items of a given content type (datasets, packages, etc.).
  * Reads frontmatter from posts/[contentType]/[name]/index.qmd files.
  */
@@ -189,12 +197,8 @@ export function getContentMetadata<T extends ContentMeta = ContentMeta>(
     }
   }
 
-  // Sort by date descending
-  items.sort((a, b) => {
-    const da = a.date ? new Date(a.date).getTime() : 0;
-    const db = b.date ? new Date(b.date).getTime() : 0;
-    return db - da;
-  });
+  // Sort by title ascending
+  items.sort((a, b) => compareByTitle(a.title, b.title));
 
   return items;
 }
@@ -238,12 +242,8 @@ export function getBlogMetadata(): BlogPostMeta[] {
     }
   }
 
-  // Sort by date descending
-  posts.sort((a, b) => {
-    const da = a.date ? new Date(a.date).getTime() : 0;
-    const db = b.date ? new Date(b.date).getTime() : 0;
-    return db - da;
-  });
+  // Sort by title ascending
+  posts.sort((a, b) => compareByTitle(a.title, b.title));
 
   return posts;
 }
@@ -309,21 +309,25 @@ export function getAllSlugs(contentType: ContentType): string[] {
   // Source-backed: has index.qmd in the source tree
   if (fs.existsSync(sourceDir)) {
     for (const entry of fs.readdirSync(sourceDir, { withFileTypes: true })) {
-      if (entry.isDirectory() &&
-          fs.existsSync(path.join(sourceDir, entry.name, "index.qmd"))) {
-        slugs.add(entry.name);
-      }
+      if (!entry.isDirectory()) continue;
+      const qmdPath = path.join(sourceDir, entry.name, "index.qmd");
+      if (!fs.existsSync(qmdPath)) continue;
+      const meta = readFrontmatter(qmdPath, entry.name);
+      if ((meta as unknown as Record<string, unknown>).draft === true) continue;
+      slugs.add(entry.name);
     }
   }
 
   // Content-only: has index.md in content/ but no source .qmd (e.g. pulled from S3)
   if (fs.existsSync(contentTypeDir)) {
     for (const entry of fs.readdirSync(contentTypeDir, { withFileTypes: true })) {
-      if (entry.isDirectory() &&
-          fs.existsSync(path.join(contentTypeDir, entry.name, "index.md")) &&
-          !fs.existsSync(path.join(sourceDir, entry.name, "index.qmd"))) {
-        slugs.add(entry.name);
-      }
+      if (!entry.isDirectory()) continue;
+      const mdPath = path.join(contentTypeDir, entry.name, "index.md");
+      if (!fs.existsSync(mdPath)) continue;
+      if (fs.existsSync(path.join(sourceDir, entry.name, "index.qmd"))) continue;
+      const meta = readFrontmatter(mdPath, entry.name);
+      if ((meta as unknown as Record<string, unknown>).draft === true) continue;
+      slugs.add(entry.name);
     }
   }
 
@@ -343,9 +347,11 @@ export function getBlogSlugs(): string[] {
       if (!entry.isDirectory()) continue;
       if (CONTENT_TYPE_DIRS.includes(entry.name as ContentType)) continue;
       if (entry.name.startsWith("_") || entry.name.startsWith(".")) continue;
-      if (fs.existsSync(path.join(POSTS_DIR, entry.name, "index.qmd"))) {
-        slugs.add(entry.name);
-      }
+      const qmdPath = path.join(POSTS_DIR, entry.name, "index.qmd");
+      if (!fs.existsSync(qmdPath)) continue;
+      const meta = readFrontmatter(qmdPath, entry.name);
+      if ((meta as unknown as Record<string, unknown>).draft === true) continue;
+      slugs.add(entry.name);
     }
   }
 
@@ -353,10 +359,12 @@ export function getBlogSlugs(): string[] {
   if (fs.existsSync(postsContentDir)) {
     for (const entry of fs.readdirSync(postsContentDir, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
-      if (fs.existsSync(path.join(postsContentDir, entry.name, "index.md")) &&
-          !fs.existsSync(path.join(POSTS_DIR, entry.name, "index.qmd"))) {
-        slugs.add(entry.name);
-      }
+      const mdPath = path.join(postsContentDir, entry.name, "index.md");
+      if (!fs.existsSync(mdPath)) continue;
+      if (fs.existsSync(path.join(POSTS_DIR, entry.name, "index.qmd"))) continue;
+      const meta = readFrontmatter(mdPath, entry.name);
+      if ((meta as unknown as Record<string, unknown>).draft === true) continue;
+      slugs.add(entry.name);
     }
   }
 

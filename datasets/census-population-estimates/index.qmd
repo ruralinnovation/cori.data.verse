@@ -1,18 +1,22 @@
 ---
 title: "Census Population Estimates Program (PEP)"
-description: "Annual county-level population estimates from the U.S. Census Bureau"
+description: "Annual county-level population estimates and components of change —
+  births, deaths, and migration — from the U.S. Census Bureau. The standard source
+  for intercensal population data between decennial census years."
 author: "Mapping & Data Analytics Team"
-date: "2026-02-02"
+date: "2026-09-02"
 categories: ["Dataset", "Demographics"]
-tags: ["Census", "Population", "County-Level", "Annual"]
+tags: ["PEP", "Census", "Population", "Migration", "Components of Change",
+  "County-Level", "Administrative Data"]
 dataset:
   name: "Census Population Estimates Program (PEP)"
   source: "U.S. Census Bureau"
   sourceUrl: "https://www.census.gov/programs-surveys/popest.html"
-  accessMethod: "Census API and Direct Download"
+  methodologyUrl: "https://www.census.gov/programs-surveys/popest/technical-documentation/methodology.html"
+  accessMethod: "Direct Download"
   updateFrequency: "Annual"
   geographicLevel: "County, State, National"
-  dataFormat: ["CSV", "API"]
+  dataFormat: ["CSV", "Excel"]
   featured: true
 execute:
   echo: true
@@ -25,254 +29,144 @@ editor:
 
 ## Overview
 
-The Census Population Estimates Program (PEP) provides annual estimates of the resident population for the United States, states, counties, cities, and towns. These estimates are produced for July 1st of each year and serve as official population counts between decennial censuses.
+The Census Bureau's Population Estimates Program (PEP) produces annual
+population and housing unit estimates for the nation, states, and
+counties between decennial census years. Rather than conducting a new
+count each year, PEP applies a demographic balancing equation: each
+year's population estimate starts from the prior year's count, adds
+births, subtracts deaths, and adds net migration (both domestic and
+international). Housing unit estimates are built separately from the
+decennial census baseline, incorporating permitted construction,
+non-permitted construction, mobile home shipments, and estimated housing
+loss. The result is a consistent annual series that captures how and
+why population and housing stock are changing — not just whether they
+are.
 
-PEP data is essential for per-capita calculations, demographic analysis, and understanding population change trends at the county level. It provides both total population and demographic breakdowns by age, sex, race, and Hispanic origin.
+The components-of-change approach is what makes PEP analytically
+valuable beyond the headline total. Two counties can have identical
+population growth rates driven by entirely different dynamics: one
+growing through natural increase, another through working-age
+in-migration, a third through retiree in-migration. PEP makes those
+distinctions visible at the county level every year, which the
+decennial census alone cannot provide.
 
-::: callout-note
-## Why PEP is Essential
+## What This Data Tells Us About Rural America
 
-- **Annual updates** - More frequent than ACS or decennial census
-- **Complete coverage** - Every county, every year
-- **Not survey-based** - No sampling error
-- **Official counts** - Used by federal agencies for funding
-:::
+Population estimates are a foundational input to rural economic
+analysis, but their value lies in the components of change rather than
+the headline net figure. A community growing at 0.5% per year through
+natural increase and retiree in-migration is building a very different
+demographic and economic future than one growing at the same rate through
+working-age in-migration. The Population Estimates Program provides the
+annual county-level components — births, deaths, domestic net migration,
+international net migration — that make this disaggregation possible.
+
+For rural communities, population trends reflect the cumulative effect
+of economic conditions, quality of life, and community capacity over
+time. Out-migration of working-age residents is a persistent pattern in
+many rural counties. CORI's research suggests this is not always
+reversed by improvements in economic indicators alone — factors beyond
+employment and income appear to shape migration decisions. PEP reveals
+what demographic flows are occurring; understanding why requires pairing
+it with other data and community context. Understanding which flows are
+driving population change is the starting point for identifying which
+conditions matter most.
+
+PEP tells us not just whether a rural community is growing or shrinking,
+but what is driving that change: births and deaths, domestic migration,
+and international migration. Those distinctions matter because different
+population trajectories imply different workforce, housing, service, and
+economic-development challenges.
 
 ## Coverage
 
-::: columns
-::: {.column width="50%"}
-**Geographic Coverage**
+- **Geography:** County, State, National
+- **Time range:** 2000–present (CORI package); PEP data available
+  further back at state and national levels from the Census Bureau
+  directly
+- **Update frequency:** Annual; released each spring for the prior
+  calendar year
+- **Universe:** Resident civilian population of the United States;
+  estimates are anchored to decennial census benchmarks and revised
+  with each new vintage
 
-- County
-- State
-- National
-:::
-
-::: {.column width="50%"}
-**Temporal Coverage**
-
-- 2000-present (annual estimates)
-- Released each March for prior year
-- Universe: All U.S. counties (3,100+)
-:::
+::: callout-note
+**Vintage revisions:** PEP revises the full time series within each
+intercensal decade with each annual release. Estimates from 2020–present
+may differ from earlier releases as new data refines the components.
+When a new decennial census is conducted, the entire prior decade's
+estimates are reconciled to the new benchmark. Analysts should use a
+consistent vintage when comparing population or components of change
+across years. See the [PEP methodology
+page](https://www.census.gov/programs-surveys/popest/technical-documentation/methodology.html)
+for documentation of component data sources and estimation procedures.
 :::
 
 ## Key Variables
 
-### Population Totals
+**Population totals** (`get_population()`)
 
-- **Total Population** - Resident population as of July 1st
-- **Population 16+** - Working-age population (for labor force calculations)
-- **Population by Age Groups** - 5-year age bands (0-4, 5-9, ... 85+)
+- `population` — total resident population estimate
+- `population_16plus` — population age 16 and over (used as labor force
+  denominator in employment rate calculations)
 
-### Demographics
+**Components of change** (`get_population_change()`)
 
-- **Population by Sex** - Male and female counts
-- **Population by Race** - Single race estimates (White, Black, Asian, etc.)
-- **Hispanic Origin** - Hispanic/Latino population regardless of race
-- **Median Age** - Age at which half the population is older/younger
+- `births` — live births
+- `deaths` — deaths
+- `natural_change` — births minus deaths
+- `domestic_migration` — net domestic in-migration (people moving from
+  other U.S. counties)
+- `international_migration` — net international in-migration
+- `net_migration` — domestic plus international net migration
 
-## Access
+## Accessing the Data
 
-::: panel-tabset
-## Census API
+### Via CORI R Package
 
-Free API access with registration:
+The [`cori.data.pep`](/packages/cori-data-pep/) package provides tidy
+access to PEP population totals and components of change at the county,
+state, and national level from 2000 to the present. Because PEP produces consistent annual county populations, it is also a
+highly convenient resource for converting raw counts into per-capita
+rates — a best practice for comparing counties of very different sizes
+that makes rural and nonrural comparisons genuinely apples-to-apples.
 
-```{r}
-#| eval: false
+```r
+library(cori.data.pep)
 
-# Using tidycensus package
-library(tidycensus)
+# Total population — all counties, all years
+get_population(geography = "county", variables = "population")
 
-# Get county population estimates for 2023
-population_2023 <- get_estimates(
-  geography = "county",
-  product = "population",
-  year = 2023,
-  vintage = 2023
+# Components of change — specific counties
+get_population_change(
+  variables = c("domestic_migration", "international_migration",
+                "natural_change"),
+  geoids = grep("^54", unique(get_population(geography = "county")$geoid),
+                value = TRUE),
+  years = 2010:2025
 )
 ```
 
-## Direct Download
+### Direct from Source
 
-Bulk CSV files available from Census FTP:
+Annual estimate files are available for download from the [Census
+Population and Housing Unit Estimates
+page](https://www.census.gov/programs-surveys/popest.html). Files are
+organized by vintage year and geography. See the [PEP methodology
+page](https://www.census.gov/programs-surveys/popest/technical-documentation/methodology.html)
+for full documentation of component data sources, estimation methods,
+and vintage revision procedures.
 
-- [Population Estimates Files](https://www2.census.gov/programs-surveys/popest/datasets/)
+## Related
 
-## CORI Packages
-
-```{r}
-#| eval: false
-
-# Using coriverse (internal)
-library(coriverse)
-
-pep_data <- get_census_population(
-  geography = "county",
-  years = 2007:2024
-)
-```
-:::
-
-## Data Structure
-
-**Standard Format:**
-
-- One row per county per year
-- GEOID: 5-digit FIPS code (state+county)
-- Annual time series from 2000-present
-
-**Typical Variables:**
-
-```
-geoid, year, population, pop_16plus, median_age,
-race_white, race_black, race_asian, hispanic
-```
-
-## Methodology
-
-PEP estimates use a "component of change" method:
-
-1. Start with last decennial census count
-2. Add births (from vital statistics)
-3. Subtract deaths (from vital statistics)
-4. Add net migration (domestic + international)
-5. Result = current population estimate
-
-Estimates are **not survey-based** - they use administrative records, making them highly reliable for time series analysis.
-
-## Use Cases
-
-### In CORI Projects
-
-| Project | Use Case |
-|---------|----------|
-| Per-Capita Calculations | Denominator for rates (jobs per 1000, permits per 1000) |
-| [Rural Economic Outlook](/projects/rural-economic-outlook/) | Population trends 2007-2024, baseline comparisons |
-| Broadband Equity Analysis | Population counts for coverage gap calculations |
-| Migration Analysis | Combined with Components of Change data |
-
-### Common Applications
-
-- Grant funding allocations (many federal formulas use PEP)
-- Business market analysis
-- Infrastructure planning
-- Demographic trend analysis
-
-## Strengths & Limitations
-
-::: columns
-::: {.column width="50%"}
-### Strengths
-
-- Annual updates
-- Complete coverage
-- Consistent methodology
-- Not survey-based (no sampling error)
-- Official counts for funding
-:::
-
-::: {.column width="50%"}
-### Limitations
-
-- Less detailed demographics than ACS
-- Estimation uncertainty (especially migration)
-- Revision cycles
-- No socioeconomic data
-:::
-:::
-
-## Important Notes
-
-### Comparison to ACS
-
-::: columns
-::: {.column width="50%"}
-**PEP**
-
-- Total population counts
-- Basic demographics
-- No sampling error
-- Annual point estimates
-:::
-
-::: {.column width="50%"}
-**ACS**
-
-- Detailed demographics
-- Socioeconomic variables
-- Sampling error (MOE)
-- 5-year rolling averages
-:::
-:::
-
-For population totals and denominators, **use PEP**. For detailed characteristics (income, education, occupation), **use ACS**.
-
-### Revision Cycles
-
-PEP estimates are revised when new census data becomes available:
-
-- 2000-2009 estimates based on 2000 Census
-- 2010-2019 estimates based on 2010 Census
-- 2020-2029 estimates based on 2020 Census
-
-Revisions can be substantial, especially for migration components.
-
-## Related Datasets
-
-- [Census PEP Components of Change](/datasets/census-pep-components/) - Births, deaths, migration detail
-- [American Community Survey](/datasets/american-community-survey/) - More detailed demographics and socioeconomics
-- [IRS County-to-County Migration](/datasets/irs-migration/) - Where people are moving to/from
-
-## R Packages
-
-### Recommended Packages
-
-```{r}
-#| eval: false
-
-# Install packages
-install.packages("tidycensus")   # Easy API access
-install.packages("censusapi")    # General Census API wrapper
-```
-
-### Usage Example
-
-```{r}
-#| eval: false
-
-library(tidycensus)
-
-# Set API key
-census_api_key("YOUR_KEY_HERE", install = TRUE)
-
-# Get population estimates
-pop_data <- get_estimates(
-  geography = "county",
-  product = "population",
-  year = 2023,
-  vintage = 2023,
-  state = NULL  # All states
-)
-
-# Get population by age
-pop_age <- get_estimates(
-  geography = "county",
-  product = "characteristics",
-  breakdown = "AGEGROUP",
-  year = 2023
-)
-```
-
-## Additional Resources
-
-- [Census PEP Methodology Documentation](https://www.census.gov/programs-surveys/popest/technical-documentation/methodology.html)
-- [Rural Economic Outlook Project](https://github.com/ruralinnovation/data-rural-economic-outlook)
-
----
-
-**Last Updated:** February 2, 2026
-**Data Coverage:** 2000-2024 (annual estimates)
-**Contact:** [data@ruralinnovation.us](mailto:data@ruralinnovation.us)
+- **Package:** [cori.data.pep](/packages/cori-data-pep/) — CORI's
+  tidy access layer for population totals and components of change
+- **Package:** [cori.data](/packages/cori-data/) — meta-package
+  including `cori.data.pep`
+- **Package:** [cori.data.hu](/packages/cori-data-hu/) — housing unit
+  estimates, also produced by PEP alongside population estimates
+- **Dataset:** [American Community Survey](/datasets/american-community-survey/)
+  — demographic composition and household characteristics that
+  contextualize PEP population totals
+- **Project:** [Rural Economic Outlook](/projects/rural-economic-outlook/)
+  — PEP is a core demographic input to CORI's multi-dataset analysis

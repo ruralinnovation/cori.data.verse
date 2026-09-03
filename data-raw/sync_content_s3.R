@@ -1,7 +1,7 @@
 # sync_content_s3.R
 #
 # S3 content sync functions for cori.data.verse.
-# These are standalone scripts (NOT exported) because they depend on cori.db
+# These are standalone scripts (NOT exported) because they depend on cori.data.s3
 # (a private package). They live in data-raw/ per R package convention.
 #
 # The _targets.R pipeline in the project root is the user-facing entry point.
@@ -18,14 +18,57 @@ get_s3_prefix <- function() {
 
 # --- Git-aware deletion helpers ----------------------------------------------
 
-#' Return relative paths of .qmd files git considers deleted (staged or unstaged).
-get_git_deleted_qmds <- function() {
-  lines <- system2("git", c("status", "--porcelain"), stdout = TRUE)
-  if (length(lines) == 0) return(character(0))
-  # Lines where the first OR second status character is 'D', ending in .qmd
-  deleted <- lines[grepl("^(D[ D]|[ D]D) .+\\.qmd$", lines)]
-  # Strip the two-character status prefix + space
-  sub("^.{3}", "", deleted)
+#' Return relative paths of .qmd files git considers deleted.
+#'
+#' Combines two signals: files deleted in the working tree but not yet
+#' committed (via `git status`), and files deleted in any of the last
+#' `n_commits` commits (via `git log --diff-filter=D`). The second signal
+#' exists because `git status` alone goes blind the moment a deletion is
+#' committed -- the working tree then matches HEAD and reports nothing
+#' pending, even though the source file is genuinely gone. A commit that
+#' deleted a source .qmd and is older than `n_commits` will still be missed;
+#' widening the window trades a smaller blind spot for a larger one, it
+#' does not remove it.
+#'
+#' Paths that currently exist on disk are dropped from the result even if
+#' they appear in the commit-log scan. This guards against a file that was
+#' deleted and then re-added within the lookback window (e.g. a revert) --
+#' without this guard such a file would be wrongly reported as deleted.
+#'
+#' @param n_commits Integer. How many recent commits to scan for .qmd
+#'   deletions, in addition to the uncommitted working tree. Default 12.
+#' @return Character vector of relative .qmd paths.
+get_git_deleted_qmds <- function(n_commits = 100) {
+  # Uncommitted deletions (staged or unstaged), as before.
+  status_lines <- system2("git", c("status", "--porcelain"), stdout = TRUE)
+  uncommitted <- if (length(status_lines) == 0) {
+    character(0)
+  } else {
+    # Lines where the first OR second status character is 'D', ending in .qmd
+    d <- status_lines[grepl("^(D[ D]|[ D]D) .+\\.qmd$", status_lines)]
+    # Strip the two-character status prefix + space
+    sub("^.{3}", "", d)
+  }
+
+  # Committed deletions within the last n_commits commits. Filtering to
+  # .qmd is done in R (not via a git pathspec) because passing a glob
+  # pathspec such as "*.qmd" through system2() silently drops it -- the
+  # call returns character(0) even though the identical argument list
+  # works when run directly in a shell. Asking git for every deleted path
+  # and filtering the suffix here avoids that quoting layer entirely.
+  history_lines <- system2(
+    "git",
+    c("log", paste0("-", n_commits), "--diff-filter=D", "--name-only",
+      "--pretty=format:"),
+    stdout = TRUE
+  )
+  historical <- history_lines[nzchar(history_lines) & grepl("\\.qmd$", history_lines)]
+
+  deleted <- unique(c(uncommitted, historical))
+
+  # Drop anything that currently exists (handles delete-then-recreate
+  # within the lookback window).
+  deleted[!file.exists(deleted)]
 }
 
 # --- Sync manifest -----------------------------------------------------------
@@ -51,7 +94,7 @@ build_sync_manifest <- function(content_dir, bucket, prefix) {
   )
 
   # Enumerate S3 objects (list_s3_objects returns columns: key, last_modified)
-  s3_objects <- cori.db::list_s3_objects(bucket_name = bucket)
+  s3_objects <- cori.data.s3::list_s3_objects(bucket_name = bucket)
 
   # Coerce key column to character vector (rbind returns a matrix)
   s3_keys <- as.character(s3_objects$key)
@@ -124,7 +167,7 @@ push_content_to_s3 <- function(content_dir, bucket, prefix,
     return(invisible(to_push))
   }
 
-  # Initialize S3 client for direct uploads (bypasses cori.db overwrite guard
+  # Initialize S3 client for direct uploads (bypasses cori.data.s3 overwrite guard
   # on non-dev/test keys)
   s3_client <- paws.storage::s3()
 
@@ -133,14 +176,14 @@ push_content_to_s3 <- function(content_dir, bucket, prefix,
     s3_key <- to_push$s3_key[i]
 
     if (startsWith(s3_key, "dev/") || startsWith(s3_key, "test/")) {
-      # Use cori.db for dev/test prefixes (overwrite is allowed)
-      cori.db::put_s3_object(
+      # Use cori.data.s3 for dev/test prefixes (overwrite is allowed)
+      cori.data.s3::put_s3_object(
         bucket_name  = bucket,
         s3_key_path  = s3_key,
         file_path    = local_path
       )
     } else {
-      # Bypass cori.db overwrite guard for production keys
+      # Bypass cori.data.s3 overwrite guard for production keys
       s3_client$put_object(
         Bucket = bucket,
         Key    = s3_key,
@@ -259,7 +302,7 @@ sync_content_s3 <- function(content_dir, bucket, prefix,
       local_path <- file.path(content_dir, to_push$rel_path[i])
       s3_key <- to_push$s3_key[i]
       if (startsWith(s3_key, "dev/") || startsWith(s3_key, "test/")) {
-        cori.db::put_s3_object(bucket_name = bucket, s3_key_path = s3_key, file_path = local_path)
+        cori.data.s3::put_s3_object(bucket_name = bucket, s3_key_path = s3_key, file_path = local_path)
       } else {
         s3_client$put_object(
           Bucket = bucket, Key = s3_key,

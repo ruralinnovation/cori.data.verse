@@ -6,6 +6,7 @@ description: >
   from 1977 to 2022, with CPI-adjusted per capita analysis stratified by
   rurality, persistent poverty, and social vulnerability.
 date: '2026-05-12'
+draft: true
 layout: default
 permalink: /projects/rwjf-seeds-of-change-public-funding/
 categories:

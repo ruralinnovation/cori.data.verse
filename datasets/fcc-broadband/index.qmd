@@ -1,18 +1,23 @@
 ---
-title: "FCC National Broadband Map"
-description: "Comprehensive broadband availability and adoption data from the Federal Communications Commission"
+title: "Federal Communications Commission Broadband Service Data"
+description: "Broadband infrastructure availability data from the FCC National
+  Broadband Map (2022–present) and its predecessor Form 477 (2014–2021). The
+  primary federal source for tracking fixed broadband infrastructure availability
+  at the location, census block, and county level."
 author: "Mapping & Data Analytics Team"
-date: "2025-12-15"
-categories: ["Dataset", "Broadband", "Infrastructure"]
-tags: ["FCC", "Connectivity", "Geographic"]
+date: "2026-09-02"
+categories: ["Dataset", "Broadband"]
+tags: ["FCC", "NBM", "Broadband", "Form 477", "Block-Level", "County-Level",
+  "Infrastructure"]
 dataset:
-  name: "FCC National Broadband Map"
+  name: "Federal Communications Commission Broadband Service Data"
   source: "Federal Communications Commission"
-  sourceUrl: "https://broadbandmap.fcc.gov/data-download"
-  accessMethod: "Direct Download and API"
-  updateFrequency: "Biannual"
+  sourceUrl: "https://www.fcc.gov/BroadbandData"
+  methodologyUrl: "https://broadbandmap.fcc.gov/about"
+  accessMethod: "Direct Download"
+  updateFrequency: "Biannual (June and December releases)"
   geographicLevel: "Census Block, County, State"
-  dataFormat: ["CSV", "Parquet"]
+  dataFormat: ["CSV"]
   featured: true
 execute:
   echo: true
@@ -25,290 +30,145 @@ editor:
 
 ## Overview
 
-The FCC National Broadband Map provides detailed information about broadband availability across the United States. This dataset includes information on:
+The FCC's Broadband Data Collection (BDC) is the federal government's
+primary program for mapping broadband infrastructure availability across
+the United States. It comprises two distinct eras: **Form 477**
+(December 2014 – December 2021), which reported coverage at the census
+block level as filed by ISPs, and the **National Broadband Map (NBM)**
+(November 2022 – present), which replaced block-level reporting with
+location-level data tied to individual addresses in the FCC's Fabric
+dataset. Together they provide a continuous picture of where broadband
+infrastructure exists and at what speeds — from the pre-BEAD baseline
+through the current expansion.
 
-- Broadband service provider coverage
-- Technology types (Fiber, Cable, DSL, etc.)
-- Upload and download speeds
-- Census block-level granularity
+The NBM represents a significant improvement in precision. Under Form
+477, a provider needed only to report coverage in a census block if it
+served a single location there, leading to known overstatement of
+coverage. The NBM requires ISPs to report which specific addresses they
+serve, which technologies they use, and their maximum advertised speeds.
+ISPs file twice yearly — as of June 30 and December 31 — with interim
+updates to reflect challenge outcomes.
 
-The National Broadband Map is the authoritative source for understanding broadband access gaps and measuring progress toward universal connectivity.
+## What This Data Tells Us About Rural America
 
-::: callout-note
-## Why FCC Broadband Data is Essential
+The FCC National Broadband Map represents the most granular and current
+public dataset on broadband infrastructure availability in the United
+States. For rural communities, it documents both how far the rural
+broadband gap has closed in recent years and where meaningful gaps
+remain. Coverage at 100/20 Mbps or better and fiber availability are
+particularly useful metrics for economic development analysis — they
+capture whether infrastructure meets a commonly used high-speed
+broadband benchmark and whether communities have access to fiber.
 
-- **Location-level precision** - Census block level data (finest geographic detail)
-- **Technology detail** - Fiber, cable, DSL, fixed wireless, satellite
-- **Speed tiers** - Upload and download speeds by provider
-- **Biannual updates** - More frequent than survey-based measures
-:::
+The data reflects infrastructure availability — what is built and where
+— not whether households are connected or what speeds they actually
+experience. NBM tells us where broadband infrastructure is available;
+ACS helps us understand whether households are actually using it.
+Communities with strong coverage on paper can still face adoption
+challenges driven by affordability, device access, or awareness.
+
+The NBM's greatest value for rural analysis is its geographic precision:
+it is possible to identify coverage gaps within a county, not just
+countywide averages. In rural places, a county can appear relatively
+well served overall while still containing substantial pockets of
+unserved locations — a pattern that older county-level broadband
+measures could not reveal. Broadband coverage has improved substantially
+in many rural communities in recent years, and the NBM provides a way
+to track that progress and identify where gaps persist.
 
 ## Coverage
 
-::: columns
-::: {.column width="50%"}
-**Geographic Coverage**
+- **Geography:** Individual broadband serviceable locations (BSLs),
+  aggregated to census block, county, and state
+- **Time range:** December 2014–December 2021 (Form 477, census-block
+  level); November 2022–present (NBM, location level)
+- **Update frequency:** Biannual — June 30 and December 31 reference
+  dates, with ongoing updates for challenge outcomes
+- **Universe:** Fixed broadband infrastructure availability as reported
+  by ISPs. Mobile broadband coverage available separately.
 
-- Census block level
-- County aggregations
-- State aggregations
-- All 50 states
+::: callout-note
+**Form 477 vs. NBM:** The two series use different units of measurement and geographic
+boundaries, which creates definitional and geographic coverage
+misalignment when constructing a longitudinal trend. Form 477 reported at the census block
+level using 2010 Census boundaries; a single served location was
+sufficient to mark an entire block as covered. NBM reports at the
+individual location level using 2020 Census boundaries. Coverage rates
+under NBM are generally lower than under Form 477 for the same geography
+— this reflects the improved precision of location-level reporting, not
+a real decline in service. A combined series can be constructed but
+should be interpreted with care around the 2021–2022 methodological
+break.
 :::
 
-::: {.column width="50%"}
-**Temporal Coverage**
+## Key Variables
 
-- Updated twice per year
-- Historical data available
-- Provider-reported service availability
-- Challenge process for data verification
-:::
-:::
+**NBM — location-level availability** (CORI block-level summary via
+`get_nbm_bl()`)
 
-## Key Features
+- `cnt_total_locations` — total broadband serviceable locations in the
+  block
+- `cnt_bead_locations` — locations classified as BEAD-eligible based on
+  FCC-reported service levels; verify current BEAD eligibility rules
+  before using for program purposes
+- `cnt_fiber_locations` — locations with fiber service available
+- `cnt_cable_locations` — locations with cable service available
+- `cnt_unlicensed_fixed_wireless_locations`,
+  `cnt_licensed_fixed_wireless_locations` — fixed wireless coverage
+- `cnt_25_3` — locations with service at 25/3 Mbps or better (FCC
+  minimum broadband threshold)
+- `cnt_100_20` — locations with service at 100/20 Mbps or better (BEAD
+  served threshold)
+- `cnt_100_100` — locations with service at 100/100 Mbps or better
 
-### Geographic Granularity
+**Form 477** (via `get_f477()`)
 
-Census block-level data allows for:
+- Provider ID, FRN, technology code
+- Maximum advertised download and upload speeds
+- Census block coverage indicator (residential and business)
 
-- Precise gap analysis
-- Rural vs. urban comparisons
-- Infrastructure planning
-- Grant targeting (BEAD, ReConnect, etc.)
+## Accessing the Data
 
-### Technology Types
+### Via CORI R Package
 
-::: panel-tabset
-## Wireline Technologies
+The [`cori.data.fcc`](/packages/cori-data-fcc/) package provides access
+to both NBM and Form 477 data. CORI's processed block-level summaries
+aggregate the location-level NBM data to census blocks, making it easier
+to use for community analysis by providing consistent geographic units
+with technology type and speed threshold counts pre-computed.
 
-- **Fiber** - Fiber to the premises (FTTP/FTTH)
-- **Cable** - Hybrid fiber-coaxial (HFC)
-- **DSL** - Digital subscriber line
-- **Copper** - Legacy telephone lines
-
-## Fixed Wireless
-
-- **Licensed Fixed Wireless** - Point-to-multipoint systems
-- **Unlicensed Fixed Wireless** - WiFi-based systems
-- **5G Home Internet** - Cellular-based home broadband
-
-## Satellite
-
-- **Geostationary Satellite** - Traditional satellite (high latency)
-- **Low Earth Orbit (LEO) Satellite** - Starlink, OneWeb, etc.
-:::
-
-### Speed Tiers
-
-Upload and download speeds reported by providers:
-
-- 25/3 Mbps (legacy broadband definition)
-- 100/20 Mbps (BEAD threshold)
-- 1 Gbps+ (gigabit service)
-
-## Usage
-
-This dataset is commonly used in:
-
-::: panel-tabset
-## Broadband Equity
-
-- Identifying unserved and underserved locations
-- BEAD (Broadband Equity, Access, and Deployment) program
-- Measuring digital divide
-
-## Rural Connectivity
-
-- Rural broadband availability
-- Technology adoption patterns
-- Infrastructure investment targeting
-
-## Infrastructure Planning
-
-- Network deployment planning
-- Cost modeling for buildout
-- Service area mapping
-
-## Policy Research
-
-- Measuring progress toward universal broadband
-- Evaluating broadband programs
-- Competition analysis
-:::
-
-## Access
-
-### FCC Broadband Map Download
-
-::: panel-tabset
-## Direct Download
-
-- [FCC Broadband Map Download](https://broadbandmap.fcc.gov/data-download)
-
-## CORI S3 Bucket
-
-- [CORI S3 Bucket](https://s3.amazonaws.com/cori-data/fcc/)
-
-## cori.data.fcc R Package
-
-```{r}
-#| eval: false
-
-# Using cori.data.fcc package
+```r
 library(cori.data.fcc)
 
-# Get broadband availability data
-fcc_data <- get_fcc_broadband(
-  geography = "county",
-  vintage = "2024-06"
-)
-```
-:::
+# CORI block-level NBM summary for a county
+get_nbm_bl(geoid_co = "33009")
 
-## Data Structure
+# County-level NBM summary
+get_nbm_county("33009")
 
-**Census Block Format:**
-
-- One row per census block per provider per technology
-- Detailed service characteristics
-- Maximum advertised speeds
-
-**County Aggregated Format:**
-
-- Unserved/underserved location counts
-- Technology availability percentages
-- Provider competition metrics
-
-## Methodology
-
-### Provider Reporting
-
-Broadband service providers report coverage data to the FCC:
-
-- Service availability by census block
-- Maximum advertised speeds
-- Technology types deployed
-- Reported twice per year
-
-### Challenge Process
-
-::: callout-important
-## Data Verification
-
-The FCC uses a challenge process to verify provider-reported data:
-
-- State and local governments can challenge data
-- Service providers must respond to challenges
-- Data updated based on verified challenges
-- Improves accuracy over time
-:::
-
-### Fabric Data
-
-The FCC uses "Fabric" data:
-
-- Comprehensive list of all broadband-serviceable locations (BSLs)
-- More accurate than census block aggregation
-- Enables location-level analysis
-
-## Strengths & Limitations
-
-::: columns
-::: {.column width="50%"}
-### Strengths
-
-- Census block precision
-- Technology detail
-- Speed tier information
-- Challenge process improves accuracy
-- Biannual updates
-:::
-
-::: {.column width="50%"}
-### Limitations
-
-- Provider self-reporting (verification ongoing)
-- Availability ≠ adoption
-- No pricing information
-- No quality/reliability metrics
-- Lag in challenge resolution
-:::
-:::
-
-## Important Notes
-
-### Availability vs. Adoption
-
-::: callout-warning
-## Critical Distinction
-
-**Availability:** Broadband service is available at a location (from FCC map)
-
-**Adoption:** Households subscribe to broadband service (from ACS)
-
-FCC data measures **availability**, not actual subscriptions. Use [ACS](/datasets/american-community-survey/) for adoption rates.
-:::
-
-### Speed Definitions
-
-Different programs use different speed thresholds:
-
-| Program | Download | Upload | Definition |
-|---------|----------|--------|------------|
-| Legacy FCC | 25 Mbps | 3 Mbps | "Broadband" |
-| BEAD | 100 Mbps | 20 Mbps | "Underserved" |
-| BEAD | <25 Mbps | <3 Mbps | "Unserved" |
-
-### Technology Considerations
-
-Not all technologies are equal:
-
-- **Fiber:** Future-proof, symmetrical speeds, low latency
-- **Cable:** High download, lower upload, shared bandwidth
-- **DSL:** Distance-limited, slower speeds
-- **Fixed Wireless:** Weather-dependent, line-of-sight required
-- **Satellite:** High latency (except LEO), expensive
-
-## Related Resources
-
-- [cori.data.fcc R Package](/packages/cori-data-fcc/)
-- [FCC Data Overview Blog Post](/blog/12_fcc-data/)
-
-## R Packages
-
-### Recommended Packages
-
-```{r}
-#| eval: false
-
-# Install cori.data.fcc package
-# remotes::install_github("ruralinnovation/cori.data.fcc")
-library(cori.data.fcc)
+# Form 477 — state data across all available years
+get_f477("NH")
 ```
 
-### Usage Example
+### Direct from Source
 
-```{r}
-#| eval: false
+NBM data files are available for bulk download from the [FCC broadband
+data download page](https://broadbandmap.fcc.gov/data-download). Form
+477 data is archived at the [FCC Form 477 page](https://www.fcc.gov/general/broadband-deployment-data-fcc-form-477).
+See the [NBM about page](https://broadbandmap.fcc.gov/about) for full
+documentation of data definitions, ISP reporting requirements, and the
+Fabric location methodology.
 
-library(cori.data.fcc)
+## Related
 
-# Get county-level broadband availability
-county_broadband <- get_fcc_broadband(
-  geography = "county",
-  vintage = "2024-06",
-  speeds = c("100_20", "25_3")
-)
-```
-
-## Additional Resources
-
-- [FCC National Broadband Map](https://broadbandmap.fcc.gov/)
-- [BEAD Program Information](https://broadbandusa.ntia.doc.gov/funding-programs/broadband-equity-access-and-deployment-bead-program)
-- [cori.data.fcc GitHub](https://github.com/ruralinnovation/cori.data.fcc)
-
----
-
-**Last Updated:** December 15, 2025
-**Data Coverage:** Census block level, all U.S. states
-**Contact:** [data@ruralinnovation.us](mailto:data@ruralinnovation.us)
+- **Package:** [cori.data.fcc](/packages/cori-data-fcc/) — CORI's
+  access layer for NBM and Form 477, with S3-backed block-level summaries
+- **Package:** [cori.data](/packages/cori-data/) — meta-package
+  including `cori.data.fcc`
+- **Dataset:** [American Community
+  Survey](/datasets/american-community-survey/) — household-level
+  broadband adoption and usage data that complements NBM's
+  infrastructure availability picture
+- **Project:** [Rural Economic
+  Outlook](/projects/rural-economic-outlook/) — broadband coverage is a
+  core input to CORI's multi-dataset economic analysis

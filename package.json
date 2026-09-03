@@ -1,5 +1,5 @@
 {
-  "name": "@cori.agent/dataverse",
+  "name": "@cori.data/verse",
   "version": "1.0.0",
   "private": true,
   "type": "module",
