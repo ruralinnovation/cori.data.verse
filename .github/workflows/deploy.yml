@@ -35,6 +35,21 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: Promote dev/ to prod/ in S3 (mirror, not merge)
+        # A push to main means development has just been merged, and dev/
+        # content/ was already synced by a local `targets::tar_make()` run
+        # before that merge. prod/content/ is not updated by that run --
+        # get_s3_prefix() in _targets.R only ever resolves to "prod/content/"
+        # when tar_make() is run FROM the main branch, which nothing in this
+        # repo does automatically. Without this step, prod/ silently drifts
+        # from what main actually contains until someone remembers to check
+        # out main locally and re-run the R pipeline by hand.
+        #
+        # --delete makes this a true mirror: files present in prod/ but no
+        # longer in dev/ (e.g. a deleted chart or package profile) are
+        # removed, not just left behind. That is "replace", not "merge".
+        run: aws s3 sync s3://cori.data.verse/dev/content/ s3://cori.data.verse/prod/content/ --delete
+
       - name: Sync content from S3
         run: aws s3 sync s3://cori.data.verse/prod/content/ content/
 
