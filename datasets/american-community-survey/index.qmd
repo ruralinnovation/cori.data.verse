@@ -81,19 +81,19 @@ in a rural context is part of what this resource is for.
 ## Coverage
 
 - **Geography:** 
-    - Nation, State, County, Census Tract, Block Group, Place, ZCTA, and more
+    - Nation, State, County, Census Tract, Block Group, Place, ZCTA, and more  
 
 - **Time range:** 
     - 1-year estimates: 2005–present
-    - 5-year estimates: 2009–present
+    - 5-year estimates: 2009–present  
 
 - **Update frequency:** 
     - 1-year estimates typically released in September
-    - 5-year estimates typically in December
+    - 5-year estimates typically in December  
 
 - **Universe:** Varies by table; most tables cover the U.S. civilian
   noninstitutionalized population. Group quarters population is included
-  for many subjects.
+  for many subjects.  
 
 ::: callout-note
 **1-year vs. 5-year for rural analysis:** 1-year estimates are only
