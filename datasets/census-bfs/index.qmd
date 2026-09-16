@@ -94,7 +94,7 @@ from entrepreneurial intent to labor market outcome.
   (NAICS 92)
 
 ::: callout-note
-**Only Business Applications are avaialble for County data:** The Census 
+**Only Business Applications are available for County data:** The Census 
 county-level file contains the Business Application (BA) series only. 
 High-propensity (HBA) and Projected Business Formation (PBF) series,
 which estimate how many applications become employer businesses, 
