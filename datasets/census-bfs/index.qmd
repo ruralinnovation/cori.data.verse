@@ -87,7 +87,7 @@ from entrepreneurial intent to labor market outcome.
 
 - **Update frequency:**     
     - Monthly national and state data
-    - annual county data (typically released approximately six months after the reference year)  
+    - Annual county data (typically released approximately six months after the reference year)  
 
 - **Universe:** EIN applications on IRS Form SS-4, excluding tax liens,
   estates, trusts, agriculture (NAICS 11), and public administration
