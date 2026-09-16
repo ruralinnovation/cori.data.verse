@@ -37,9 +37,8 @@ economy from 1978 to the present. While most labor market data answers
 distinguishing new establishments from expansions, and closures from
 contractions. This granularity makes BDS one of the primary federal sources for
 studying entrepreneurial dynamism, firm lifecycle, and the underlying
-churn of a local economy. QCEW tells us what the labor market looks like;
-BDS helps explain how the business and employment base is changing
-beneath the surface.
+churn of a local economy. In short, BDS helps explain how the business 
+and employment base is changing beneath the surface.
 
 BDS is derived from the Census Bureau's Longitudinal Business Database
 (LBD), which links IRS employer records, Social Security Administration
@@ -60,16 +59,15 @@ locations.
 
 ## What This Data Tells Us About Rural America
 
-The Business Dynamics Statistics provide a window into the
-entrepreneurial vitality of local economies that employment headcounts
-alone cannot offer. By tracking establishment entry, exit, and survival
-alongside job creation and destruction at the county level, BDS reveals
-whether a community's business base is renewing itself, contracting, or
-consolidating — dynamics that have significant implications for long-run
+BDS provides a window into the entrepreneurial vitality of local economies 
+that employment headcounts alone cannot offer. By tracking establishment entry, 
+exit, and survival alongside job creation and destruction at the county level, 
+BDS reveals whether a community's business base is renewing itself, contracting, 
+or consolidating — dynamics that have significant implications for long-run
 economic resilience.
 
 Rural communities tend to have smaller and more concentrated business
-ecosystems than their metro counterparts, which makes BDS particularly
+ecosystems than their nonrural counterparts, which makes BDS particularly
 informative. In communities where a small number of establishments
 account for a large share of employment, business exit can be
 consequential in ways that aggregate county-level employment data
@@ -78,28 +76,27 @@ headline visible: a community holding steady employment while losing
 established firms and gaining new ones is in a fundamentally different
 position than one where the same employers have persisted for decades.
 
-Establishments 1–5 years old account for a disproportionate share of
-job creation relative to more established establishments, a pattern
+Young establishments that range from 1 to 5 years old account for a disproportionate share of
+job creation relative to more tenured establishments. This pattern is
 visible in rural communities as well. Examining job creation by establishment age helps
 researchers understand whether new and young businesses are contributing
 meaningfully to local employment growth, and whether that contribution
-is changing over time. BDS is a useful measure of whether
-entrepreneurial momentum is building or stalling, though it describes
-current dynamics rather than predicting future outcomes. Business formation and employment growth are
-not always tightly coupled in the short run — new businesses take time
-to scale — making multi-year trend analysis more informative than any
-single year snapshot.
+is changing over time.
 
 ## Coverage
 
-- **Geography:** County, State, National
-- **Time range:** 1978–present (county data available from 1978; earlier
-  years at smaller geographies may have more disclosure suppression)
-- **Update frequency:** Annual; typically released approximately 18
-  months after the reference year
-- **Universe:** U.S. employer businesses — firms and establishments with
-  paid employees. Does not cover the nonemployer universe (self-employed
-  with no employees).
+- **Geography:** 
+    - County, State, National  
+
+- **Time range:** 
+    - 1978 – present 
+
+- **Update frequency:** 
+    - Annual (typically released approximately 18 months after the reference year)
+
+- **Universe:** 
+    - U.S. employer businesses — firms and establishments with paid employees. 
+      Does not cover the nonemployer universe (self-employed with no employees).
 
 ::: callout-note
 **Notable exclusions:** BDS covers employer businesses only and does not
