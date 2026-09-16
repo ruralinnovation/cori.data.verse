@@ -136,11 +136,13 @@ came from new, expanding, contracting, and closing establishments.
 Three mutually exclusive breakdowns are available via `_by_sector`,
 `_by_age`, and `_by_size` function variants:
 
-- **By NAICS sector** — identifies where business dynamism is occurring;
+- **By sector (NAICS)** — identifies where business dynamism is occurring;
   20 major 2-digit sectors at county level, finer detail at state and
-  national level
+  national level (i.e., 4- or 6-digit)  
+
 - **By establishment age** — distinguishes startup and young-firm
-  dynamics from mature-firm dynamics; age 0 through 26+ years
+  dynamics from mature-firm dynamics; age 0 through 26+ years  
+
 - **By firm size** — reveals whether dynamics are concentrated among
   smaller or larger employers; three mutually exclusive categories:
   1–19, 20–499, and 500+ employees
