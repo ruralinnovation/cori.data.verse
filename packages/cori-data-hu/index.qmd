@@ -51,7 +51,7 @@ datasets support analysis of how supply is changing relative to the
 existing base. All data are returned in the standard `cori.data` long format: one row
 per `geoid / year / variable`.
 
-## Installation & Quick Start
+## Installation & quick start
 
 ```{r}
 #| eval: false
@@ -76,7 +76,7 @@ get_housing_units(
 )
 ```
 
-## What This Data Tells Us About Rural
+## What this data tells us about rural America  
 
 Housing is the physical substrate of rural economic development — the
 asset that determines whether a community can translate economic momentum
@@ -136,7 +136,7 @@ nh_hu <- get_housing_units(
 dplyr::glimpse(nh_hu)
 ```
 
-### Rural vs. Nonrural
+### Rural vs. nonrural
 
 ```{r}
 #| eval: false
@@ -176,7 +176,7 @@ ggplot(rural_avg, aes(x = year, y = value, color = is_rural)) +
   )
 ```
 
-### County Spotlight: Grafton County, NH
+### County spotlight: Grafton County, NH
 
 ```{r}
 #| eval: false
