@@ -51,7 +51,7 @@ Business Formations (PBF)**, which estimates conversion rates within
 four and eight quarters. These finer series are not available at the
 county level.
 
-## What This Data Tells Us About Rural America
+## What this data tells us about rural America
 
 Business formation statistics — tracking EIN applications as a leading
 indicator of entrepreneurial intent — provide an early signal of
@@ -69,7 +69,7 @@ necessarily translate into durable establishment growth. Comparing BFS
 with BDS can help identify where strong application activity was followed
 by actual business formation and job creation — and where it was not.
 
-:::callout-note
+::: callout-usage
 Coupling BFS with other datasets is a primary step for its use:
 BFS shows where people are initiating businesses while Business Dymanics Statistics reveals
 whether those applications become employer establishments. Other datasets, such as
@@ -114,7 +114,7 @@ the [BFS methodology page](https://www.census.gov/econ/bfs/methodology.html)
 for details on the disclosure avoidance approach applied to county data.
 :::
 
-## Key Variables
+## Key variables
 
 Counts and rates answer different questions. Counts show the scale of
 business application activity in a county; rates allow comparison of
@@ -127,9 +127,9 @@ entrepreneurial activity across communities of very different sizes.
 - **Applications per 1,000 population** — population-normalized rate
   for comparing application intensity across counties
 
-## Accessing the Data
+## Accessing the data
 
-### Via CORI R Package
+### Via CORI R package
 
 The [`cori.data.bfs`](/packages/cori-data-bfs/) package provides tidy
 annual county-level access to BFS business application counts, with
@@ -148,7 +148,7 @@ get_business_applications(
 )
 ```
 
-### Direct from Source
+### Direct from source
 
 Monthly national and state data, and annual county files, are available
 from the [BFS data page](https://www.census.gov/econ/bfs/data.html).
