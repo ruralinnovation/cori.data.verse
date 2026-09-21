@@ -55,7 +55,7 @@ economies where establishment counts alone may show little movement. All
 data are returned in the standard `cori.data` long format: one row per
 `geoid / year / variable`.
 
-## Installation & Quick Start
+## Installation & quick start
 
 ```{r}
 #| eval: false
@@ -79,7 +79,7 @@ get_business_applications(
 )
 ```
 
-## What This Data Tells Us About Rural
+## What this data tells us about rural America  
 
 Business applications are best interpreted as a leading indicator of
 future establishment counts rather than a measure of current economic
@@ -101,9 +101,9 @@ U.S. Census Bureau's Business Formation Statistics. Data cover
 applications filed with the IRS, excluding tax liens, estates, trusts,
 agriculture (NAICS 11), and public administration (NAICS 92).
 
-**Source:** U.S. Census Bureau, Business Formation Statistics\
-**Coverage:** 2005–present, updated annually\
-**Geography:** County (5-digit FIPS), state (2-digit FIPS), national (`"00"`)
+**Source:** U.S. Census Bureau, Business Formation Statistics\  
+**Coverage:** 2005–present, updated annually\  
+**Geography:** County (5-digit FIPS), state (2-digit FIPS), national (`"00"`)  
 
 ### Variables
 
@@ -136,7 +136,7 @@ nh_bfs <- get_business_applications(
 dplyr::glimpse(nh_bfs)
 ```
 
-### Rural vs. Nonrural
+### Rural vs. nonrural
 
 Business formation diverges between rural and nonrural counties. The
 chart below shows total business applications by rural status using the
@@ -191,7 +191,7 @@ ggplot(rural_avg, aes(x = year, y = value, color = is_rural)) +
   )
 ```
 
-### County Spotlight: Grafton County, NH
+### County ppotlight: Grafton County, NH
 
 ```{r}
 #| eval: false
