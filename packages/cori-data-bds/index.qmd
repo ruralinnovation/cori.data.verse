@@ -80,46 +80,45 @@ get_business_dynamics_by_sector(geography = "state", years = 2018:2023)
 get_business_dynamics_by_age(geography = "county", years = 2018:2023)
 ```
 
-## What This Data Tells Us About Rural
+## What this data tells us about rural America  
 
-Business dynamics data captures what employment data misses: the
+Business dynamics data captures what employment data misses, like the
 churning process beneath aggregate counts. A county can hold steady
 employment while simultaneously losing established firms and gaining new
-ones — or vice versa. Entry and exit rates, job creation by firm age,
+ones or vice versa. Entry and exit rates, job creation by firm age,
 and establishment counts together describe whether a rural economy is
 renewing itself or sustaining on its existing institutional base.
 
-Young firms — those five years old or less — create a disproportionate
+Young firms (i.e., businesses five years of age or less) create a disproportionate
 share of net new jobs in the U.S. economy. Rural communities with active
 entrepreneurial ecosystems show this pattern clearly, and CORI's
 community research documents meaningful business formation growth in
 communities that have invested in their entrepreneurial infrastructure.
 Converting new business formation into employment growth takes time,
-capital, and ecosystem depth — the BDS data supports tracking that
+capital, and ecosystem depth. BDS data supports tracking that
 progression over multiple years rather than treating any single year as
 definitive.
 
 High exit rates in isolation can look like distress. But exit rates
-interpreted alongside entry rates tell a more nuanced story: dynamic
+interpreted alongside entry rates tell a more nuanced story about how dynamic
 economies churn. A community with both high entry and high exit rates may
 be more economically active than one with low rates of both. The BDS
 data supports this kind of comparative reading across rural county types
 and over time.
 
 Industry concentration at the county level reveals the degree to which
-a rural economy's employment base is anchored in a narrow set of sectors
-— often a direct reflection of the community's core assets.
-Understanding that concentration is the starting point for any economic
+a rural economy's employment base is anchored in a narrow set of sectors.
+Understanding a rural community's business concentration is the starting point for any economic
 development strategy, whether the goal is to deepen existing strengths or
 to build complementary capacity alongside them.
 
-## Introduction
+## Introduction  
 
 *Adapted from the [Introduction
 vignette](https://github.com/ruralinnovation/cori.data.bds/blob/main/vignettes/introduction.Rmd)
 on GitHub.*
 
-### What is this data?
+### What is this data?  
 
 The Census Bureau's Business Dynamics Statistics track the birth, death,
 and employment of U.S. establishments and firms from 1978 to the
@@ -130,7 +129,7 @@ contracting.
 
 Data is available at the county, state, and national level.
 
-### Quick start
+### Quick start  
 
 ```{r}
 #| eval: false
@@ -143,8 +142,8 @@ bd <- get_business_dynamics(geography = "county", years = 2018:2023)
 ed <- get_employment_dynamics(geography = "county", years = 2018:2023)
 ```
 
-### Dimensional breakdowns
-
+### Dimensional breakdowns  
+ 
 BDS measures three mutually exclusive dimensions. Each `_by_*` function
 slices the data along one dimension at a time.
 
@@ -192,7 +191,7 @@ net_jobs <- get_employment_dynamics(
 )
 ```
 
-### Rural vs. nonrural comparison
+### Rural vs. nonrural comparison  
 
 ```{r}
 #| eval: false
@@ -216,17 +215,20 @@ county_ed |>
 ## Related
 
 -   **Dataset:** [Census Business Dynamics
-    Statistics](/datasets/census-bds/)
+    Statistics](/datasets/census-bds/)  
+
 -   **Package:** [cori.data](/packages/cori-data/) — meta-package that
-    includes `cori.data.bds`
+    includes `cori.data.bds`  
+
 -   **Package:** [cori.data.bfs](/packages/cori-data-bfs/) — business
     applications as a leading indicator; pairs with BDS for the full
-    formation-to-employment story
+    formation-to-employment story  
+
 -   **Package:** [ruraldefinitions](/packages/ruraldefinitions/) —
     rural/nonrural classification used in comparison examples
 -   **Project:** [Rural Economic
     Outlook](/projects/rural-economic-outlook/) — BDS is a core input to
-    CORI's multi-dataset economic analysis
+    CORI's multi-dataset economic analysis  
 
 ::: callout-note
 **Data attribution:** Business Dynamics Statistics are produced by the
