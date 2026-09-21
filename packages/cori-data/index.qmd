@@ -39,7 +39,7 @@ sources, applying consistent rural classifications, and packaging data in
 a format that works across rural geographies — so analysts can focus on
 the research question, not the data infrastructure.
 
-## Installation & Quick Start
+## Installation & quick start
 
 ```{r}
 #| eval: false
@@ -59,7 +59,7 @@ get_population(geography = "county", years = 2019:2023)
 get_business_dynamics(geography = "county", years = 2019:2023)
 ```
 
-## The Ecosystem
+## The ecosystem
 
 | Package | What it measures | Geography | Years |
 |---|---|---|---|
@@ -72,14 +72,14 @@ get_business_dynamics(geography = "county", years = 2019:2023)
 | [cori.data.fcc](/packages/cori-data-fcc/) | Broadband coverage (FCC NBM) | county | 2022–present |
 | [ruraldefinitions](/packages/ruraldefinitions/) | Rural classifications (OMB, USDA ERS, NCHS) | county | multiple vintages |
 
-## What This Data Tells Us About Rural
+## What this data tells us about rural America  
 
 Rural economies are diverse, complex, and deeply shaped by the assets
-and advantages they have accumulated over time — natural resources,
+and advantages they have accumulated over time: natural resources,
 agricultural land, industrial infrastructure, geographic position,
 community institutions, and workforce traditions. Some rural communities
 are thriving, leveraging those assets in new ways as remote work,
-entrepreneurship, and targeted investment open new pathways. Others are
+entrepreneurship, and targeted investments. Others are
 navigating structural transitions as legacy industries shift. What they
 share is a foundation of real assets whose value in the modern economy
 depends on the conditions surrounding them.
@@ -104,7 +104,7 @@ aggregations across counties of very different sizes, which sector
 taxonomy to use) are embedded in the packages rather than left to each
 researcher to reinvent.
 
-## Getting Started
+## Getting started
 
 *Adapted from the [Getting Started
 vignette](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/getting-started.Rmd)
@@ -184,7 +184,7 @@ nchs_2023  # NCHS Urban-Rural Classification Scheme
 uic_2024   # USDA Urban Influence Codes
 ```
 
-## Working with Tidy Data
+## Working with tidy data
 
 *Adapted from the [Working with Tidy
 Data](https://github.com/ruralinnovation/cori.data/blob/main/vignettes/tidy-data.Rmd)
