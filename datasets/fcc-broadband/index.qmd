@@ -41,6 +41,7 @@ dataset. Together they provide a continuous picture of where broadband
 infrastructure exists and at what speeds — from the pre-BEAD baseline
 through the current expansion.
 
+callout-note:::
 The NBM represents a significant improvement in precision. Under Form
 477, a provider needed only to report coverage in a census block if it
 served a single location there, leading to known overstatement of
@@ -48,8 +49,9 @@ coverage. The NBM requires ISPs to report which specific addresses they
 serve, which technologies they use, and their maximum advertised speeds.
 ISPs file twice yearly — as of June 30 and December 31 — with interim
 updates to reflect challenge outcomes.
+:::
 
-## What This Data Tells Us About Rural America
+## What this data tells us about rural America
 
 The FCC National Broadband Map represents the most granular and current
 public dataset on broadband infrastructure availability in the United
@@ -60,12 +62,16 @@ particularly useful metrics for economic development analysis — they
 capture whether infrastructure meets a commonly used high-speed
 broadband benchmark and whether communities have access to fiber.
 
-The data reflects infrastructure availability — what is built and where
-— not whether households are connected or what speeds they actually
-experience. NBM tells us where broadband infrastructure is available;
+The data reflects infrastructure availability — what is built and where. 
+The data does not decribe whether households are connected or what speeds they actually
+experience. 
+
+callout-where:::
+NBM tells us where broadband infrastructure is available;
 ACS helps us understand whether households are actually using it.
 Communities with strong coverage on paper can still face adoption
 challenges driven by affordability, device access, or awareness.
+::
 
 The NBM's greatest value for rural analysis is its geographic precision:
 it is possible to identify coverage gaps within a county, not just
@@ -74,18 +80,21 @@ well served overall while still containing substantial pockets of
 unserved locations — a pattern that older county-level broadband
 measures could not reveal. Broadband coverage has improved substantially
 in many rural communities in recent years, and the NBM provides a way
-to track that progress and identify where gaps persist.
+to track that progress and identify where gaps persist.  
 
-## Coverage
+## Coverage  
 
 - **Geography:** Individual broadband serviceable locations (BSLs),
-  aggregated to census block, county, and state
+  aggregated to census block, county, and state  
+
 - **Time range:** December 2014–December 2021 (Form 477, census-block
-  level); November 2022–present (NBM, location level)
+  level); November 2022–present (NBM, location level)  
+
 - **Update frequency:** Biannual — June 30 and December 31 reference
-  dates, with ongoing updates for challenge outcomes
+  dates, with ongoing updates for challenge outcomes  
+
 - **Universe:** Fixed broadband infrastructure availability as reported
-  by ISPs. Mobile broadband coverage available separately.
+  by ISPs. Mobile broadband coverage available separately.  
 
 ::: callout-note
 **Form 477 vs. NBM:** The two series use different units of measurement and geographic
@@ -101,7 +110,7 @@ should be interpreted with care around the 2021–2022 methodological
 break.
 :::
 
-## Key Variables
+## Key variables
 
 **NBM — location-level availability** (CORI block-level summary via
 `get_nbm_bl()`)
@@ -127,9 +136,9 @@ break.
 - Maximum advertised download and upload speeds
 - Census block coverage indicator (residential and business)
 
-## Accessing the Data
+## Accessing the data
 
-### Via CORI R Package
+### Via CORI R package
 
 The [`cori.data.fcc`](/packages/cori-data-fcc/) package provides access
 to both NBM and Form 477 data. CORI's processed block-level summaries
@@ -150,7 +159,7 @@ get_nbm_county("33009")
 get_f477("NH")
 ```
 
-### Direct from Source
+### Direct from Source  
 
 NBM data files are available for bulk download from the [FCC broadband
 data download page](https://broadbandmap.fcc.gov/data-download). Form
@@ -159,7 +168,7 @@ See the [NBM about page](https://broadbandmap.fcc.gov/about) for full
 documentation of data definitions, ISP reporting requirements, and the
 Fabric location methodology.
 
-## Related
+## Related  
 
 - **Package:** [cori.data.fcc](/packages/cori-data-fcc/) — CORI's
   access layer for NBM and Form 477, with S3-backed block-level summaries
