@@ -55,7 +55,7 @@ analysis, where most counties fall below the 1-year threshold. The
 trade-off is currency: 5-year estimates represent a rolling average, not
 a snapshot of a single year.
 
-## What This Data Tells Us About Rural America
+## What this data tells us about rural America
 
 The ACS provides the broadest cross-section of socioeconomic conditions
 at the county level — covering educational attainment, income,
@@ -116,7 +116,7 @@ vignette](https://walker-data.com/tidycensus/articles/margins-of-error.html)
 is an excellent primer on working with ACS uncertainty in R.
 :::
 
-## Key Variables
+## Key variables
 
 The ACS covers hundreds of variables. The most analytically valuable
 for rural economic analysis fall into four groups:
@@ -134,7 +134,7 @@ for rural economic analysis fall into four groups:
 - Educational attainment (less than high school through graduate degree)
 - School enrollment
 
-**Employment, Income, and Economic Characteristics**
+**Employment, income, and economic characteristics**
 
 - Employment status and labor force participation
 - Occupation and industry of employment
@@ -152,7 +152,7 @@ for rural economic analysis fall into four groups:
 - Internet access and subscription type
 - Units in structure; year built
 
-## Accessing the Data
+## Accessing the data
 
 `tidycensus` is the go-to R package for ACS data — and one of the best
 data access tools in the R ecosystem. Constructed by Kyle Walker,
