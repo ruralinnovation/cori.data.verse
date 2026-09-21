@@ -45,8 +45,8 @@ The `cori.data.qcew` package provides access to Bureau of Labor
 Statistics Quarterly Census of Employment and Wages (QCEW) data at the
 county, state, and national level from 1990 to the present. Derived from
 unemployment insurance records rather than a survey, QCEW covers roughly
-95% of all U.S. employment — the standard source for local labor market
-analysis, and more reliable than survey-based estimates in the small
+95% of all U.S. employment. It is the standard source for local labor market
+analysis and more reliable than survey-based estimates in the small
 rural counties where sample sizes are thin.
 
 Beyond access, the package adds two analytical layers over the raw
@@ -65,7 +65,7 @@ All functions return tidy long-format data consistent with the
 `agg_var` employment-weight column on rate and share variables for
 correct aggregation across geographies of different sizes.
 
-## Installation & Quick Start
+## Installation & quick start
 
 ```{r}
 #| eval: false
@@ -100,10 +100,10 @@ Check the current data vintage:
 latest_qcew_vintage()
 ```
 
-## What This Data Tells Us About Rural
+## What this data tells us about rural America  
 
-Employment is the most fundamental indicator of a local economy's health
-— and one of the most easily misread in a rural context. Aggregate
+Employment is the most fundamental indicator of a local economy's health 
+and one of the most easily misread in a rural context. Aggregate
 employment counts can grow while wages stagnate, or decline while
 productivity rises. In CORI's community research, many rural counties
 show GDP per capita growth alongside employment that has not recovered to
@@ -251,7 +251,7 @@ pay |>
   )
 ```
 
-## Rural vs. Nonrural Employment Trends
+## Rural vs. nonrural employment trends
 
 *Adapted from the [Rural vs. Nonrural Employment Trends
 vignette](https://github.com/ruralinnovation/cori.data.qcew/blob/main/vignettes/rural-employment-trends.Rmd)
