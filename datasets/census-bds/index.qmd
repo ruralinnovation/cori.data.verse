@@ -57,7 +57,7 @@ business formation from the opening, closing, or expansion of individual
 locations.
 :::
 
-## What This Data Tells Us About Rural America
+## What this data tells us about rural America
 
 BDS provides a window into the entrepreneurial vitality of local economies 
 that employment headcounts alone cannot offer. By tracking establishment entry, 
@@ -106,7 +106,7 @@ page](https://www.census.gov/programs-surveys/bds/documentation/methodology.html
 for the full coverage description.
 :::
 
-## Key Variables
+## Key variables
 
 BDS separates **business dynamics** from **employment dynamics**,
 allowing users to distinguish changes in the number of establishments
@@ -156,9 +156,9 @@ Unlike ACS, BDS is not a sample survey; suppression reflects
 confidentiality protection, not sampling uncertainty.
 :::
 
-## Accessing the Data
+## Accessing the data
 
-### Via CORI R Package
+### Via CORI R package
 
 The [`cori.data.bds`](/packages/cori-data-bds/) package provides tidy
 access to BDS at the county, state, and national level across all
@@ -177,7 +177,7 @@ get_employment_dynamics_by_age(geography = "county", years = 2018:2023)
 get_business_dynamics_by_sector(geography = "state", years = 2018:2023)
 ```
 
-### Direct from Source
+### Direct from source
 
 Annual CSV files are available from the [BDS data
 page](https://www.census.gov/programs-surveys/bds/data.html). Data are
