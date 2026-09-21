@@ -41,7 +41,7 @@ dataset. Together they provide a continuous picture of where broadband
 infrastructure exists and at what speeds — from the pre-BEAD baseline
 through the current expansion.
 
-callout-note:::
+::: callout-precision
 The NBM represents a significant improvement in precision. Under Form
 477, a provider needed only to report coverage in a census block if it
 served a single location there, leading to known overstatement of
@@ -66,12 +66,12 @@ The data reflects infrastructure availability — what is built and where.
 The data does not decribe whether households are connected or what speeds they actually
 experience. 
 
-callout-where:::
+::: callout-where
 NBM tells us where broadband infrastructure is available;
 ACS helps us understand whether households are actually using it.
 Communities with strong coverage on paper can still face adoption
 challenges driven by affordability, device access, or awareness.
-::
+:::
 
 The NBM's greatest value for rural analysis is its geographic precision:
 it is possible to identify coverage gaps within a county, not just
