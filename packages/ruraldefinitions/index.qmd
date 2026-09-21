@@ -55,7 +55,7 @@ Census Bureau's block-level rural definition. Every other `cori.data.*`
 package uses `ruraldefinitions` to attach rural/nonrural flags to
 analysis datasets.
 
-## Installation & Quick Start
+## Installation & quick start
 
 ```{r}
 #| eval: false
@@ -82,7 +82,7 @@ my_data |>
   left_join(select(cbsa_2023, geoid, is_rural), by = "geoid")
 ```
 
-## What This Data Tells Us About Rural
+## What this data tells us about rural America  
 
 "Rural" is not a single definition. The federal government uses multiple
 classification systems — CBSA metropolitan/micropolitan delineations,
@@ -121,7 +121,7 @@ experiences and economic assets are not captured in analyses that treat
 rural as a monolithic category. Rural classifications are most useful
 when paired with demographic data, not used as a substitute for it.
 
-## Available Definitions
+## Available definitions
 
 County-level definitions are bundled as package data and available
 immediately. Tract-level definitions are accessed via `get_definition()`.
@@ -136,7 +136,7 @@ immediately. Tract-level definitions are accessed via `get_definition()`.
 | RUCA | 1990–2020 | Tract | USDA commuting-based tract classification |
 | Census | 2010, 2020 | Block | Census Bureau block-level definition |
 
-## Selecting a Definition
+## Selecting a definition
 
 For county-level economic analysis, CORI recommends `cbsa_2023`. If you
 have access to tract data and need to capture rural tracts within metro
@@ -157,7 +157,7 @@ CORI's published guidance on definition selection:
 - [Do No Harm Guide](https://www.urban.org/research/publication/do-no-harm-guide-crafting-equitable-data-narratives)
   — Urban Institute writeup on crafting equitable data narratives
 
-## Definition Maps
+## Definition maps
 
 *Adapted from the [Rural Definitions Maps
 vignette](https://github.com/ruralinnovation/ruraldefinitions/blob/main/vignettes/rural-definitions-maps.Rmd)
