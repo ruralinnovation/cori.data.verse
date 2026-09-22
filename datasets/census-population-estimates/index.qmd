@@ -31,24 +31,28 @@ editor:
 
 The Census Bureau's Population Estimates Program (PEP) produces annual
 population and housing unit estimates for the nation, states, and
-counties between decennial census years. Rather than conducting a new
-count each year, PEP applies a demographic balancing equation: each
-year's population estimate starts from the prior year's count, adds
+counties between decennial census years. 
+
+
+callout-note:::
+Rather than conducting a new count each year, PEP applies a demographic balancing equation:
+each year's population estimate starts from the prior year's count, adds
 births, subtracts deaths, and adds net migration (both domestic and
 international). Housing unit estimates are built separately from the
 decennial census baseline, incorporating permitted construction,
 non-permitted construction, mobile home shipments, and estimated housing
 loss. The result is a consistent annual series that captures how and
 why population and housing stock are changing — not just whether they
-are.
+are.  
 
-The components-of-change approach is what makes PEP analytically
-valuable beyond the headline total. Two counties can have identical
+This components-of-change approach is what makes PEP analytically
+valuable beyond the headline total. Counties can have identical
 population growth rates driven by entirely different dynamics: one
 growing through natural increase, another through working-age
 in-migration, a third through retiree in-migration. PEP makes those
 distinctions visible at the county level every year, which the
 decennial census alone cannot provide.
+:::
 
 ## What this data tells us about rural America  
 
@@ -64,11 +68,10 @@ international net migration — that make this disaggregation possible.
 For rural communities, population trends reflect the cumulative effect
 of economic conditions, quality of life, and community capacity over
 time. Out-migration of working-age residents is a persistent pattern in
-many rural counties. CORI's research suggests this is not always
-reversed by improvements in economic indicators alone — factors beyond
+many rural counties. Our research here at CORI suggests this is not always
+reversed by improvements in economic indicators alone: factors beyond
 employment and income appear to shape migration decisions. PEP reveals
-what demographic flows are occurring; understanding why requires pairing
-it with other data and community context. Understanding which flows are
+what demographic flows are occurring. Understanding which flows are
 driving population change is the starting point for identifying which
 conditions matter most.
 
@@ -107,21 +110,21 @@ for documentation of component data sources and estimation procedures.
 
 ## Key variables
 
-**Population totals** (`get_population()`)
+**Population totals** (`get_population()`)  
 
-- `population` — total resident population estimate
+- `population` — total resident population estimate  
 - `population_16plus` — population age 16 and over (used as labor force
-  denominator in employment rate calculations)
+  denominator in employment rate calculations)  
 
-**Components of change** (`get_population_change()`)
+**Components of change** (`get_population_change()`)  
 
-- `births` — live births
-- `deaths` — deaths
-- `natural_change` — births minus deaths
+- `births` — live births  
+- `deaths` — deaths  
+- `natural_change` — births minus deaths  
 - `domestic_migration` — net domestic in-migration (people moving from
-  other U.S. counties)
-- `international_migration` — net international in-migration
-- `net_migration` — domestic plus international net migration
+  other U.S. counties)  
+- `international_migration` — net international in-migration  
+- `net_migration` — domestic plus international net migration  
 
 ## Accessing the data
 
@@ -129,7 +132,8 @@ for documentation of component data sources and estimation procedures.
 
 The [`cori.data.pep`](/packages/cori-data-pep/) package provides tidy
 access to PEP population totals and components of change at the county,
-state, and national level from 2000 to the present. Because PEP produces consistent annual county populations, it is also a
+state, and national level from 2000 to the present. 
+Because PEP produces consistent annual county populations, it is also a
 highly convenient resource for converting raw counts into per-capita
 rates — a best practice for comparing counties of very different sizes
 that makes rural and nonrural comparisons genuinely apples-to-apples.
