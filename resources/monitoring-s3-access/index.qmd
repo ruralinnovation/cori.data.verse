@@ -23,7 +23,7 @@ editor:
 ---
 
 Every request to a CORI data bucket is written to an S3 server access log.
-This resource turns those logs into charts: who is downloading what, from
+This resource turns those logs into charts: who is requesting what, from
 which bucket, and how that changes over time.
 
 Code cells are set `eval: false` in the document front matter because
@@ -90,24 +90,44 @@ query_template <- "
        'operation','key','status','err','bytes']) AS f
     FROM read_csv('%s', delim='\\x01', header = false,
                   columns = {'line': 'VARCHAR'})
+  ),
+  parsed AS (
+    SELECT
+      f.bucket                                                 AS bucket,
+      CAST(strptime(split_part(f.ts, ' ', 1),
+                    '%%d/%%b/%%Y:%%H:%%M:%%S') AS DATE)        AS day,
+      f.requester                                              AS requester,
+      split_part(f.requester, '/', 3)                          AS session_name,
+      TRY_CAST(f.bytes AS BIGINT)                              AS bytes
+    FROM raw
+    WHERE f.operation LIKE 'REST.GET.OBJECT%%'
   )
   SELECT
-    f.bucket                                                   AS bucket,
-    CAST(strptime(split_part(f.ts, ' ', 1),
-                  '%%d/%%b/%%Y:%%H:%%M:%%S') AS DATE)          AS day,
+    bucket,
+    day,
+    -- caller_type: for aggregating by credential category
     CASE
-      WHEN f.requester = '-' THEN 'anonymous'
-      WHEN f.requester LIKE '%%CoriDataS3ReaderRole%%'
-        THEN coalesce(nullif(nullif(regexp_extract(
-               split_part(f.requester, '/', 3),
-               '^coridata-(.*)-[0-9]+$', 1), ''), 'anon'), 'anonymous')
-      ELSE 'local credentials'
-    END                                                        AS caller,
+      WHEN requester = '-' THEN 'anonymous'
+      WHEN requester LIKE '%%CoriDataS3ReaderRole%%'
+           AND session_name LIKE 'coridata-anon-%%'
+        THEN 'anonymous'
+      WHEN requester LIKE '%%CoriDataS3ReaderRole%%'
+           AND session_name LIKE 'coridata-tag-%%'
+        THEN 'tagged'
+      WHEN requester LIKE '%%CoriDataS3ReaderRole%%'
+        THEN 'anonymous'  -- legacy format fallback
+      ELSE 'local'
+    END                                                        AS caller_type,
+    -- caller_id: IP hash (anon) or explicit tag (tagged) for drill-down
+    CASE
+      WHEN requester LIKE '%%CoriDataS3ReaderRole%%'
+        THEN regexp_extract(session_name, '^coridata-(?:anon|tag)-([^-]+)-[0-9]+$', 1)
+      ELSE NULL
+    END                                                        AS caller_id,
     COUNT(*)                                                   AS requests,
-    SUM(TRY_CAST(f.bytes AS BIGINT))                           AS bytes
-  FROM raw
-  WHERE f.operation LIKE 'REST.GET.OBJECT%%'
-  GROUP BY 1, 2, 3
+    SUM(bytes)                                                 AS bytes
+  FROM parsed
+  GROUP BY 1, 2, 3, 4
 "
 
 activity <- list()
@@ -163,13 +183,14 @@ glimpse(activity)
 One row per bucket, day, and caller. Everything below is `dplyr` on that
 frame — the expensive work is already done.
 
-## Downloads over time, by bucket
+## Requests over time, by bucket
 
 ```{r}
 #| label: chart-by-bucket
 
 activity |>
   filter(day >= Sys.Date() - 7) |>
+  filter(bucket != "cori.data.fcc") |>
   group_by(bucket, day) |>
   summarise(requests = sum(requests), .groups = "drop") |>
   ggplot(aes(day, requests, color = bucket)) +
@@ -178,14 +199,14 @@ activity |>
   scale_x_date(date_labels = "%b %d", date_breaks = "1 day") +
   scale_color_viridis_d(option = "turbo", begin = 0.1, end = 0.9) +
   labs(
-    title    = "S3 object downloads by bucket",
+    title    = "S3 object requests by bucket",
     subtitle = "Daily GET requests over the past week",
     x = NULL, y = "Requests", color = NULL
   ) +
   theme_cori_line()
 ```
 
-## Who is downloading
+## Who is requesting
 
 The `requester` field carries the full assumed-role session ARN, and the
 session name is minted per credential as `coridata-<caller>-<timestamp>`.
@@ -223,7 +244,7 @@ activity |>
   coord_flip() +
   scale_y_continuous(labels = label_comma()) +
   labs(
-    title    = "Downloads by credential type",
+    title    = "Requests by credential type",
     subtitle = "Parsed from the vended credential's session name",
     x = NULL, y = "Requests"
   ) +
