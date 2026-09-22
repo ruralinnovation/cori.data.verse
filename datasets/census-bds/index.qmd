@@ -147,7 +147,7 @@ Three mutually exclusive breakdowns are available via `_by_sector`,
   smaller or larger employers; three mutually exclusive categories:
   1–19, 20–499, and 500+ employees
 
-::: callout-important
+::: callout-note
 **Mind the suppression.** BDS protects the confidentiality of
 individual businesses, so some county-level estimates may be suppressed
 — particularly for small industries or geographies. Suppression can

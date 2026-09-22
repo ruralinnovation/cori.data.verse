@@ -42,7 +42,7 @@ NAICS hierarchy — make it possible to examine not just how much
 employment exists in a place, but where it is concentrated and how
 wages vary across industries.  
 
-callout-supplement:::
+::: callout-note
 Two supplemental surveys add to the administrative foundation:
 the Annual Refiling Survey (ARS) contacts roughly one-third of private
 businesses annually to verify business activity and location, and the

@@ -34,7 +34,7 @@ population and housing unit estimates for the nation, states, and
 counties between decennial census years. 
 
 
-callout-note:::
+::: callout-note
 Rather than conducting a new count each year, PEP applies a demographic balancing equation:
 each year's population estimate starts from the prior year's count, adds
 births, subtracts deaths, and adds net migration (both domestic and

@@ -105,7 +105,7 @@ year-over-year changes should be interpreted carefully given overlapping
 sample periods.
 :::
 
-::: callout-important
+::: callout-note
 **Mind the margins of error.** ACS estimates are based on a sample
 survey, so every estimate carries a margin of error. Uncertainty is
 generally greater for smaller geographies and smaller population groups.
