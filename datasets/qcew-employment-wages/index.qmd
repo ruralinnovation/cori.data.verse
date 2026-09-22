@@ -29,10 +29,21 @@ editor:
 ## Overview
 
 The Quarterly Census of Employment and Wages (QCEW) is the standard
-source for local labor market analysis in the United States. Produced by the Bureau of Labor Statistics, QCEW is primarily derived
+source for local labor market analysis in the United States. 
+Produced by the Bureau of Labor Statistics, QCEW is primarily derived
 from unemployment insurance (UI) administrative records submitted by
 employers to state agencies — not a household or establishment sample
-survey. Two supplemental surveys add to the administrative foundation:
+survey. 
+
+QCEW captures three core dimensions of local labor markets: total
+employment, average annual wages, and the count of establishments
+reporting wages. The sector breakdowns — available across the full
+NAICS hierarchy — make it possible to examine not just how much
+employment exists in a place, but where it is concentrated and how
+wages vary across industries.  
+
+::: callout-note
+Two supplemental surveys add to the administrative foundation:
 the Annual Refiling Survey (ARS) contacts roughly one-third of private
 businesses annually to verify business activity and location, and the
 Multiple Worksite Report (MWR) requires multi-establishment employers to
@@ -41,15 +52,9 @@ primary source is administrative rather than sampled, QCEW is not
 subject to sampling error and covers roughly 95% of all U.S. jobs. Data are available at
 the county, state, and national level from 1990 to the present, with
 quarterly releases and annual summaries by NAICS industry.
+:::
 
-QCEW captures three core dimensions of local labor markets: total
-employment, average annual wages, and the count of establishments
-reporting wages. The sector breakdowns — available across the full
-NAICS hierarchy — make it possible to examine not just how much
-employment exists in a place, but where it is concentrated and how
-wages vary across industries.
-
-## What This Data Tells Us About Rural America
+## What this data tells us about rural America
 
 QCEW provides the baseline picture of a local labor market: where
 covered jobs are located, how much those jobs pay, and which industries
@@ -61,9 +66,9 @@ naturally with BDS, which tracks how the business and employment base is
 changing beneath those levels.
 
 Because its primary source is unemployment insurance administrative
-records rather than a probability sample, QCEW has broad coverage of
-wage and salary employment. For rural analysis, this is particularly
-valuable: sample-based employment estimates can become less precise in
+records, QCEW has broad coverage of wage and salary employment. 
+For rural analysis, this is particularly valuable as that 
+sample-based employment estimates can become less precise in
 small counties where sample sizes are thin.
 
 What the data reveals about rural communities is not a single pattern
@@ -79,20 +84,24 @@ analysts to identify higher-wage sectors within rural economies and
 examine whether communities are gaining or losing covered employment in
 those sectors over time.
 
-## Coverage
+## Coverage  
 
-- **Geography:** County, State, National
+- **Geography:** County, State, National  
+
 - **Time range:** 1990–present (NAICS-based; data available before 1990
-  under the prior SIC classification system)
+  under the prior SIC classification system)  
+
 - **Update frequency:** Employment data available monthly; wages and
   establishment counts available quarterly and annually. Full quarterly
-  industry detail published within 6 months of each quarter's end.
+  industry detail published within 6 months of each quarter's end.  
+ 
 - **Industry detail:** Down to 6-digit NAICS at the county and state
-  level, subject to disclosure restrictions
+  level, subject to disclosure restrictions  
+
 - **Universe:** Employers covered by state unemployment insurance (UI)
   laws and federal workers covered by the Unemployment Compensation for
   Federal Employees (UCFE) program (~95% of U.S. wage and salary
-  employment)
+  employment)  
 
 ::: callout-note
 **Notable exclusions:** QCEW does not cover proprietors, the
@@ -105,36 +114,36 @@ security reasons. See [Table A — Coverage Exclusions](https://www.bls.gov/cew/
 on the BLS QCEW overview page for the complete list.
 :::
 
-## Key Variables
+## Key variables
 
 **Employment**
 
-- Average annual employment (total and by NAICS sector)
+- Average annual employment (total and by NAICS sector)  
 - Employment by ownership (private, federal, state, local government)
 
 **Wages**
 
-- Total quarterly and annual wages
-- Average annual pay per worker (nominal dollars)
-- Average weekly wages
+- Total quarterly and annual wages  
+- Average annual pay per worker (nominal dollars)  
+- Average weekly wages  
 
 QCEW wages are broadly defined — they include bonuses, stock options,
 severance pay, tips, and the cash value of meals and lodging, making
 them a more complete measure of total labor compensation than base pay
 alone. Employer-side benefit contributions (health insurance, workers'
 compensation, pension) are not included; amounts withheld from worker
-paychecks for taxes and union dues are.
+paychecks for taxes and union dues are.  
 
-**Sector breakdowns**
+**Sector breakdowns**  
 
 Available at multiple NAICS levels. CORI's `cori.data.qcew` package
 exposes two classification systems: the 11 BLS supersectors and CORI's
 own three-way aggregation — Tradable Goods, Tradable Services, and Local
 Services — designed for rural economic analysis.
 
-## Accessing the Data
+## Accessing the data
 
-### Via CORI R Package
+### Via CORI R package
 
 The [`cori.data.qcew`](/packages/cori-data-qcew/) package provides
 tidy access to QCEW data at the county, state, and national level. It
@@ -152,7 +161,7 @@ get_wage_salary(geography = "county", years = 2018:2023)
 get_sector_employment(geography = "county", sector_type = "CORI")
 ```
 
-### Direct from Source
+### Direct from source
 
 Annual and quarterly CSV files are available for bulk download from the
 [BLS QCEW data page](https://www.bls.gov/cew/downloadfiles.htm). Files

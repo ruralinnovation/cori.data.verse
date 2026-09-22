@@ -62,7 +62,7 @@ CORI's ingestion focuses on fixed broadband (excluding satellite) and
 applies consistent versioning decisions to produce a comparable
 longitudinal dataset.
 
-## Installation & Quick Start
+## Installation & quick start
 
 ```{r}
 #| eval: false
@@ -89,7 +89,7 @@ f477_nh <- get_f477("NH")
 get_fcc_dictionary("nbm_block")
 ```
 
-## What This Data Tells Us About Rural
+## What this data tells us about rural America  
 
 Broadband infrastructure is a foundational asset for rural participation
 in the modern economy — enabling remote work, business formation,
@@ -147,7 +147,7 @@ dplyr::glimpse(nbm_co)
 ```
 
 **2. Census block-level** — CORI-opinionated aggregation with technology
-type and speed threshold counts (21 columns), one row per block:
+type and speed threshold counts (21 columns), one row per block:  
 
 ```{r}
 #| eval: false
@@ -156,7 +156,7 @@ dplyr::glimpse(nbm_bl)
 ```
 
 **3. Raw location-level** — the full NBM records for all locations in a
-county as reported by ISPs:
+county as reported by ISPs:  
 
 ```{r}
 #| eval: false
@@ -167,7 +167,7 @@ dplyr::glimpse(nbm_raw)
 The block-level summary (`get_nbm_bl()`) is the recommended starting
 point for county and community analysis — it aggregates to technology
 type and speed thresholds most relevant for rural broadband gap work
-(25/3, 100/20, 100/100 Mbps).
+(25/3, 100/20, 100/100 Mbps).  
 
 ### Checking available releases
 

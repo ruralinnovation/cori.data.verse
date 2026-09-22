@@ -58,7 +58,7 @@ both normalize their counts against PEP population estimates. All data
 are returned in the standard `cori.data` long format: one row per
 `geoid / year / variable`.
 
-## Installation & Quick Start
+## Installation & quick start
 
 ```{r}
 #| eval: false
@@ -83,7 +83,7 @@ get_population_change(
 )
 ```
 
-## What This Data Tells Us About Rural
+## What this data tells us about rural America  
 
 Population change reflects how people are responding to conditions on
 the ground — economic opportunity, quality of life, housing access,
@@ -159,7 +159,7 @@ wv_mig <- get_population_change(
 dplyr::glimpse(wv_mig)
 ```
 
-### County Spotlight: Grafton County, NH
+### County spotlight: Grafton County, NH
 
 ```{r}
 #| eval: false

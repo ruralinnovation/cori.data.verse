@@ -53,7 +53,7 @@ counts are normalized by population using `cori.data.pep` and returned
 in the standard `cori.data` long format: one row per `geoid / year /
 variable`.
 
-## Installation & Quick Start
+## Installation & quick start
 
 ```{r}
 #| eval: false
@@ -78,7 +78,7 @@ get_building_permits(
 )
 ```
 
-## What This Data Tells Us About Rural
+## What this data tells us about rural America  
 
 Housing supply is a foundational asset for rural economic development —
 and in many communities, a binding constraint on growth strategies that
@@ -145,7 +145,7 @@ nh_bps <- get_building_permits(
 dplyr::glimpse(nh_bps)
 ```
 
-### Rural vs. Nonrural
+### Rural vs. nonrural
 
 Housing permit activity diverges between rural and nonrural counties.
 The chart below shows population-weighted average units permitted per
@@ -189,7 +189,7 @@ ggplot(rural_avg, aes(x = year, y = value, color = is_rural)) +
   )
 ```
 
-### County Spotlight: Grafton County, NH
+### County spotlight: Grafton County, NH
 
 ```{r}
 #| eval: false

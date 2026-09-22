@@ -42,17 +42,20 @@ work-from-home rates. For any analysis that asks not just "how many
 jobs" but "who holds them, at what pay, and under what conditions," ACS
 is where the answer lives.
 
-The survey produces two main products. **1-year estimates** cover
-geographies with populations of 65,000 or more and are released each
-fall for the prior calendar year — current, but limited in geographic
-reach. **5-year estimates** aggregate five years of survey data and are
+### The survey produces two main products:
+
+- **1-year estimates** cover geographies with populations of 65,000 or more 
+and are released each fall for the prior calendar year — current, 
+but limited in geographic reach. 
+
+- **5-year estimates** aggregate five years of survey data and are
 available for all geographies including small counties, census tracts,
 block groups, and places — making them the essential product for rural
 analysis, where most counties fall below the 1-year threshold. The
 trade-off is currency: 5-year estimates represent a rolling average, not
 a snapshot of a single year.
 
-## What This Data Tells Us About Rural America
+## What this data tells us about rural America
 
 The ACS provides the broadest cross-section of socioeconomic conditions
 at the county level — covering educational attainment, income,
@@ -63,14 +66,10 @@ and business data alone cannot supply.
 
 For rural analysis, ACS is particularly valuable for measures that
 reflect the quality and accessibility of economic opportunity, not just
-its quantity. Educational attainment shapes the workforce available to
-attract and grow businesses. ACS measures self-employment but does not
-distinguish opportunity entrepreneurship from necessity entrepreneurship
-— drawing that distinction requires reading ACS alongside employment and
-wage data. The share of workers working from home, paired with FCC
-broadband coverage data, helps researchers explore whether infrastructure
-availability is translating into workforce flexibility. These are
-dimensions of economic conditions that QCEW and BDS cannot see.
+its quantity. For instance, educational attainment shapes the workforce available to
+attract and grow businesses; self-employment helps describe the state of rural entrepreneurship;
+and, the share of remote workers in tradable services describes the nuance of rural knowledge work.
+These are dimensions of economic conditions that QCEW and BDS cannot see.
 
 The ACS can be accessed through [`tidycensus`](https://walker-data.com/tidycensus/),
 an easy-to-use R package developed and maintained by Kyle Walker that provides a clean
@@ -81,19 +80,24 @@ in a rural context is part of what this resource is for.
 
 ## Coverage
 
-- **Geography:** Nation, State, County, Census Tract, Block Group,
-  Place, ZCTA, and more
-- **Time range:** 1-year estimates: 2005–present; 5-year estimates:
-  2009–present
-- **Update frequency:** Annual; 1-year estimates typically released each
-  September, 5-year estimates typically each December
+- **Geography:** 
+    - Nation, State, County, Census Tract, Block Group, Place, ZCTA, and more  
+
+- **Time range:** 
+    - 1-year estimates: 2005–present
+    - 5-year estimates: 2009–present  
+
+- **Update frequency:** 
+    - 1-year estimates typically released in September
+    - 5-year estimates typically in December  
+
 - **Universe:** Varies by table; most tables cover the U.S. civilian
   noninstitutionalized population. Group quarters population is included
-  for many subjects.
+  for many subjects.  
 
 ::: callout-note
 **1-year vs. 5-year for rural analysis:** 1-year estimates are only
-available for geographies with 65,000+ residents — which excludes most
+available for geographies with 65,000+ residents, which excludes most
 rural counties. For county-level rural analysis, **5-year estimates are
 the correct product**. They cover all counties and geographies but
 represent a rolling 5-year average rather than a single year, so
@@ -101,7 +105,7 @@ year-over-year changes should be interpreted carefully given overlapping
 sample periods.
 :::
 
-::: callout-important
+::: callout-note
 **Mind the margins of error.** ACS estimates are based on a sample
 survey, so every estimate carries a margin of error. Uncertainty is
 generally greater for smaller geographies and smaller population groups.
@@ -112,7 +116,7 @@ vignette](https://walker-data.com/tidycensus/articles/margins-of-error.html)
 is an excellent primer on working with ACS uncertainty in R.
 :::
 
-## Key Variables
+## Key variables
 
 The ACS covers hundreds of variables. The most analytically valuable
 for rural economic analysis fall into four groups:
@@ -130,7 +134,7 @@ for rural economic analysis fall into four groups:
 - Educational attainment (less than high school through graduate degree)
 - School enrollment
 
-**Employment, Income, and Economic Characteristics**
+**Employment, income, and economic characteristics**
 
 - Employment status and labor force participation
 - Occupation and industry of employment
@@ -148,10 +152,10 @@ for rural economic analysis fall into four groups:
 - Internet access and subscription type
 - Units in structure; year built
 
-## Accessing the Data
+## Accessing the data
 
 `tidycensus` is the go-to R package for ACS data — and one of the best
-data access tools in the R ecosystem, full stop. Written by Kyle Walker,
+data access tools in the R ecosystem. Constructed by Kyle Walker,
 it wraps the Census Data API with a clean, consistent interface that
 returns tidy data frames with geography attached, handles variable
 lookups, and supports both 1-year and 5-year estimates across all
