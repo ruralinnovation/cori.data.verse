@@ -50,7 +50,7 @@ in-migration, a third through retiree in-migration. PEP makes those
 distinctions visible at the county level every year, which the
 decennial census alone cannot provide.
 
-## What This Data Tells Us About Rural America
+## What this data tells us about rural America  
 
 Population estimates are a foundational input to rural economic
 analysis, but their value lies in the components of change rather than
@@ -80,12 +80,15 @@ economic-development challenges.
 
 ## Coverage
 
-- **Geography:** County, State, National
+- **Geography:** County, State, National  
+
 - **Time range:** 2000–present (CORI package); PEP data available
   further back at state and national levels from the Census Bureau
-  directly
+  directly  
+
 - **Update frequency:** Annual; released each spring for the prior
-  calendar year
+  calendar year  
+
 - **Universe:** Resident civilian population of the United States;
   estimates are anchored to decennial census benchmarks and revised
   with each new vintage
@@ -102,7 +105,7 @@ page](https://www.census.gov/programs-surveys/popest/technical-documentation/met
 for documentation of component data sources and estimation procedures.
 :::
 
-## Key Variables
+## Key variables
 
 **Population totals** (`get_population()`)
 
@@ -120,9 +123,9 @@ for documentation of component data sources and estimation procedures.
 - `international_migration` — net international in-migration
 - `net_migration` — domestic plus international net migration
 
-## Accessing the Data
+## Accessing the data
 
-### Via CORI R Package
+### Via CORI R package
 
 The [`cori.data.pep`](/packages/cori-data-pep/) package provides tidy
 access to PEP population totals and components of change at the county,
@@ -147,7 +150,7 @@ get_population_change(
 )
 ```
 
-### Direct from Source
+### Direct from source
 
 Annual estimate files are available for download from the [Census
 Population and Housing Unit Estimates

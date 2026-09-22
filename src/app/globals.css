@@ -49,6 +49,23 @@ p {
   margin-bottom: 1em;
 }
 
+/* Lists
+   The reset above strips the UA default `padding-inline-start: 40px` that
+   browsers use to indent lists, so without this every nesting level renders
+   flush left. Scoped to .markdown-body because the nav and footer lists are
+   styled in their own CSS modules and are meant to stay flush. */
+.markdown-body ul,
+.markdown-body ol {
+  padding-inline-start: 1.75em;
+  margin-bottom: 1em;
+}
+
+/* Nested lists sit inside their parent's rhythm, so no extra bottom gap. */
+.markdown-body li > ul,
+.markdown-body li > ol {
+  margin-bottom: 0;
+}
+
 a {
   color: var(--color-primary);
   text-decoration: none;
@@ -113,6 +130,51 @@ blockquote {
   margin: 1em 0;
   color: var(--color-subtitle);
 }
+
+/* Quarto callouts
+   Quarto renders its five callout types to GFM alerts (`> [!NOTE]`), and
+   markdown-to-jsx turns those into <blockquote class="markdown-alert-TYPE">
+   with a synthetic <header> holding the alert word. These rules have to
+   outrank the plain `blockquote` rule above, which would otherwise give every
+   type an identical border and mute the body text. Colors follow
+   src/components/quarto/Callout.module.css. */
+.markdown-body blockquote[class^="markdown-alert-"] {
+  border-left: 4px solid var(--color-border);
+  border-radius: 4px;
+  padding: 1em 1.25em;
+  margin: 1.5em 0;
+  background: var(--color-bg-light);
+  color: var(--color-text);
+}
+
+/* The alert word arrives already uppercase, so no text-transform here. */
+.markdown-body blockquote[class^="markdown-alert-"] > header {
+  font-size: 0.9em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5em;
+}
+
+.markdown-body blockquote[class^="markdown-alert-"] > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Per-type accents. These match the base rule's specificity and follow it in
+   source order, so they win -- keep them below it. */
+.markdown-body blockquote.markdown-alert-note { border-left-color: #0d6efd; }
+.markdown-body blockquote.markdown-alert-note > header { color: #0d6efd; }
+
+.markdown-body blockquote.markdown-alert-tip { border-left-color: #198754; }
+.markdown-body blockquote.markdown-alert-tip > header { color: #198754; }
+
+.markdown-body blockquote.markdown-alert-warning { border-left-color: #ffc107; }
+.markdown-body blockquote.markdown-alert-warning > header { color: #997404; }
+
+.markdown-body blockquote.markdown-alert-caution { border-left-color: #fd7e14; }
+.markdown-body blockquote.markdown-alert-caution > header { color: #c2570a; }
+
+.markdown-body blockquote.markdown-alert-important { border-left-color: #dc3545; }
+.markdown-body blockquote.markdown-alert-important > header { color: #dc3545; }
 
 /* Layout */
 .container {
