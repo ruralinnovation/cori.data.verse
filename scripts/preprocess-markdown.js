@@ -23,6 +23,9 @@ import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 import os from "os";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
 
 const CONTENT_DIR = path.join(process.cwd(), "content");
 const PUBLIC_CONTENT_DIR = path.join(process.cwd(), "public", "content");
@@ -54,7 +57,13 @@ function renderMermaidBlocks(content, filePath) {
     try {
       fs.mkdirSync(outDir, { recursive: true });
       fs.writeFileSync(tmpInput, diagram.trim());
-      const mmdc = path.join(process.cwd(), "node_modules", ".bin", "mmdc");
+      // Resolve via Node's module resolution rather than assuming a local
+      // node_modules/.bin/ -- npm workspace hoisting may install this only
+      // at the monorepo root, not inside this app's own node_modules.
+      // "./src/cli.js" isn't a published exports subpath, but it's a sibling
+      // of the package's main entry, which is resolvable.
+      const mmdcIndex = require.resolve("@mermaid-js/mermaid-cli");
+      const mmdc = path.join(path.dirname(mmdcIndex), "cli.js");
       execSync(`"${mmdc}" -i "${tmpInput}" -o "${imgPath}" --quiet`, {
         stdio: "pipe",
       });

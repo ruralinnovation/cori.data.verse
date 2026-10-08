@@ -15,6 +15,7 @@ Depends:
   cori.data.s3,
   ruraldefinitions
 Remotes:
+  DyfanJones/noctua@v2.6.3,
   ruralinnovation/cori.charts,
   ruralinnovation/cori.data,
   ruralinnovation/cori.data.bds,
@@ -29,6 +30,7 @@ Suggests:
   igraph,
   ggraph,
   ggplot2,
+  quarto,
   tidygraph,
   targets,
   paws.storage,
