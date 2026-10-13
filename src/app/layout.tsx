@@ -33,6 +33,19 @@ export default function RootLayout({
     <html lang="en" className={bitter.variable}>
       <head>
         <link rel="stylesheet" href={`${basePath}/assets/fonts.css`} />
+
+        {/* Google tag (gtag.js) */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-C4SPYSR4GZ"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-C4SPYSR4GZ');
+            `,
+          }}
+        />
       </head>
       <body>
         <Navbar />
