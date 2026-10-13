@@ -93,8 +93,10 @@ build_sync_manifest <- function(content_dir, bucket, prefix) {
     stringsAsFactors = FALSE
   )
 
-  # Enumerate S3 objects (list_s3_objects returns columns: key, last_modified)
-  s3_objects <- cori.data.s3::list_s3_objects(bucket_name = bucket)
+  # Enumerate S3 objects (list_s3_objects returns columns: key, last_modified).
+  # Pass prefix so AWS filters server-side (list_objects_v2's Prefix param) --
+  # without it, this paginates the entire bucket, not just this app's slice.
+  s3_objects <- cori.data.s3::list_s3_objects(bucket_name = bucket, prefix = prefix)
 
   # Coerce key column to character vector (rbind returns a matrix)
   s3_keys <- as.character(s3_objects$key)

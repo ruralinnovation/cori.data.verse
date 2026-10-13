@@ -2,14 +2,15 @@
 
 A universe of rural innovation data, tools, research, and analysis from the [Center on Rural Innovation (CORI)](https://ruralinnovation.us/).
 
-This project combines **Quarto** for content authoring with **Next.js** for the site shell, producing a static site that showcases CORI's datasets, R packages, research projects, charts, and blog posts. Next.js relies on the Node Package Manager (`npm`), so the first thing you need to do is run:
+This project combines **Quarto** for content authoring with **Next.js** for the site shell, producing a static site that showcases CORI's datasets, R packages, research projects, charts, and blog posts. Next.js relies on the Node Package Manager (`npm`), so the first thing you need to do is:
 
+1. Install `node`/`npm` dependencies:
 ```bash
 npm install
 ```
-
+2. Install `R` dependencies:
 ```r
-devtools::install()
+devtools::install(dependencies = TRUE)
 ```
 
 ### Adding New Content (Quarto Markdown)
