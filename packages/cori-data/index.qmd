@@ -1,6 +1,6 @@
 ---
 title: "cori.data"
-description: "CORI's rural data ecosystem — a family of R packages providing unified access to employment, population, business, housing, and broadband data across rural America"
+description: "CORI's rural data ecosystem — a family of R packages providing unified access to employment, population, business, housing, broadband, and higher education data across rural America"
 author: "Mapping & Data Analytics Team"
 date: "2026-08-27"
 categories: ["R Package", "Data Infrastructure"]
@@ -28,7 +28,8 @@ editor:
 
 `cori.data` is the meta-package for CORI's rural data ecosystem — a
 growing collection of R packages providing unified access to employment,
-population, business, housing, and broadband data across rural America.
+population, business, housing, broadband, and higher education data across
+rural America.
 Installing it pulls in every companion package; loading it attaches them
 all, so `get_employment()`, `get_population()`, `get_definition()`, and
 more are available without separate `library()` calls.
@@ -70,6 +71,7 @@ get_business_dynamics(geography = "county", years = 2019:2023)
 | [cori.data.bps](/packages/cori-data-bps/) | Building permits (Census BPS) | county, state, nation | 2000–present |
 | [cori.data.hu](/packages/cori-data-hu/) | Housing units (Census HU) | county, state, nation | 2000–present |
 | [cori.data.fcc](/packages/cori-data-fcc/) | Broadband coverage (FCC NBM) | county | 2022–present |
+| [cori.data.ipeds](/packages/cori-data-ipeds/) | Higher education (NCES IPEDS) | county, institution | 2010–present |
 | [ruraldefinitions](/packages/ruraldefinitions/) | Rural classifications (OMB, USDA ERS, NCHS) | county | multiple vintages |
 
 ## What this data tells us about rural America  
@@ -318,6 +320,7 @@ get_business_dynamics(geography = "nation", years = 2000:2023) |>
 - [cori.data.bds](/packages/cori-data-bds/) — Business dynamics
 - [cori.data.pep](/packages/cori-data-pep/) — Population estimates
 - [cori.data.fcc](/packages/cori-data-fcc/) — Broadband coverage
+- [cori.data.ipeds](/packages/cori-data-ipeds/) — Higher education
 - [ruraldefinitions](/packages/ruraldefinitions/) — Rural classifications
 
 
