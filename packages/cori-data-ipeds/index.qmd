@@ -49,8 +49,7 @@ Education Statistics Integrated Postsecondary Education Data System
 (IPEDS) data at the county and institution levels from 2010 to the
 present. IPEDS is the annual census of U.S. postsecondary institutions.
 Reporting is mandatory for institutions that participate in Title IV
-federal student aid programs, which is most of the universe — 5,837 of
-the 6,163 institutions in the 2023–24 collection — so IPEDS is
+federal student aid programs, which is most of the universe so IPEDS is
 effectively a census rather than a sample.
 
 NCES distributes IPEDS as about a dozen separate component surveys per
