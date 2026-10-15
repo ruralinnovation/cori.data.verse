@@ -1,0 +1,534 @@
+---
+title: cori.data.ipeds
+description: Access and analyze National Center for Education Statistics
+  Integrated Postsecondary Education Data System (IPEDS) data at the county and
+  institution levels from 2010 to the present. Covers institutional presence and
+  composition, degrees conferred by program, student headcounts, and graduation
+  rates, with the NCES CIP-to-SOC crosswalk for mapping degree production to
+  occupations.
+author: Drew Rosebush
+date: '2026-10-14'
+categories:
+  - R Package
+  - Education
+tags:
+  - IPEDS
+  - NCES
+  - Higher Education
+  - Degrees
+  - Workforce
+  - County-Level
+  - Institution-Level
+  - S3
+  - Tidy Data
+  - Rural
+package:
+  name: cori.data.ipeds
+  githubUrl: https://github.com/ruralinnovation/cori.data.ipeds
+  installCommand: remotes::install_github("ruralinnovation/cori.data.ipeds")
+  status: development
+  version: 0.1.0
+  maintainer: Drew Rosebush
+  featured: false
+usesDatasets:
+  - nces-ipeds
+usesResources: []
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+The `cori.data.ipeds` package provides access to National Center for
+Education Statistics Integrated Postsecondary Education Data System
+(IPEDS) data at the county and institution levels from 2010 to the
+present. IPEDS is the annual census of U.S. postsecondary institutions.
+Reporting is mandatory for institutions that participate in Title IV
+federal student aid programs, which is most of the universe so IPEDS is
+effectively a census rather than a sample.
+
+NCES distributes IPEDS as about a dozen separate component surveys per
+year, each with its own grain and its own identifier conventions. This
+package harmonizes four of its files: Institutional Characteristics,
+Completions awards, Completions completers, and Graduation Rates. It
+brings them into a single consistent interface and aggregates them to
+counties so higher education can be analyzed alongside the rest of the
+`cori.data` ecosystem.
+
+Beyond access, the package adds the layers that make IPEDS usable
+without reading NCES documentation first. Negative sentinel codes
+(`-1`, `-2`, `-3`, meaning not reported, not applicable and not
+available) are converted to `NA` rather than left as integers that
+silently corrupt any mean. Identifiers stay character, so `unitid`
+keeps its leading zeros and `cipcode` stays in the zero-padded
+`"xx.xxxx"` form that joins correctly for the 01 through 09 CIP
+families. County aggregations are restricted to degree-granting
+institutions and exclude NCES's grand-total rows, second majors and
+certificates. Every categorical column — 20 of them — carries its value
+labels in the codebook, so a `sector_code` of 4 can be resolved without
+leaving R.
+
+The package also includes the NCES CIP-to-SOC crosswalk in both
+vintages, which turns degree production into a measure of occupational
+supply.
+
+Variables that are rates or shares carry an `agg_var` column consistent
+with the rest of the ecosystem: the adjusted cohort for graduation
+rates, total degrees for degree shares, so `value * agg_var` recovers a
+raw count and counties can be rolled up with correct weighting.
+
+## Installation & quick start
+
+```{r}
+#| eval: false
+remotes::install_github("ruralinnovation/cori.data.ipeds")
+```
+
+```{r}
+#| eval: false
+library(cori.data.ipeds)
+
+# See all available variables, their coverage, and value labels
+get_ipeds_codebook()
+
+# Institutional presence and composition
+get_institutions(geoids = "33009", years = 2024)
+
+# Degrees conferred
+get_degrees(geoids = "33009", years = 2024)
+
+# Students completing — distinct from degrees
+get_completers(geoids = "33009", years = 2024)
+
+# Completion outcomes
+get_graduation_rates(geoids = "33009", years = 2012:2023)
+
+# Everything about a county, across all four functions
+get_ipeds(geoids = "33009", years = 2024)
+```
+
+`geography` selects the geographic unit. County is tidy long; institution is
+point-level and wide, retaining NCES's CIP detail:
+
+```{r}
+#| eval: false
+get_degrees(geography = "institution", geoids = "33009", years = 2024)
+```
+
+Map programs to occupations:
+
+```{r}
+#| eval: false
+get_cip_soc_crosswalk("2020")   # CIP 2020 to SOC 2018, for 2020 onward
+get_cip_soc_crosswalk("2010")   # CIP 2010 to SOC 2010, for 2010-2019
+```
+
+## What this data tells us about rural America  
+
+Rural colleges and universities are assets before they are statistics. A
+college can be among the largest employers in its county, with a payroll
+and a physical footprint that do not relocate, and it tends to supply the
+arts, athletics and public gathering spaces a rural community might
+otherwise lack. It produces the credentials that raise local educational
+attainment, which means a county with an active institution has a way of
+building human capital in place rather than importing it.
+
+Presence alone is a thin reading of that asset. What an institution
+grants, at what volume, and relative to the population it serves are the
+questions that separate an active anchor from an address on a list. So is
+what kind of institution it is. Rural higher education is roughly twice
+as public as nonrural higher education, and its largest single category
+is the public two-year college where the nonrural sector's is the
+private four-year — structurally different sectors, with different
+exposure to state appropriations and enrollment pressure.
+
+The footprint is also wider than the county. In rural areas access often
+depends on drive time, and an institution may draw students, employ staff
+and place graduates across more than one county. Of the rural counties
+with no four-year institution of their own, most border a county that
+has one, so a measure built on presence within county lines understates
+rural access considerably. The same boundary cuts the other way: a
+college town's entire degree production is credited to its host county
+even where that capacity serves a wider region.
+
+## Introduction
+
+*Adapted from the [Introduction
+vignette](https://github.com/ruralinnovation/cori.data.ipeds/blob/main/vignettes/introduction.Rmd)
+on GitHub.*
+
+### What is this data?
+
+IPEDS is the annual census NCES collects from U.S. postsecondary
+institutions. Reporting is mandatory for the institutions that
+participate in Title IV federal student aid programs — 5,837 of the
+6,163 institutions in the 2023–24 collection — so IPEDS covers a
+universe rather than a sample. The universe is shrinking: 7,503
+institutions in 2010, 6,072 in 2024.
+
+NCES distributes it as about a dozen separate survey files per year.
+This package harmonizes four:
+
+| Measure | Getter | NCES file | Grain of the source file |
+|---|---|---|---|
+| Institutional characteristics | `get_institutions()` | `HD{year}` | One row per institution |
+| Degrees conferred | `get_degrees()` | `C{year}_A` | Institution × CIP × award level × major number |
+| Students completing | `get_completers()` | `C{year}_C` | Institution × award level category |
+| Graduation rates | `get_graduation_rates()` | `GR{year}` | Institution × cohort type × status |
+
+Not covered: enrollment (`EF`), finance (`F`), staff (`S`), admissions
+(`ADM`), student financial aid (`SFA`) and outcome measures (`OM`).
+
+Data is available at the **county and institution levels** from **2010
+to the present**, with two exceptions: completers begin in 2012, because
+NCES published no `C_C` file before that, and graduation rates lag the
+other surveys by about a year.
+
+### Two levels: county and institution
+
+`geography` selects the geographic unit, the same as in other cori.data
+packages. IPEDS is collected from institutions rather than places, so
+the finest unit available here is the institution itself — every record
+carries coordinates, address, city and county — and county output
+aggregates those points.
+
+```{r}
+#| eval: false
+# County level (default): tidy long, one row per geoid x year x variable
+get_degrees(geoids = "33009", years = 2024)
+
+# Institution level: wide, one row per institution and the survey's own
+# dimensions -- CIP code, award level, cohort type
+get_degrees(geography = "institution", geoids = "33009", years = 2024)
+```
+
+The county level is an aggregation restricted to degree-granting
+institutions, with NCES's grand-total rows, second majors and
+certificates already excluded. The institution level is deliberately
+unfiltered — it keeps everything NCES publishes, including the CIP
+detail, so you can aggregate on your own terms.
+
+Two things to know before using the output:
+
+- **`variables` applies to the county level only.** At institution level
+  the output is wide, so select columns after the call.
+- **Absence is represented by no row.** A county with no degree-granting
+  institution does not appear in the county output. Start joins from a
+  full county list, or the counties the question is about drop out
+  silently.
+
+### What this package changes
+
+Both levels differ from the raw NCES files in the same ways:
+
+- **Canonical names.** `COUNTYCD` becomes `geoid`, `AWLEVEL` becomes
+  `ed_level`. `get_ipeds_codebook()` is the mapping, and it drives the
+  ETL rather than merely documenting it.
+- **Sentinels become `NA`.** NCES codes "not reported", "not applicable"
+  and "not available" as `-1`, `-2` and `-3`.
+- **Identifiers stay character.** `unitid` zero-padded to six digits and
+  `cipcode` to `"xx.xxxx"`, so CIP families 01 through 09 keep their
+  leading zero.
+- **Derived flags are added.** `is_public`, `is_4yr`,
+  `is_degree_granting`, `is_hbcu`, `is_tribal` and others, computed from
+  `sector_code` and the NCES status codes. These overlap rather than
+  partition: all 35 tribal colleges are also land-grant institutions
+  (under the 1994 designation, not the Morrill Acts), and 22 of the 102
+  HBCUs are land-grant, so they cannot be cross-tabulated as mutually
+  exclusive categories.
+
+### Decoding categorical variables
+
+The institution level returns NCES's bare integers. The codebook's
+`codes` column carries the value labels for all 20 categorical columns.
+
+```{r}
+#| eval: false
+cb <- get_ipeds_codebook()
+
+# Which variables are categorical?
+cb[nzchar(cb$codes), c("variable", "label")]
+
+# What do sector_code's numbers mean?
+cb$codes[cb$variable == "sector_code"]
+```
+
+### Understanding agg_var
+
+Variables that are rates or shares include an `agg_var` column — the
+weight needed to aggregate correctly across counties. An unweighted mean
+gives a 40-student county the same weight as a 40,000-student one.
+
+```{r}
+#| eval: false
+library(dplyr)
+
+rates <- get_graduation_rates(geography = "county", years = 2023)
+
+rates |>
+  filter(variable == "grad_rate_150pct") |>
+  summarize(
+    weighted   = sum(value * agg_var, na.rm = TRUE) / sum(agg_var, na.rm = TRUE),
+    unweighted = mean(value, na.rm = TRUE)
+  )
+```
+
+### Counting conventions
+
+The institution tables are unfiltered because the right filter depends
+on the question. Three NCES conventions will inflate a naive sum:
+
+- **`cipcode == "99.0000"`** is each institution's grand total across
+  programs, included alongside the per-program rows.
+- **`major_num == 2`** is the second major of a double-majoring student.
+- **Certificates are not degrees.** `ed_level` spans certificates
+  through doctorates; the county variables count codes 3, 5, 7, 17, 18
+  and 19 only.
+
+The first two together inflate a 2024 national degree count from 4.14
+million to 8.46 million. The county getters apply all three already.
+
+Two further limits are worth stating plainly. IPEDS measures production,
+not attainment — a degree is credited to the county of the institution,
+not the student's home — and enrollment is absent, so any
+enrollment-based measure, including online and distance education, needs
+the IPEDS Enrollment (`EF`) component added first.
+
+## Rural higher education
+
+*Adapted from the [Rural Higher Education
+vignette](https://github.com/ruralinnovation/cori.data.ipeds/blob/main/vignettes/rural-higher-education.Rmd)
+on GitHub.*
+
+This section compares rural and nonrural counties across all four
+measures, using `ruraldefinitions::cbsa_2023` for the rural split, then
+links degrees to the occupations they prepare students for.
+
+```{r}
+#| eval: false
+library(cori.data.ipeds)
+library(cori.data.pep)
+library(ruraldefinitions)
+library(cori.charts)
+library(dplyr)
+library(ggplot2)
+
+load_fonts()
+
+YR <- 2024
+
+degrees    <- get_degrees(years = YR)
+completers <- get_completers(years = YR)
+grad_rates <- get_graduation_rates(years = 2010:2023)
+
+rural <- cbsa_2023 |> select(geoid, is_rural)
+```
+
+### Where the four-year institutions are
+
+Identifying counties with a four-year institution requires
+institution-level data, because the county-level variables count
+institutions without distinguishing which ones offer bachelor's degrees.
+A county with no degree-granting institution produces no row, so the
+join starts from the full county list.
+
+```{r}
+#| eval: false
+has_university <- get_institutions(geography = "institution", years = YR) |>
+  filter(is_degree_granting == 1, is_4yr == 1, !is.na(geoid)) |>
+  distinct(geoid) |>
+  mutate(has_university = TRUE)
+
+rural |>
+  left_join(has_university, by = "geoid") |>
+  mutate(has_university = coalesce(has_university, FALSE)) |>
+  group_by(is_rural) |>
+  summarize(
+    counties    = n(),
+    with_uni    = sum(has_university),
+    pct_without = 100 * mean(!has_university),
+    .groups     = "drop"
+  )
+```
+
+### Reach beyond the host county
+
+A county without a campus may still be served by one next door. The
+package is county-keyed, so build adjacency from county geometry and
+check presence across each county's neighbors.
+
+```{r}
+#| eval: false
+library(sf)
+
+counties <- tigris::counties(cb = TRUE, year = 2023, progress_bar = FALSE)
+neighbors <- st_touches(counties)
+
+has_4yr <- get_institutions(geography = "institution", years = YR) |>
+  filter(is_degree_granting == 1, is_4yr == 1) |>
+  distinct(geoid) |>
+  pull(geoid)
+
+access <- tibble(
+  geoid    = counties$GEOID,
+  in_county = counties$GEOID %in% has_4yr,
+  adjacent  = vapply(
+    neighbors,
+    function(i) any(counties$GEOID[i] %in% has_4yr),
+    logical(1)
+  )
+) |>
+  mutate(
+    access = case_when(
+      in_county ~ "In county",
+      adjacent  ~ "Adjacent county",
+      TRUE      ~ "Neither"
+    )
+  )
+
+access |>
+  inner_join(rural, by = "geoid") |>
+  count(is_rural, access)
+```
+
+For 2024 this gives 341 rural counties with a four-year institution in
+county, 1,169 adjacent to one, and 473 with neither — so a presence-only
+measure treats 1,169 rural counties as lacking access to a four-year
+institution when they border one.
+
+### Composition, from the institution level
+
+```{r}
+#| eval: false
+get_institutions(geography = "institution", years = YR) |>
+  inner_join(rural, by = "geoid") |>
+  # the level filter matters: without it, the 71 degree-granting
+  # less-than-two-year institutions fall into the "Two-year" bucket
+  filter(is_degree_granting == 1, is_4yr == 1 | is_2yr == 1) |>
+  mutate(
+    level   = if_else(is_4yr == 1, "Four-year", "Two-year"),
+    control = if_else(is_public == 1, "Public", "Private")
+  ) |>
+  count(is_rural, level, control) |>
+  group_by(is_rural) |>
+  mutate(share = 100 * n / sum(n)) |>
+  ungroup()
+```
+
+### Degrees conferred per resident
+
+Population comes from `cori.data.pep` on the same `geoid`.
+
+```{r}
+#| eval: false
+pop <- get_population(geography = "county", years = YR) |>
+  filter(variable == "population") |>
+  select(geoid, population = value)
+
+rural |>
+  inner_join(pop, by = "geoid") |>
+  left_join(
+    degrees |> filter(variable == "count_degrees_total") |>
+      select(geoid, degrees = value),
+    by = "geoid"
+  ) |>
+  mutate(degrees = coalesce(degrees, 0)) |>
+  group_by(is_rural) |>
+  summarize(per_1k = 1000 * sum(degrees) / sum(population), .groups = "drop")
+```
+
+### Completion rates over time
+
+Rates cover the full-time, first-time bachelor's cohort at four-year
+institutions, weighted by `agg_var` when counties are combined.
+
+```{r}
+#| eval: false
+trend <- grad_rates |>
+  filter(variable == "grad_rate_150pct") |>
+  inner_join(rural, by = "geoid") |>
+  group_by(year, is_rural) |>
+  summarize(rate = sum(value * agg_var) / sum(agg_var), .groups = "drop")
+```
+
+### From degrees to occupations
+
+SOC major group 15 is Computer and Mathematical Occupations. The
+crosswalk is many-to-many, so collapse to a distinct CIP set *before*
+joining — otherwise the join multiplies rows and inflates the sum.
+
+```{r}
+#| eval: false
+xw <- get_cip_soc_crosswalk("2020")
+
+cips <- xw |>
+  filter(grepl("^15-", soc_code)) |>
+  distinct(cip_code) |>
+  pull(cip_code)
+
+tech <- get_degrees(geography = "institution", years = 2022:2024) |>
+  filter(
+    cipcode %in% cips,
+    major_num == 1L,              # first majors only
+    cipcode != "99.0000",         # drop NCES grand-total rows
+    ed_level %in% c(3L, 5L, 7L, 17L, 18L, 19L)
+  ) |>
+  group_by(geoid) |>
+  summarize(tech_degrees = sum(count_total_students), .groups = "drop")
+
+rural |>
+  left_join(tech, by = "geoid") |>
+  mutate(tech_degrees = coalesce(tech_degrees, 0)) |>
+  group_by(is_rural) |>
+  summarize(degrees = sum(tech_degrees), .groups = "drop")
+```
+
+Match the crosswalk vintage to the completions year: `"2010"` for
+2010–2019 and `"2020"` for 2020 onward, when NCES moved to the CIP 2020
+taxonomy. Pairing a year with the wrong vintage usually runs without
+error, which is why it's worth setting deliberately.
+
+### Filtering to one state
+
+```{r}
+#| eval: false
+# This lists only counties that contain an institution; start from a full
+# county list before joining other data.
+state_counties <- get_institutions(geography = "institution", years = YR) |>
+  filter(st_abbr == "MT") |>
+  distinct(geoid) |>
+  pull(geoid)
+
+get_degrees(geoids = state_counties, years = YR)
+get_graduation_rates(geoids = state_counties, years = 2010:2023)
+```
+
+## Related
+
+-   **Dataset:** [Integrated Postsecondary Education Data System
+    (IPEDS)](/datasets/nces-ipeds/) — source dataset documentation
+-   **Package:** [cori.data](/packages/cori-data/) — meta-package that
+    includes `cori.data.ipeds`
+-   **Package:** [cori.data.pep](/packages/cori-data-pep/) — population
+    denominators for per-resident degree production
+-   **Package:** [ruraldefinitions](/packages/ruraldefinitions/) —
+    rural/nonrural county classifications used throughout
+-   **Package:** [cori.data.qcew](/packages/cori-data-qcew/) — IPEDS
+    describes the talent a place produces; QCEW describes the jobs
+    available to absorb it
+
+
+::: callout-note
+**Data attribution:** IPEDS data are produced by the National Center for
+Education Statistics, U.S. Department of Education. When citing analysis
+using this package, reference: U.S. Department of Education, National
+Center for Education Statistics, Integrated Postsecondary Education Data
+System, [nces.ed.gov/ipeds](https://nces.ed.gov/ipeds/). This product
+uses IPEDS data retrieved from NCES but is not endorsed or certified by
+NCES or the U.S. Department of Education.
+:::
