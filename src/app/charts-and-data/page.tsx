@@ -21,17 +21,17 @@ export default function ChartsAndDataPage() {
         <p>Charts produced by rural innovation research and the datasets from which they were derived</p>
       </div>
 
-      {charts.length > 0 && (
-        <section>
-          <h2>Charts</h2>
-          <ListingGrid items={charts} basePath="/charts-and-data/charts" />
-        </section>
-      )}
-
       {datasets.length > 0 && (
         <section style={{ marginBottom: "3rem" }}>
           <h2>Datasets</h2>
           <ListingGrid items={datasets} basePath="/charts-and-data/datasets" />
+        </section>
+      )}
+
+      {charts.length > 0 && (
+        <section>
+          <h2>Charts</h2>
+          <ListingGrid items={charts} basePath="/charts-and-data/charts" />
         </section>
       )}
     </div>

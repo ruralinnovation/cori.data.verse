@@ -9,9 +9,9 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const NAV_ITEMS = [
   { title: "Home", url: "/" },
   { title: "Charts & Data", url: "/charts-and-data" },
-  { title: "Projects", url: "/projects" },
+  { title: "Projects", url: "https://ruralinnovation.us/resources/?_sft_resource-topic=data-analytics-mapping" }, // "/projects" },
   { title: "R Packages", url: "/packages" },
-  { title: "Resources", url: "/resources" },
+  { title: "Resources", url: "https://ruralinnovation.us/resources/?_sft_resource-topic=data-analytics-mapping" }, // "/resources" },
   { title: "About", url: "/about" },
 ];
 
@@ -39,7 +39,9 @@ export default function Navbar() {
         <nav className={styles.nav}>
           <ul>
             {NAV_ITEMS.map((item) => (
-              <li key={item.url}>
+              <li key={item.title + "-" + item.url}>{ (item.title == "Projects" || item.title == "Resources") ? (
+                <a href={item.url} target="_blank">{item.title}</a>
+              ) : (
                 <Link
                   href={item.url}
                   className={
@@ -51,7 +53,7 @@ export default function Navbar() {
                 >
                   {item.title}
                 </Link>
-              </li>
+              )}</li>
             ))}
           </ul>
         </nav>

@@ -162,18 +162,31 @@ function QuartoDiv(props: Record<string, unknown>) {
 function MarkdownImage(props: Record<string, unknown>) {
   let src = props.src as string;
 
+  console.log(props);
+
   // Prepend basePath to absolute paths (e.g., /content/...) unless already external
-  if (src && src.startsWith("/") && !src.startsWith("http")) {
+  if (!!process.env.NEXT_PUBLIC_BASE_PATH && src && src.startsWith("/") && !src.startsWith("http")) {
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
     src = basePath + src;
+  // } else if (src.startsWith("./")) {
+  //   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+  //   src = src.replace("./", basePath);
   }
 
-  return (
-    <LightboxImage
-      src={src}
-      alt={(props.alt as string) || ""}
-    />
-  );
+  if (
+    "class" in props && props.class ==="no-lightbox" ||
+    "alt" in props && props.alt === "The Center on Rural Innovation"
+  ) {
+    return <img src={src} alt={(props.alt as string) || ""} width="25%" align="center"  />
+  } else {
+
+    return (
+      <LightboxImage
+        src={src}
+        alt={(props.alt as string) || ""}
+      />
+    );
+  }
 }
 
 interface MarkdownContentProps {
