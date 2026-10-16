@@ -30,5 +30,6 @@ PLAN.md
 RURAL_CONTEXT_COPY.md
 
 posts/12_fcc-data/proj-fcc-report
+resources/monitoring-s3-access
 
 **/*.quarto_ipynb

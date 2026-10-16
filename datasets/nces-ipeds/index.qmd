@@ -1,0 +1,252 @@
+---
+title: "Integrated Postsecondary Education Data System (IPEDS)"
+description: "The annual census of U.S. postsecondary institutions, covering
+  institutional characteristics, degrees conferred by program, student
+  headcounts, and graduation rates. Reporting is mandatory for institutions
+  in Title IV federal student aid programs, so IPEDS is a census rather than
+  a sample."
+author: "Mapping & Data Analytics Team"
+date: "2026-10-14"
+categories: ["Dataset", "Education"]
+tags: ["IPEDS", "NCES", "Higher Education", "Degrees", "Workforce", "County-Level", "Institution-Level"]
+dataset:
+  name: "Integrated Postsecondary Education Data System (IPEDS)"
+  source: "National Center for Education Statistics, U.S. Department of Education"
+  sourceUrl: "https://nces.ed.gov/ipeds/"
+  accessMethod: "Direct Download"
+  updateFrequency: "Annual (provisional, then revised the following year)"
+  geographicLevel: "Institution, County"
+  dataFormat: ["CSV"]
+  featured: false
+execute:
+  echo: true
+  warning: false
+  message: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+## Overview
+
+The Integrated Postsecondary Education Data System (IPEDS) is the
+annual census of U.S. postsecondary institutions, collected by the
+National Center for Education Statistics (NCES). Reporting is mandatory
+for institutions that participate in Title IV federal student aid
+programs, which is most of the universe — 5,837 of the 6,163
+institutions in the 2023–24 collection. The rest are reported but do
+not currently participate in Title IV. Because the collection covers a
+universe rather than a sample, it is not subject to sampling error.
+
+That universe is shrinking. IPEDS carried 7,503 institutions in 2010 and
+6,072 in 2024.
+
+IPEDS is not a single table. It is a set of component surveys, each
+collected on its own schedule and at its own grain: institutional
+characteristics, completions, graduation rates, enrollment, finance,
+staffing, student financial aid and outcome measures. Each component is
+released provisionally and then reissued as a revised file the
+following year.
+
+What makes IPEDS usable for place-based research is that every record
+is keyed to an institution whose address and county, along with its
+sector, level and control, are reported in the directory file. That
+allows awards, headcounts and completion outcomes to be aggregated from
+institutions to counties — turning an institution-level census into a
+measure of local postsecondary capacity.
+
+::: callout-note
+IPEDS measures **production**, not attainment. A degree is credited to
+the county where the institution sits, not where the student lives. In
+communities where students commute to a metro campus, or enroll online,
+local educational attainment and local degree production can diverge
+sharply.
+:::
+
+## What this data tells us about rural America
+
+Rural colleges and universities are assets, and IPEDS is the record of
+where they are and what they produce. They do three kinds of work for a
+rural economy at once.
+
+**They are anchor institutions.** A college can be among the largest
+employers in its county, with a payroll and a physical footprint that do
+not relocate. It also tends to supply arts, athletics, lectures and
+public spaces that a rural county might otherwise lack.
+
+**They are talent development engines.** They produce the credentials
+that raise local educational attainment. Where a rural county has an
+active institution, it has a mechanism for building human capital in
+place rather than importing it.
+
+**They are economic development partners.** Rural institutions
+are tied to local industry — the two-year
+colleges, regional publics and small privates that make up most of the
+rural landscape. That orientation makes them practical partners for
+workforce strategy, and a connection point between graduates and the
+capital and employers in the wider economy.
+
+Their footprint is often regional rather than county-shaped. In rural
+areas access frequently depends on drive time, and an institution may
+draw students, employ staff and place graduates across more than one
+county. County boundaries cut through that footprint in both
+directions: a county counted as having no institution may be well
+served by a neighbor, and a college town's degree production is
+credited entirely to the host county even though the capacity serves
+the region.
+
+IPEDS also identifies what kind of asset each institution is. It
+distinguishes public from private nonprofit and private for-profit,
+four-year from two-year and less-than-two-year, and degree-granting from
+non-degree-granting.
+
+IPEDS carries its own geographic classification as well. Each
+institution is assigned an NCES urban-centric locale code, which
+separates city, suburb, town and rural settings and further splits rural
+into fringe, distant and remote — useful for distinguishing an
+institution in a rural county adjacent to a metro area from one serving
+a genuinely remote region.
+
+Because completions are reported by program code, IPEDS also joins to
+occupational data through the NCES CIP-to-SOC crosswalk — the step that
+turns degree counts into a measure of occupational supply, and a local
+institution into a legible workforce asset.
+
+::: callout-note
+**What this data cannot answer.** The components curated here cover
+institutions, awards and completion outcomes — not enrollment. Headcount
+by level, and online and distance education, live in the IPEDS
+Enrollment (`EF`) component, which is not included. Coverage also begins
+in 2010; longer historical series have to be pulled from the source
+files directly.
+:::
+
+## Coverage
+
+- **Geography:** Institution; aggregable to county via the institution
+  directory
+
+- **Time range:** The IPEDS Data Center distributes files back to 1980,
+  the earliest of them from collections that predate IPEDS itself. CORI's
+  curation covers 2010–present, the period over which award-level and
+  geographic coding are consistent enough for cross-year comparison
+
+- **Update frequency:** Annual. Provisional files release in the summer
+  following the collection year, with revised files about a year later
+
+- **Universe:** The IPEDS universe of postsecondary institutions —
+  6,163 in 2023–24, of which 5,837 participate in Title IV federal
+  student aid programs and are required to report. Counts have declined
+  from 7,503 in 2010
+
+- **Component surveys curated by CORI:** Institutional Characteristics
+  (`HD`), Completions awards (`C_A`), Completions completers (`C_C`),
+  Graduation Rates (`GR`)
+
+::: callout-note
+**Release lags differ by component.** Graduation rates publish roughly a
+year behind the others, so the most recent IPEDS vintage typically has
+institutional characteristics and completions but no completion
+outcomes. The completers file begins in 2012 — NCES published none
+before that. Neither gap is an error in the data; both are properties of
+the collection schedule.
+:::
+
+## Key variables
+
+**Institutional capacity**
+
+- Counts of degree-granting institutions, by control (public, private
+  nonprofit) and level (four-year, two-year)
+- Counts of HBCUs and tribal colleges
+- Institution directory: sector, level, control, Carnegie
+  classification, urbanization level, enrollment size category,
+  land-grant and HBCU status
+
+**Degrees conferred**
+
+- Total degrees conferred, associate through doctoral
+- Share of degrees by level and by sex
+- At institution level: awards by 6-digit CIP program code, award level
+  and major number
+
+**Student headcounts**
+
+- Students completing, by award level (2012 onward)
+
+**Completion outcomes**
+
+- Six-year graduation rate for the four-year full-time first-time
+  bachelor's-seeking cohort
+- Transfer-out rate
+
+Award counts and student headcounts answer different questions and are
+not interchangeable. The Completions file counts *awards*; the
+completers file counts *students*. A student who earns two degrees at
+the same level counts as two awards but one completer, and the gap
+concentrates at the associate level, where degrees run roughly 10% ahead
+of students.
+
+::: callout-note
+**Three NCES conventions inflate a naive sum** of the institution-level
+completions table. CIP code `99.0000` is each institution's grand total
+across programs, included alongside the per-program rows. `major_num`
+of 2 is a double-majoring student's second major. And certificates are
+not degrees — the award level column spans certificates through
+doctorates. Together the first two inflate a 2024 national degree count
+from 4.14 million to 8.46 million.
+:::
+
+## Accessing the data
+
+### Via CORI R package
+
+The [`cori.data.ipeds`](/packages/cori-data-ipeds/) package provides
+tidy access to four IPEDS files at both the county and institution
+levels, with canonical column names, NCES sentinel codes converted to
+`NA`, and the value labels for every categorical column carried in the
+codebook.
+
+```r
+library(cori.data.ipeds)
+
+# County level — tidy long
+get_institutions(geoids = "33009", years = 2024)
+get_degrees(geoids = "33009", years = 2024)
+get_completers(geoids = "33009", years = 2024)
+get_graduation_rates(geoids = "33009", years = 2012:2023)
+
+# Institution level — wide, with CIP detail
+get_degrees(geography = "institution", geoids = "33009", years = 2024)
+
+# Variable definitions, coverage caveats and value labels
+get_ipeds_codebook()
+
+# Map programs to occupations
+get_cip_soc_crosswalk("2020")
+```
+
+### Direct from source
+
+Annual CSV files for every component are available as zip archives from
+the [IPEDS Data Center](https://nces.ed.gov/ipeds/datacenter/DataFiles.aspx),
+organized by survey and year. Each file comes with a dictionary workbook
+whose Frequencies sheet carries the value labels for its categorical
+columns. The [CIP resources page](https://nces.ed.gov/ipeds/cipcode/resources.aspx)
+hosts the CIP taxonomy and the CIP-to-SOC crosswalks.
+
+## Related
+
+- **Package:** [cori.data.ipeds](/packages/cori-data-ipeds/) — CORI's
+  tidy access layer, with county aggregations and the CIP-to-SOC
+  crosswalk
+- **Package:** [cori.data](/packages/cori-data/) — meta-package
+  including `cori.data.ipeds`
+- **Dataset:** [Quarterly Census of Employment and Wages](/datasets/qcew-employment-wages/)
+  — IPEDS describes the talent a place produces; QCEW describes the jobs
+  available to absorb it
+- **Dataset:** [American Community Survey](/datasets/american-community-survey/)
+  — resident educational attainment, which diverges from local degree
+  production wherever students commute or leave
+- **Dataset:** [Census Population Estimates](/datasets/census-population-estimates/)
+  — the denominator for per-resident degree production
