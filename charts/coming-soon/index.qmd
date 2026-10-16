@@ -1,0 +1,9 @@
+---
+title: "More charts coming soon"
+description: "Chart visualization profiles are being created. Check back soon."
+date: "2026-10-16"
+categories: ["Placeholder"]
+tags: []
+---
+
+New chart profiles are being created. Check back soon.
