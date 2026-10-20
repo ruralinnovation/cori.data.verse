@@ -33,3 +33,23 @@ posts/12_fcc-data/proj-fcc-report
 resources/monitoring-s3-access
 
 **/*.quarto_ipynb
+
+# Quarto/knitr render output next to any source .qmd, at any depth
+# (figures, chunk caches, stray graphics-device files); rebuilt by render
+**/index_files/
+**/*_cache/
+Rplots.pdf
+*.rmarkdown
+
+# Quarto writes each document's output beside its source during a project
+# render and only moves it into content/ when the whole render finishes.
+# One entry per content type in _quarto.yml `project: render:`.
+/index.html
+/about.html
+/charts/*/index.md
+/datasets/*/index.md
+/packages/*/index.md
+/posts/*/index.md
+/projects/*/index.md
+/resources/index.md
+/resources/*/index.md

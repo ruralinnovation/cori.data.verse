@@ -1,12 +1,12 @@
 ---
 title: "Monitoring S3 access"
-date: "2026-08-24"
-draft: true
+date: "2026-10-16"
 categories: ["Resource", "Data Infrastructure"]
 tags: ["S3", "AWS", "Logging", "Athena", "Monitoring"]
+draft: true
 execute:
   cache: true
-  eval: false
+  eval: true
   echo: true
   warning: false
   message: false
@@ -46,6 +46,7 @@ history — there are hundreds of thousands of small log objects.
 
 ```{r}
 #| label: libraries
+#| cache: false
 
 library(cori.data.s3)
 library(cori.charts)
@@ -53,7 +54,17 @@ library(dplyr)
 library(ggplot2)
 library(scales)
 
+library(noctua)
+
 load_fonts()
+update_cori_geom_defaults()
+
+# Every cached chunk is keyed on today's date and the installed cori.charts
+# build, so results expire nightly and when the theme package is reinstalled.
+knitr::opts_chunk$set(cache.extra = list(
+  as.character(Sys.Date()),
+  as.character(utils::packageDescription("cori.charts")$Built)
+))
 ```
 
 ## Reading the logs
@@ -99,8 +110,6 @@ con <- DBI::dbConnect(
     "s3://aws-athena-query-results-312512371189-us-east-1/cori-data-monitoring/"
   )
 )
-on.exit(DBI::dbDisconnect(con), add = TRUE)
-
 # Aggregated server-side; only the summary crosses the wire. The date
 # predicate is written against the concatenated partition columns rather
 # than a derived date, which is what lets Athena prune partitions before
@@ -110,7 +119,8 @@ activity <- DBI::dbGetQuery(con, "
       sourcebucket                                          AS bucket,
       from_iso8601_date(year || '-' || month || '-' || day) AS day,
       caller_class,
-      caller_id                                             AS caller,
+      CASE WHEN caller_class = 'vended_tagged'
+           THEN 'tag-' || caller_id ELSE caller_id END      AS caller,
       COUNT(*)                            AS api_calls,
       COUNT(DISTINCT key)                 AS distinct_objects,
       SUM(TRY_CAST(bytessent AS BIGINT))  AS bytes
@@ -118,7 +128,14 @@ activity <- DBI::dbGetQuery(con, "
   WHERE operation LIKE 'REST.GET.OBJECT%'
     AND (year || month || day) >= date_format(current_date - interval '30' day, '%Y%m%d')
   GROUP BY 1, 2, 3, 4
-")
+") |>
+  # Athena BIGINT arrives as bit64::integer64, which scales::label_bytes() and
+  # label_comma() cannot format.
+  mutate(across(c(api_calls, distinct_objects, bytes), as.numeric))
+
+# Not on.exit(): at top level of a knitr chunk it fires immediately after
+# that one expression, closing the connection before the query runs.
+DBI::dbDisconnect(con)
 
 glimpse(activity)
 ```
@@ -131,21 +148,72 @@ One row per bucket, day, caller class, and caller. Everything below is
 ```{r}
 #| label: chart-by-bucket
 
-activity |>
-  filter(day >= Sys.Date() - 7) |>
+week <- activity |>
+  filter(day >= Sys.Date() - 7, day < Sys.Date()) |>
   group_by(bucket, day) |>
+  summarise(api_calls = sum(api_calls), .groups = "drop")
+
+# The four busiest buckets carry colour; the rest stay as gray context.
+top_buckets <- week |>
+  group_by(bucket) |>
   summarise(api_calls = sum(api_calls), .groups = "drop") |>
-  ggplot(aes(day, api_calls, color = bucket)) +
-  geom_line(linewidth = 0.8) +
-  scale_y_continuous(labels = label_comma()) +
-  scale_x_date(date_labels = "%b %d", date_breaks = "1 day") +
-  scale_color_viridis_d(option = "turbo", begin = 0.1, end = 0.9) +
-  labs(
-    title    = "S3 API calls by bucket",
-    subtitle = "Daily GET API calls over the past week (range reads inflate this;\nsee note above)",
-    x = NULL, y = "API calls", color = NULL
+  slice_max(api_calls, n = 4, with_ties = FALSE) |>
+  pull(bucket)
+bucket_colors <- setNames(
+  unname(cori_colors[c("Emerald", "Mid Blue", "Mid Purple", "Mid Orange")]),
+  top_buckets
+)
+end_labels <- week |>
+  filter(bucket %in% top_buckets, day == max(day))
+top_share <- sum(week$api_calls[week$bucket == top_buckets[1]]) / sum(week$api_calls)
+
+ggplot(week, aes(day, api_calls, group = bucket)) +
+  geom_line(
+    data      = filter(week, !bucket %in% top_buckets),
+    color     = cori_colors[["CORI Gray"]],
+    linewidth = 0.8
   ) +
-  theme_cori_line()
+  geom_line(
+    data      = filter(week, bucket %in% top_buckets),
+    aes(color = bucket),
+    linewidth = 1.5
+  ) +
+  ggrepel::geom_text_repel(
+    data         = end_labels,
+    aes(label = bucket, color = bucket),
+    hjust        = 0,
+    nudge_x      = 0.3,
+    direction    = "y",
+    size         = 4.5,
+    family       = "Lato",
+    fontface     = "bold",
+    segment.size = 0
+  ) +
+  scale_color_manual(values = bucket_colors) +
+  scale_y_continuous(
+    labels = label_comma(),
+    limits = c(0, NA),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  scale_x_date(
+    date_labels = "%b %d",
+    breaks      = sort(unique(week$day)),
+    expand      = expansion(mult = c(0.02, 0.3))
+  ) +
+  theme_cori_line() +
+  theme(legend.position = "none") +
+  labs(
+    title    = paste0(
+      top_buckets[1], " drives ", percent(top_share, accuracy = 1),
+      " of the\nweek's S3 API calls"
+    ),
+    subtitle = "Daily GET API calls by bucket over the past week; the four busiest are highlighted",
+    caption  = paste0(
+      "Source: CORI analysis of S3 server access logs (cori_data_monitoring.s3_access_identified).\n",
+      "Range reads inflate API call counts; see the note above. Excludes today, which is not yet logged."
+    ),
+    x = NULL, y = NULL
+  )
 ```
 
 ## Who is downloading
@@ -173,31 +241,112 @@ as a usage label, never as an identity.
 ```{r}
 #| label: chart-by-caller
 
-activity |>
-  group_by(caller) |>
+class_phrase <- c(
+  anonymous_unauth   = "Anonymous callers",
+  local_iam          = "Staff IAM callers",
+  other_assumed_role = "Infrastructure roles",
+  "vended_*"         = "Vended-credential callers"
+)
+class_colors <- c(
+  anonymous_unauth   = cori_colors[["Emerald"]],
+  local_iam          = cori_colors[["Mid Blue"]],
+  other_assumed_role = cori_colors[["Mid Orange"]],
+  "vended_*"         = cori_colors[["Mid Purple"]]
+)
+fmt_bytes <- function(x) {
+  v <- vapply(x / 1e6, function(m) {
+    if (is.na(m)) "NA"
+    else if (m == 0) "0"
+    else if (m < 0.01) "<0.01"
+    else format(signif(m, 3), big.mark = ",", scientific = FALSE, trim = TRUE)
+  }, character(1))
+  paste(v, "MB")
+}
+
+by_caller <- activity |>
+  filter(day >= Sys.Date() - 7) |>
+  mutate(caller_class = ifelse(grepl("^vended", caller_class), "vended_*", caller_class)) |>
+  group_by(caller_class, caller) |>
+  summarise(bytes = sum(bytes, na.rm = TRUE), .groups = "drop")
+
+by_class <- by_caller |>
+  group_by(caller_class) |>
   summarise(bytes = sum(bytes), .groups = "drop") |>
-  slice_max(bytes, n = 12) |>
-  ggplot(aes(reorder(caller, bytes), bytes)) +
-  geom_col(fill = cori_colors[["Mid Teal"]]) +
-  # Centered at each bar's own midpoint (bytes / 2), not inset from the
-  # tip -- real traffic here is heavily skewed (anonymous vastly outweighs
-  # everything else), and a fixed tip-inset would overflow a short bar.
-  # Centering scales with each bar's own length regardless of skew.
+  arrange(desc(bytes))
+
+by_caller |>
+  slice_max(bytes, n = 12, with_ties = FALSE) |>
+  ggplot(aes(reorder(caller, bytes), bytes, fill = caller_class)) +
+  geom_col(width = 0.7) +
   geom_text(
-    aes(y = bytes / 2, label = scales::label_bytes()(bytes)),
-    color    = "white",
+    aes(label = fmt_bytes(bytes)),
+    hjust    = -0.15,
     fontface = "bold",
-    size     = 3.5
+    family   = "Lato",
+    size     = 4
   ) +
   coord_flip() +
-  scale_y_continuous(labels = scales::label_bytes()) +
+  scale_fill_manual(values = class_colors, labels = class_phrase) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
+  theme_cori_horizontal_bars() +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(nrow = 1)) +
   labs(
-    title    = "Bytes served by caller",
-    subtitle = "Caller resolved by the s3_access_identified view; bytes rather\nthan API calls, which range reads inflate",
-    x = NULL, y = "Bytes sent"
-  ) +
-  theme_cori_horizontal_bars()
+    title    = paste0(
+      class_phrase[[by_class$caller_class[1]]], " account for ",
+      percent(by_class$bytes[1] / sum(by_class$bytes), accuracy = 1),
+      "\nof bytes served"
+    ),
+    subtitle = "Twelve largest callers by bytes sent over the past week, colored by caller class",
+    caption  = paste0(
+      "Source: CORI analysis of S3 server access logs (cori_data_monitoring.s3_access_identified).\n",
+      "Bytes rather than API calls, which range reads inflate. Caller resolved by the s3_access_identified view."
+    ),
+    x = NULL, y = NULL, fill = NULL
+  )
 ```
+
+### Is a name on this chart an IAM user?
+
+Not necessarily. Take a caller labelled `tag-bench`. It is not an IAM user:
+the log's `requester` field for those requests names a shared role, not a
+user, and reads:
+
+```
+arn:aws:sts::312512371189:assumed-role/CoriDataVendCredentials-CoriDataS3ReaderRole…/coridata-tag-bench-1792415554
+```
+
+That ARN has three parts:
+
+- `assumed-role/CoriDataVendCredentials-CoriDataS3ReaderRole…` is the one
+  shared role that every vended credential assumes. It says nothing about
+  who is using it.
+- `coridata-tag-` marks the session as tagged, so the view classifies it as
+  `vended_tagged`.
+- `bench` is the tag, and `1792415554` is the epoch second at which the
+  session started (2026-10-19 13:12:34 UTC). The query above shows it in
+  the `caller` column as `tag-bench`, keeping the `tag-` prefix so a label
+  is never mistaken for an IAM user name.
+
+The tag is whatever the caller passed as `caller = "bench"` when it asked
+the vending endpoint for a credential. The endpoint is public and does not
+check it, so `tag-bench` is a self-declared label. Two people can use the same
+tag, and one person can use many. A tag is good for grouping one pipeline's
+traffic, and it is not evidence of who ran it. When it was seen, `bench`
+made 7 sessions on 2026-10-19, all against `cori.data.fcc`, and one of them
+moved 98.9% of the bytes.
+
+Compare a `local_iam` caller, such as a staff member's email address. There
+the `requester` is `arn:aws:iam::312512371189:user/<name>`, which AWS fills
+in itself and the caller cannot choose, so it does identify who made the
+request. The same applies to untagged vended callers, which carry
+`ip:<8 hex characters>`, the first eight characters of a SHA-256 hash of the
+caller's IP address, so they separate networks without naming anyone.
+
+So the colour of the bar tells you what kind of name you are looking at: a
+`local_iam` name can be looked up in IAM, and a `vended_*` name cannot. To
+learn more about a vended label, filter the log on its `caller_id` and read
+the `remoteip`, `useragent` and object keys.
 
 ## Year-to-date summary
 
@@ -210,11 +359,11 @@ activity |>
   summarise(
     api_calls = sum(api_calls),
     objects   = sum(distinct_objects),
-    gb        = round(sum(bytes, na.rm = TRUE) / 1024^3, 1),
+    mb        = round(sum(bytes, na.rm = TRUE) / 1e6, 1),
     callers   = n_distinct(caller),
     .groups   = "drop"
   ) |>
-  arrange(desc(gb)) |>
+  arrange(desc(mb)) |>
   knitr::kable()
 ```
 

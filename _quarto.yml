@@ -23,7 +23,7 @@ format:
     wrap: none
 
 execute:
-  freeze: auto
+  freeze: false
   echo: true
   warning: false
   message: false

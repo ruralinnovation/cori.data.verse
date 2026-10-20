@@ -1,0 +1,1738 @@
+---
+title: "Usage Reports"
+subtitle: "Who is using the CORI public data buckets"
+date: "2026-10-16"
+draft: true
+execute:
+  cache: true
+  eval: true
+  echo: true
+  warning: false
+  message: false
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+    dpi: 300
+    fig.width: 12
+    fig.height: 6
+editor:
+  markdown:
+    wrap: 72
+vignette: >
+  %\VignetteIndexEntry{Usage Reports}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  eval     = FALSE
+)
+```
+
+```{r}
+#| label: libraries
+#| cache: false
+
+library(DBI)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(scales)
+library(cori.charts)
+
+# Attached so as.numeric() on Athena BIGINT columns dispatches to bit64.
+# Without it, a re-render that skips the cached query chunks never loads bit64,
+# and as.numeric() reinterprets the integer64 bits as denormal doubles (~1e-313).
+library(bit64)
+
+load_fonts()
+update_cori_geom_defaults()
+
+# Every cached chunk is keyed on today's date and the installed cori.charts
+# build, so results expire nightly and when the theme package is reinstalled.
+knitr::opts_chunk$set(cache.extra = list(
+  as.character(Sys.Date()),
+  as.character(utils::packageDescription("cori.charts")$Built)
+))
+```
+
+Every CORI data bucket writes S3 server access logs to
+`s3://cori.data.verse/logs/`. This vignette runs the ten canned reports in
+`src/athena/reports.sql` against those logs and records what each one found.
+
+The following code chunks require live AWS credentials with Athena, Glue
+and S3 permissions, which vended credentials deliberately do not carry. Every
+figure quoted in the text below each chunk is computed from that chunk's
+result when the document is rendered, so the prose always describes the
+window the queries actually returned.
+
+### Two things to know before reading any number
+
+**`api_calls` is not a download count.** DuckDB and similar clients read
+parquet files in HTTP 206 range requests, so one logical download becomes
+hundreds of API calls. Report 1 below puts a number on that inflation for the
+largest bucket. Use `distinct_objects` and `bytes_sent` as usage measures.
+
+**Caller identity comes from a view, not from tags.** All classification
+lives in `cori_data_monitoring.s3_access_identified`, which resolves four
+generations of vended session-name format into `caller_class` and
+`caller_id`. Keeping it in one place is deliberate: this document and
+`reports.sql` previously carried two hand-written parsers that disagreed.
+
+Every report below uses the same 30-day window so the numbers are
+comparable across reports. Reports 6 and 11 are the exceptions and say so.
+
+```{r}
+#| label: connect
+
+con <- dbConnect(
+  noctua::athena(),
+  schema_name    = "cori_data_monitoring",
+  s3_staging_dir = Sys.getenv(
+    "CORI_ATHENA_STAGING",
+    "s3://aws-athena-query-results-312512371189-us-east-1/cori-data-monitoring/"
+  )
+)
+
+```
+
+```{r}
+#| label: helpers
+#| include: false
+
+# Formatters for inline `r ` expressions. Athena BIGINT arrives as
+# bit64::integer64, so everything is coerced with as.numeric() first.
+code  <- function(x) paste0("\x60", x, "\x60")
+num   <- function(x) format(round(as.numeric(x)), big.mark = ",", trim = TRUE)
+total <- function(x) sum(as.numeric(x), na.rm = TRUE)
+pct   <- function(x, digits = 0) {
+  paste0(format(round(100 * as.numeric(x), digits), nsmall = digits, trim = TRUE), "%")
+}
+bytes <- function(x) {
+  v <- vapply(as.numeric(x) / 1e6, function(m) {
+    if (is.na(m)) "NA"
+    else if (m == 0) "0"
+    else if (m < 0.01) "<0.01"
+    else format(signif(m, 3), big.mark = ",", scientific = FALSE, trim = TRUE)
+  }, character(1))
+  paste(v, "MB")
+}
+# "one in 8,400"
+one_in <- function(part, whole) paste("one in", num(signif(whole / part, 2)))
+# English words for small counts
+words <- function(x) {
+  w <- c("zero", "one", "two", "three", "four", "five", "six", "seven",
+         "eight", "nine", "ten", "eleven", "twelve")
+  ifelse(x <= 12, w[x + 1], format(x))
+}
+```
+
+The `s3_staging_dir` must not be a public bucket — result sets contain
+source IPs and full staff IAM ARNs. The default above is the account's
+private Athena results bucket.
+
+### Report 1 — Requests and bytes, by bucket and day
+
+```{r}
+#| label: report-01
+
+report_01 <- dbGetQuery(con, "
+  SELECT
+      sourcebucket,
+      from_iso8601_date(year || '-' || month || '-' || day) AS day,
+      COUNT(*)                           AS api_calls,
+      COUNT_IF(httpstatus = '206')       AS range_calls,
+      COUNT(DISTINCT key)                AS distinct_objects,
+      SUM(TRY_CAST(bytessent AS BIGINT)) AS bytes_sent
+  FROM cori_data_monitoring.s3_access_logs
+  WHERE (year || month || day) >= date_format(current_date - interval '30' day, '%Y%m%d')
+  GROUP BY 1, 2
+  ORDER BY day DESC, bytes_sent DESC
+")
+```
+
+This is the baseline shape of all traffic: one row per bucket per day, with
+no filtering by who made the request. The `range_calls` column exists purely
+so the inflation is visible rather than hidden inside `api_calls`.
+
+```{r}
+#| label: report-01-table
+
+report_01 |>
+  group_by(sourcebucket) |>
+  summarise(
+    api_calls   = sum(api_calls),
+    range_calls = sum(range_calls),
+    objects     = sum(distinct_objects),
+    mb          = round(sum(bytes_sent, na.rm = TRUE) / 1e6, 1),
+    days        = n(),
+    .groups     = "drop"
+  ) |>
+  arrange(desc(mb)) |>
+  kable(caption = "30-day totals by bucket")
+```
+
+```{r}
+#| label: report-01-summary
+#| include: false
+
+r1 <- report_01 |>
+  group_by(sourcebucket) |>
+  summarise(
+    api_calls   = total(api_calls),
+    range_calls = total(range_calls),
+    objects     = total(distinct_objects),
+    bytes_sent  = total(bytes_sent),
+    first_day   = min(day),
+    days        = n(),
+    .groups     = "drop"
+  ) |>
+  arrange(desc(bytes_sent))
+
+r1_top  <- r1[1, ]
+r1_rest <- r1[-(1:3), ]
+r1_zero <- r1$sourcebucket[r1$range_calls == 0]
+r1_zero_txt <- if (length(r1_zero)) {
+  paste0("For ", knitr::combine_words(r1_zero, before = "`", after = "`"),
+         " the range count is zero, so their call counts are honest download counts.")
+} else {
+  "Every bucket has at least some range reads, so no call count here is a pure download count."
+}
+r1_short <- r1[r1$days < max(r1$days), ]
+r1_short_txt <- if (nrow(r1_short)) {
+  paste0(
+    knitr::combine_words(
+      paste0("`", r1_short$sourcebucket, "` (", r1_short$days, " ",
+             ifelse(r1_short$days == 1, "day", "days"), ", first logged ",
+             r1_short$first_day, ")")
+    ),
+    ifelse(nrow(r1_short) == 1, " appears", " appear"),
+    " on fewer days than the rest of the window. Logging started recently, so ",
+    "the totals are not comparable to the buckets that have been logging for ",
+    "the whole window."
+  )
+} else {
+  "Every bucket appears on every day of the window."
+}
+```
+
+The report covers `r min(report_01$day)` through `r max(report_01$day)`:
+`r length(unique(report_01$day))` days and `r nrow(r1)` buckets, returned as
+`r nrow(report_01)` rows totalling `r num(total(report_01$api_calls))` API
+calls and `r bytes(total(report_01$bytes_sent))`. The distribution is
+extremely lopsided: `r code(r1_top$sourcebucket)` alone accounts for
+`r num(r1_top$api_calls)` calls and `r bytes(r1_top$bytes_sent)`, which is
+`r pct(r1_top$bytes_sent / sum(r1$bytes_sent))` of bytes served. Everything
+else is small: `r code(r1$sourcebucket[2])` and `r code(r1$sourcebucket[3])` are next at
+`r bytes(r1$bytes_sent[2])` and `r bytes(r1$bytes_sent[3])`, and the remaining
+`r words(nrow(r1_rest))` buckets together move `r bytes(sum(r1_rest$bytes_sent))`.
+
+The range-read column shows where the inflation lives. For
+`r code(r1_top$sourcebucket)`, `r num(r1_top$range_calls)` of
+`r num(r1_top$api_calls)` calls are 206s
+(`r pct(r1_top$range_calls / r1_top$api_calls, 1)`) against just
+`r num(r1_top$objects)` distinct objects, a
+`r round(r1_top$api_calls / r1_top$objects)`x inflation of calls over objects.
+`r r1_zero_txt`
+
+`r r1_short_txt`
+
+### Report 2 — By caller class and caller
+
+```{r}
+#| label: report-02
+
+report_02 <- dbGetQuery(con, "
+  SELECT
+      sourcebucket,
+      from_iso8601_date(year || '-' || month || '-' || day) AS day,
+      caller_class,
+      caller_id,
+      COUNT(*)                           AS api_calls,
+      COUNT(DISTINCT key)                AS distinct_objects,
+      SUM(TRY_CAST(bytessent AS BIGINT)) AS bytes_sent
+  FROM cori_data_monitoring.s3_access_identified
+  WHERE (year || month || day) >= date_format(current_date - interval '30' day, '%Y%m%d')
+  GROUP BY 1, 2, 3, 4
+  ORDER BY day DESC, sourcebucket, bytes_sent DESC
+")
+```
+
+This is the only report that answers "who," and it is the reason the
+`s3_access_identified` view exists. `caller_class` separates four things
+that earlier versions of this analysis collapsed into one bucket labelled
+"anonymous."
+
+```{r}
+#| label: report-02-table
+
+report_02 |>
+  group_by(caller_class) |>
+  summarise(
+    api_calls = sum(api_calls),
+    callers   = n_distinct(caller_id),
+    mb        = round(sum(bytes_sent, na.rm = TRUE) / 1e6, 1),
+    .groups   = "drop"
+  ) |>
+  arrange(desc(api_calls)) |>
+  kable(caption = "30-day traffic by caller class")
+```
+
+```{r}
+#| label: report-02-summary
+#| include: false
+
+r2 <- report_02 |>
+  mutate(caller_group = ifelse(grepl("^vended", caller_class), "vended", caller_class)) |>
+  group_by(caller_group) |>
+  summarise(
+    api_calls  = total(api_calls),
+    callers    = n_distinct(caller_id),
+    bytes_sent = total(bytes_sent),
+    .groups    = "drop"
+  )
+r2_get <- function(group, col) {
+  v <- r2[[col]][r2$caller_group == group]
+  if (length(v)) v else 0
+}
+r2_calls  <- sum(r2$api_calls)
+r2_bytes  <- sum(r2$bytes_sent)
+
+r2_local <- report_02 |>
+  filter(caller_class == "local_iam") |>
+  group_by(caller_id) |>
+  summarise(api_calls = total(api_calls), .groups = "drop") |>
+  arrange(desc(api_calls))
+r2_local_top2 <- sum(head(r2_local$api_calls, 2)) / max(sum(r2_local$api_calls), 1)
+
+r2_infra <- report_02 |>
+  filter(caller_class == "other_assumed_role") |>
+  distinct(caller_id) |>
+  pull(caller_id)
+r2_infra_txt <- if (length(r2_infra)) {
+  knitr::combine_words(r2_infra, before = "`", after = "`")
+} else {
+  "none in this window"
+}
+```
+
+Over the window measured that returned `r num(r2_get("anonymous_unauth", "api_calls"))`
+calls and `r bytes(r2_get("anonymous_unauth", "bytes_sent"))` for
+`anonymous_unauth`, `r num(r2_get("local_iam", "api_calls"))` calls and
+`r bytes(r2_get("local_iam", "bytes_sent"))` for `local_iam` across
+`r words(r2_get("local_iam", "callers"))` identities,
+`r num(r2_get("other_assumed_role", "api_calls"))` calls for
+`other_assumed_role` across `r words(r2_get("other_assumed_role", "callers"))`,
+and `r num(r2_get("vended", "api_calls"))` calls totalling
+`r bytes(r2_get("vended", "bytes_sent"))` for the vended classes combined.
+
+The headline is the ratio. Vended credentials, the mechanism built
+specifically to identify callers, account for `r num(r2_get("vended", "api_calls"))`
+of `r num(r2_calls)` calls, about
+`r one_in(r2_get("vended", "api_calls"), r2_calls)`. Meanwhile
+`r pct(r2_get("anonymous_unauth", "api_calls") / r2_calls)` of calls and
+`r pct(r2_get("anonymous_unauth", "bytes_sent") / r2_bytes)` of bytes arrive
+with `requester = '-'`: no credential, no identity, nothing a tagging scheme
+can ever reach.
+
+`local_iam` resolves to `r words(r2_get("local_iam", "callers"))` named staff
+identities, which need no tagging mechanism because the IAM ARN already names
+them exactly. The two busiest account for
+`r pct(r2_local_top2)` of the `local_iam` calls.
+
+`other_assumed_role` is worth keeping separate rather than folding into
+staff: these are infrastructure roles, not people. In this window its
+identities are `r r2_infra_txt`, and together they made
+`r num(r2_get("other_assumed_role", "api_calls"))` calls. Counting those as
+staff activity would overstate internal use by that amount.
+
+### Report 3 — Vended-credential traffic only
+
+```{r}
+#| label: report-03
+
+report_03 <- dbGetQuery(con, "
+  SELECT
+      sourcebucket,
+      from_iso8601_date(year || '-' || month || '-' || day) AS day,
+      COUNT(*)                           AS api_calls,
+      SUM(TRY_CAST(bytessent AS BIGINT)) AS bytes_sent
+  FROM cori_data_monitoring.s3_access_identified
+  WHERE caller_class LIKE 'vended%'
+    AND (year || month || day) >= date_format(current_date - interval '30' day, '%Y%m%d')
+  GROUP BY 1, 2
+  ORDER BY day DESC, sourcebucket
+")
+```
+
+Isolates traffic that came through the credential-vending endpoint. The
+filter is on `caller_class`, not on a substring match against the requester
+ARN, so it cannot accidentally sweep in unrelated assumed roles.
+
+```{r}
+#| label: report-03-table
+
+report_03 |>
+  arrange(desc(day), sourcebucket) |>
+  mutate(mb = round(bytes_sent / 1e6, 2)) |>
+  select(sourcebucket, day, api_calls, mb) |>
+  kable(caption = "All vended-credential traffic, 30 days")
+```
+
+```{r}
+#| label: report-03-summary
+#| include: false
+
+r3_calls   <- total(report_03$api_calls)
+r3_buckets <- sort(unique(report_03$sourcebucket))
+r3_buckets_txt <- if (length(r3_buckets)) {
+  knitr::combine_words(r3_buckets, before = "`", after = "`")
+} else {
+  "no buckets"
+}
+```
+
+`r words(nrow(report_03))` rows. The window's vending activity is
+`r num(r3_calls)` API calls and `r bytes(total(report_03$bytes_sent))` across
+`r words(length(r3_buckets))` buckets (`r r3_buckets_txt`) on
+`r words(n_distinct(report_03$day))` distinct days.
+
+That number is the single most useful result in this vignette, because of
+how small it is: `r pct(r3_calls / r2_calls, 2)` of all calls. Any proposal to
+improve caller attribution by enriching vended session names is optimising
+that sliver, and the raw `remoteip` on the same log line already
+distinguishes these callers anyway.
+
+### Report 4 — Anonymous public traffic
+
+```{r}
+#| label: report-04
+
+report_04 <- dbGetQuery(con, "
+  SELECT
+      sourcebucket,
+      from_iso8601_date(year || '-' || month || '-' || day) AS day,
+      COUNT(*)                          AS api_calls,
+      SUM(TRY_CAST(bytessent AS BIGINT)) AS bytes_sent
+  FROM cori_data_monitoring.s3_access_identified
+  WHERE caller_class = 'anonymous_unauth'
+    AND (year || month || day) >= date_format(current_date - interval '30' day, '%Y%m%d')
+  GROUP BY 1, 2
+  ORDER BY day DESC, api_calls DESC
+")
+```
+
+The complement of report 3: everything arriving with no credential at all.
+This is public consumption of the world-readable buckets.
+
+```{r}
+#| label: report-04-table
+
+report_04 |>
+  group_by(sourcebucket) |>
+  summarise(
+    api_calls = sum(api_calls),
+    mb        = round(sum(bytes_sent, na.rm = TRUE) / 1e6, 1),
+    days      = n(),
+    .groups   = "drop"
+  ) |>
+  arrange(desc(mb)) |>
+  kable(caption = "Anonymous public traffic by bucket")
+```
+
+```{r}
+#| label: report-04-summary
+#| include: false
+
+r4_daily <- report_04 |>
+  filter(sourcebucket == r1_top$sourcebucket) |>
+  arrange(day) |>
+  mutate(api_calls = as.numeric(api_calls))
+r4_max <- r4_daily[which.max(r4_daily$api_calls), ]
+r4_min <- r4_daily[which.min(r4_daily$api_calls), ]
+r4_cv  <- sd(r4_daily$api_calls) / mean(r4_daily$api_calls)
+```
+
+`r num(nrow(report_04))` rows, `r num(total(report_04$api_calls))` API calls,
+`r bytes(total(report_04$bytes_sent))` across
+`r n_distinct(report_04$sourcebucket)` buckets and
+`r n_distinct(report_04$day)` days. Daily volume on
+`r code(r1_top$sourcebucket)` ranges from `r num(r4_min$api_calls)` calls
+(`r r4_min$day`) to `r num(r4_max$api_calls)` calls (`r r4_max$day`), a
+coefficient of variation of `r round(r4_cv, 2)` across
+`r nrow(r4_daily)` days. Values well above zero mean a small number of large,
+bursty jobs rather than steady background traffic.
+
+This report is where the request-count caveat bites hardest. Read alone it
+suggests `r num(total(report_04$api_calls))` downloads. Reports 9 and 10 below
+restate the same traffic as sessions and distinct objects, which is the
+honest measure.
+
+### Report 5 — Top objects
+
+```{r}
+#| label: report-05
+
+report_05 <- dbGetQuery(con, "
+  SELECT
+      sourcebucket,
+      from_iso8601_date(year || '-' || month || '-' || day) AS day,
+      key,
+      COUNT(*)                          AS api_calls,
+      SUM(TRY_CAST(bytessent AS BIGINT)) AS bytes_sent
+  FROM cori_data_monitoring.s3_access_logs
+  WHERE key != '-'
+    AND (year || month || day) >= date_format(current_date - interval '30' day, '%Y%m%d')
+  GROUP BY 1, 2, 3
+  ORDER BY day DESC, sourcebucket, api_calls DESC
+")
+```
+
+Object-level detail, one row per bucket, day and key. Useful for finding
+which specific files drive load.
+
+```{r}
+#| label: report-05-table
+
+report_05 |>
+  group_by(sourcebucket, key) |>
+  summarise(
+    api_calls = sum(api_calls),
+    mb        = round(sum(bytes_sent, na.rm = TRUE) / 1e6, 1),
+    .groups   = "drop"
+  ) |>
+  slice_max(api_calls, n = 10) |>
+  kable(caption = "Ten most-requested objects over 30 days")
+```
+
+```{r}
+#| label: report-05-summary
+#| include: false
+
+r5_top10 <- report_05 |>
+  group_by(sourcebucket, key) |>
+  summarise(api_calls = total(api_calls), .groups = "drop") |>
+  slice_max(api_calls, n = 10, with_ties = FALSE)
+r5_in_top <- report_05[report_05$sourcebucket == r1_top$sourcebucket, ]
+r5_peak <- report_05[which.max(as.numeric(report_05$api_calls)), ]
+```
+
+`r num(nrow(report_05))` rows covering `r num(n_distinct(report_05$key))`
+distinct keys. `r code(r1_top$sourcebucket)` contributes
+`r num(n_distinct(r5_in_top$key))` of those keys and
+`r num(total(r5_in_top$api_calls))` calls, which is
+`r pct(total(r5_in_top$api_calls) / total(report_05$api_calls))` of all calls
+in this report, so the concentration seen at bucket level
+`r if (total(r5_in_top$api_calls) / total(report_05$api_calls) > 0.5) "holds" else "does not hold"`
+at object level too.
+
+`r sum(r5_top10$sourcebucket == r1_top$sourcebucket)` of the ten most-requested
+objects are in `r code(r1_top$sourcebucket)`. The single busiest object-day is
+`r code(r5_peak$key)` in `r code(r5_peak$sourcebucket)`, which drew
+`r num(r5_peak$api_calls)` API calls on `r r5_peak$day` for
+`r bytes(r5_peak$bytes_sent)`. When that is a parquet file read through
+DuckDB, it is one file being range-read thousands of times, not thousands of
+downloads.
+
+Note the keys are doubly URL-encoded here (`%253D` rather than `=`). Report
+10 decodes them.
+
+### Report 6 — Raw event drill-down
+
+```{r}
+#| label: report-06
+
+report_06 <- dbGetQuery(con, "
+  SELECT
+      sourcebucket,
+      date_parse(requestdatetime, '%d/%b/%Y:%H:%i:%s +0000') AS request_time,
+      requester,
+      operation,
+      key,
+      httpstatus,
+      TRY_CAST(bytessent AS BIGINT) AS bytes_sent,
+      remoteip
+  FROM cori_data_monitoring.s3_access_logs
+  WHERE (year || month || day) >= date_format(current_date - interval '1' day, '%Y%m%d')
+  ORDER BY request_time DESC
+  LIMIT 500
+")
+```
+
+Unaggregated events with full timestamp precision, for investigating a
+specific incident or window. **This is the one report on a 1-day window**,
+not 30 days — with `LIMIT 500` a wider window returns the same 500 most
+recent rows while scanning thirty times the data.
+
+```{r}
+#| label: report-06-table
+
+report_06 |>
+  count(operation, httpstatus, name = "events") |>
+  arrange(desc(events)) |>
+  kable(caption = "Most recent 500 events, by operation and status")
+```
+
+```{r}
+#| label: report-06-summary
+#| include: false
+
+r6_ops <- report_06 |>
+  count(operation, name = "events") |>
+  arrange(desc(events))
+r6_status <- report_06 |>
+  count(httpstatus, name = "events") |>
+  arrange(desc(events))
+r6_status_txt <- paste0(r6_status$events, " were ", r6_status$httpstatus, collapse = ", ")
+r6_other_ops <- r6_ops$operation[-1]
+r6_other_txt <- if (length(r6_other_ops)) {
+  paste0(" and the rest are ", knitr::combine_words(r6_other_ops, before = "`", after = "`"))
+} else {
+  ""
+}
+r6_object_ops <- sum(r6_ops$events[grepl("^REST\\.GET\\.OBJECT", r6_ops$operation)])
+r6_top_requester <- max(table(report_06$requester)) / nrow(report_06)
+```
+
+The `r num(nrow(report_06))` most recent events break down by operation as
+follows: `r r6_ops$events[1]` are `r code(r6_ops$operation[1])``r r6_other_txt`.
+Only `r num(r6_object_ops)` of them are object reads. The busiest single
+requester accounts for `r pct(r6_top_requester)` of the events. A single
+requester that dominates the list is usually a scheduled poller enumerating
+bucket configuration, not people downloading data.
+
+Status codes are worth watching here: of `r num(nrow(report_06))` events,
+`r r6_status_txt`. A steady trickle of 404s and 403s from automated pollers is
+normal, but this is the report to check first if that ratio shifts.
+
+Because the operations are metadata reads, not object reads, note that this
+report has no `operation LIKE 'REST.GET.OBJECT%'` filter — it deliberately
+shows everything.
+
+### Report 7 — User-agent taxonomy
+
+```{r}
+#| label: report-07
+
+report_07 <- dbGetQuery(con, "
+  SELECT
+      sourcebucket,
+      CASE
+          WHEN useragent LIKE 'duckdb/%'                               THEN 'duckdb'
+          WHEN useragent LIKE '%aws-cli/%'                             THEN 'aws-cli'
+          WHEN useragent LIKE '%Boto3%' OR useragent LIKE '%botocore%' THEN 'boto3'
+          WHEN useragent LIKE '%aws-sdk-java%'                         THEN 'aws-sdk-java'
+          WHEN useragent LIKE '%aws-sdk-go%'                           THEN 'aws-sdk-go'
+          WHEN useragent LIKE '%paws%' OR useragent LIKE '%libcurl%'
+            OR useragent LIKE '%R (%'                                  THEN 'r-client'
+          WHEN useragent LIKE '%GDAL%' OR useragent LIKE '%rasterio%'  THEN 'geospatial'
+          WHEN regexp_like(useragent, '(?i)bot|spider|crawler|scrape') THEN 'crawler'
+          WHEN useragent LIKE 'Mozilla/%'                              THEN 'browser'
+          WHEN useragent = '-'                                         THEN 'unset'
+          ELSE 'other'
+      END                                                              AS ua_family,
+      regexp_extract(useragent, '^([A-Za-z0-9._-]+)/v?([0-9][0-9A-Za-z.]*)', 0) AS ua_tool_version,
+      COUNT(*)                            AS api_calls,
+      COUNT(DISTINCT key)                 AS distinct_objects,
+      COUNT(DISTINCT remoteip)            AS distinct_ips,
+      SUM(TRY_CAST(bytessent AS BIGINT))  AS bytes_sent
+  FROM cori_data_monitoring.s3_access_identified
+  WHERE caller_class = 'anonymous_unauth'
+    AND operation LIKE 'REST.GET.OBJECT%'
+    AND (year || month || day) >= date_format(current_date - interval '30' day, '%Y%m%d')
+  GROUP BY 1, 2, 3
+  ORDER BY bytes_sent DESC
+")
+```
+
+Since anonymous traffic carries no credential, the user-agent string is the
+best available signal about who the consumer is.
+
+`useragent` is an HTTP request header. Every client names itself in it, by
+convention as `Name/Version` — a browser sends `Mozilla/5.0 (Macintosh...)`,
+the AWS CLI sends `aws-cli/2.x`, DuckDB sends
+`duckdb/v1.5.5(linux_amd64) python/3.11`. S3 copies whatever the client sent
+into the access log verbatim. It is free text: self-reported, unverified and
+trivially spoofable, so treat it as evidence rather than proof. Most clients
+report honestly because they have no reason not to.
+
+```{r}
+#| label: report-07-table
+
+report_07 |>
+  group_by(ua_family) |>
+  summarise(
+    api_calls = sum(api_calls),
+    objects   = sum(distinct_objects),
+    ips       = sum(distinct_ips),
+    mb        = round(sum(bytes_sent, na.rm = TRUE) / 1e6, 1),
+    .groups   = "drop"
+  ) |>
+  mutate(calls_per_object = round(api_calls / objects, 1)) |>
+  arrange(desc(mb)) |>
+  kable(caption = "Anonymous traffic by client family")
+```
+
+```{r}
+#| label: report-07-summary
+#| include: false
+
+r7 <- report_07 |>
+  group_by(ua_family) |>
+  summarise(
+    api_calls  = total(api_calls),
+    objects    = total(distinct_objects),
+    ips        = total(distinct_ips),
+    bytes_sent = total(bytes_sent),
+    .groups    = "drop"
+  ) |>
+  mutate(calls_per_object = api_calls / pmax(objects, 1)) |>
+  arrange(desc(bytes_sent))
+
+r7_rest_txt <- knitr::combine_words(
+  paste0("`", r7$ua_family[-1], "` (", num(r7$api_calls[-1]), " calls, ",
+         bytes(r7$bytes_sent[-1]), ")")
+)
+
+r7_busy  <- r7[r7$api_calls >= 100, ]
+r7_hi    <- r7_busy[which.max(r7_busy$calls_per_object), ]
+r7_lo    <- r7_busy[which.min(r7_busy$calls_per_object), ]
+
+r7_ver <- report_07 |>
+  filter(ua_family == r7$ua_family[1], nzchar(ua_tool_version)) |>
+  group_by(ua_tool_version) |>
+  summarise(api_calls = total(api_calls), .groups = "drop") |>
+  arrange(desc(api_calls))
+r7_ver_txt <- if (nrow(r7_ver) > 1) {
+  paste0("`", r7_ver$ua_tool_version[1], "` dominates (",
+         pct(r7_ver$api_calls[1] / sum(r7_ver$api_calls)), " of that family's calls), with a tail of ",
+         knitr::combine_words(paste0("`", head(r7_ver$ua_tool_version[-1], 4), "`")), ".")
+} else if (nrow(r7_ver) == 1) {
+  paste0("only `", r7_ver$ua_tool_version[1], "` appears.")
+} else {
+  "none of the top family's strings carried a parseable version."
+}
+```
+
+`r num(nrow(report_07))` rows collapse to `r words(nrow(r7))` families.
+`r code(r7$ua_family[1])` dominates by bytes with `r num(r7$api_calls[1])` calls and
+`r bytes(r7$bytes_sent[1])`, followed by `r r7_rest_txt`.
+
+The contrast between the highest and lowest calls-per-object rows is the most
+informative thing here. `r code(r7_hi$ua_family)` made `r num(r7_hi$api_calls)` calls
+against `r num(r7_hi$objects)` objects, which is
+`r num(r7_hi$calls_per_object)` calls per object: the signature of
+range-reading. `r code(r7_lo$ua_family)` made `r num(r7_lo$api_calls)` calls against
+`r num(r7_lo$objects)` objects, `r round(r7_lo$calls_per_object, 1)` calls per
+object, which is what whole-file downloads look like when it is near 1. Both
+are legitimate; they are simply different access patterns, and only the first
+inflates counts.
+
+`ua_tool_version` resolves to specific builds, which is more actionable than
+the family alone. For `r code(r7$ua_family[1])`, `r r7_ver_txt` The raw strings
+carry the host language version too.
+
+One implementation note: this regex originally required a digit immediately
+after the slash, which silently returned empty for every DuckDB row, because
+DuckDB reports `duckdb/v1.5.5`. The `v?` is load-bearing.
+
+### Report 7b — Unclassified user agents
+
+```{r}
+#| label: report-07b
+
+report_07b <- dbGetQuery(con, "
+  SELECT
+      useragent,
+      COUNT(*)                 AS api_calls,
+      COUNT(DISTINCT remoteip) AS distinct_ips
+  FROM cori_data_monitoring.s3_access_identified
+  WHERE caller_class = 'anonymous_unauth'
+    AND operation LIKE 'REST.GET.OBJECT%'
+    AND (year || month || day) >= date_format(current_date - interval '30' day, '%Y%m%d')
+    AND useragent <> '-'
+    AND NOT regexp_like(useragent, '(?i)^duckdb/|aws-cli/|Boto3|botocore|aws-sdk-java|aws-sdk-go|paws|libcurl|GDAL|rasterio|bot|spider|crawler|scrape|^Mozilla/')
+  GROUP BY 1
+  ORDER BY api_calls DESC
+  LIMIT 50
+")
+```
+
+The honesty check on report 7. Any taxonomy built from `LIKE` patterns is a
+guess, and this shows what the guess missed. Run it before quoting report
+7's shares.
+
+```{r}
+#| label: report-07b-table
+
+report_07b |>
+  mutate(calls_per_ip = round(api_calls / distinct_ips, 1)) |>
+  arrange(desc(api_calls)) |>
+  kable(caption = "User agents the taxonomy does not classify")
+```
+
+```{r}
+#| label: report-07b-summary
+#| include: false
+
+r7b_calls <- total(report_07b$api_calls)
+r7b_share <- r7b_calls / total(report_07$api_calls)
+r7b_rc     <- report_07b[grepl("^RuralConnectivity", report_07b$useragent), ]
+r7b_rstudio <- report_07b[grepl("^RStudio", report_07b$useragent), ]
+r7b_curl   <- report_07b[grepl("^curl", report_07b$useragent, ignore.case = TRUE), ]
+r7b_named  <- report_07b[
+  !grepl("^(RuralConnectivity|RStudio|curl)", report_07b$useragent, ignore.case = TRUE) &
+    grepl("^[A-Za-z][A-Za-z0-9_.-]*/[0-9]", report_07b$useragent), ]
+r7b_named  <- head(r7b_named[order(-as.numeric(r7b_named$api_calls)), ], 3)
+r7b_ladder <- c(
+  if (nrow(r7b_rstudio)) "an `RStudio` branch",
+  if (nrow(r7b_curl)) "a `curl` branch"
+)
+r7b_ladder_txt <- if (length(r7b_ladder)) {
+  paste0("The ladder in report 7 should gain ", knitr::combine_words(r7b_ladder),
+         " before its family shares are published.")
+} else {
+  ""
+}
+```
+
+`r words(nrow(report_07b))` distinct strings, `r num(r7b_calls)` API calls,
+which is about `r pct(r7b_share, 1)` of anonymous traffic, so report 7's shares
+`r if (r7b_share < 0.01) "are trustworthy" else "may be skewed by what the taxonomy missed"`.
+The residual can still contain the most interesting names in the whole
+dataset:
+
+```{r}
+#| label: report-07b-bullets
+#| output: asis
+#| echo: false
+
+if (nrow(r7b_rc)) {
+  cat(sprintf(
+    "- %s: named, purpose-built third-party software. Someone wrote a tool against CORI data and named it after what it does. Drilled into below.\n",
+    knitr::combine_words(paste0("`", r7b_rc$useragent, "`"))
+  ))
+}
+if (nrow(r7b_rstudio)) {
+  cat(sprintf(
+    "- `%s`: R users working interactively, %s calls from %s %s. Report 7's `r-client` branch matches `paws`, `libcurl` and `R (`, but RStudio's string puts the `R (` token after a semicolon in a way that branch misses, so R usage is understated there.\n",
+    "RStudio Desktop (...)",
+    knitr::combine_words(num(r7b_rstudio$api_calls)),
+    num(total(r7b_rstudio$distinct_ips)),
+    ifelse(total(r7b_rstudio$distinct_ips) == 1, "IP", "IPs")
+  ))
+}
+for (i in seq_len(nrow(r7b_named))) {
+  cat(sprintf(
+    "- `%s`: another named tool, %s calls from %s %s.\n",
+    r7b_named$useragent[i], num(r7b_named$api_calls[i]),
+    num(r7b_named$distinct_ips[i]),
+    ifelse(r7b_named$distinct_ips[i] == 1, "IP", "IPs")
+  ))
+}
+if (nrow(r7b_curl)) {
+  cat(sprintf(
+    "- `curl` accounts for %s calls from %s distinct IPs across %s %s. That is a different shape from a single program running repeatedly: many people each running a one-off command.\n",
+    num(total(r7b_curl$api_calls)), num(total(r7b_curl$distinct_ips)),
+    words(nrow(r7b_curl)), ifelse(nrow(r7b_curl) == 1, "version", "versions")
+  ))
+}
+```
+
+`r r7b_ladder_txt`
+
+#### Drilling into a named client
+
+A name in the residual is worth following up, because it is the only place
+in these logs where a consumer volunteers who they are. This query
+characterises the whole `RuralConnectivity` family.
+
+```{r}
+#| label: report-07b-drilldown
+
+rural_connectivity <- dbGetQuery(con, "
+  SELECT
+      useragent,
+      remoteip,
+      split_part(COALESCE(try(url_decode(url_decode(key))), key), '/', 1) AS key_prefix,
+      COUNT(*)                            AS api_calls,
+      COUNT(DISTINCT key)                 AS distinct_objects,
+      MIN(from_iso8601_date(year || '-' || month || '-' || day)) AS first_day,
+      MAX(from_iso8601_date(year || '-' || month || '-' || day)) AS last_day,
+      SUM(TRY_CAST(bytessent AS BIGINT))  AS bytes_sent
+  FROM cori_data_monitoring.s3_access_identified
+  WHERE useragent LIKE 'RuralConnectivity%'
+    AND (year || month || day) >= date_format(current_date - interval '30' day, '%Y%m%d')
+  GROUP BY 1, 2, 3
+  ORDER BY api_calls DESC
+")
+```
+
+```{r}
+#| label: report-07b-drilldown-table
+
+rural_connectivity |>
+  group_by(useragent, key_prefix) |>
+  summarise(
+    api_calls = sum(api_calls),
+    objects   = sum(distinct_objects),
+    ips       = n_distinct(remoteip),
+    mb        = round(sum(bytes_sent, na.rm = TRUE) / 1e6, 1),
+    first_day = min(first_day),
+    last_day  = max(last_day),
+    .groups   = "drop"
+  ) |>
+  mutate(calls_per_object = round(api_calls / objects, 2)) |>
+  arrange(desc(api_calls)) |>
+  kable(caption = "The RuralConnectivity client family")
+```
+
+```{r}
+#| label: report-07b-drilldown-ips
+
+rural_connectivity |>
+  group_by(remoteip) |>
+  summarise(
+    tools     = n_distinct(useragent),
+    api_calls = sum(api_calls),
+    mb        = round(sum(bytes_sent, na.rm = TRUE) / 1e6, 1),
+    .groups   = "drop"
+  ) |>
+  arrange(desc(api_calls)) |>
+  kable(caption = "Which hosts ran which tools")
+```
+
+```{r}
+#| label: report-07b-drilldown-summary
+#| output: asis
+#| echo: false
+
+if (nrow(rural_connectivity) == 0) {
+  cat("No `RuralConnectivity` requests appear in this window, so there is nothing to drill into.\n")
+} else {
+  rc <- rural_connectivity
+  rc_calls   <- total(rc$api_calls)
+  rc_objects <- total(rc$distinct_objects)
+  rc_ratio   <- rc_calls / max(rc_objects, 1)
+  rc_agents  <- sort(unique(rc$useragent))
+  rc_prefix  <- sort(unique(rc$key_prefix))
+  rc_hosts   <- rc |>
+    group_by(remoteip) |>
+    summarise(tools = n_distinct(useragent), .groups = "drop") |>
+    arrange(desc(tools))
+  rc_nets    <- n_distinct(sub("\\.[0-9]+$", "", rc$remoteip))
+  rc_first   <- min(rc$first_day)
+  rc_last    <- max(rc$last_day)
+  rc_span    <- as.integer(rc_last - rc_first) + 1L
+  rc_multi   <- rc_hosts[rc_hosts$tools > 1, ]
+
+  cat(sprintf(
+    "There are %s variants (%s). Together they made %s calls for %s, hitting the %s prefixes.\n\n",
+    words(length(rc_agents)),
+    knitr::combine_words(paste0("`", rc_agents, "`")),
+    num(rc_calls), bytes(total(rc$bytes_sent)),
+    knitr::combine_words(paste0("`", rc_prefix, "`"))
+  ))
+
+  cat("Three things stand out.\n\n")
+
+  cat(sprintf(
+    "The access pattern is %s: %s calls for %s distinct objects, a ratio of %s. Compare that with %s's %s calls per object in report 7. Both are legitimate, but only one inflates request counts, and this is a good illustration of why `distinct_objects` is the honest measure.\n\n",
+    if (rc_ratio < 1.5) "whole-file downloads" else "repeated range reads",
+    num(rc_calls), num(rc_objects), round(rc_ratio, 2),
+    r7_hi$ua_family, num(r7_hi$calls_per_object)
+  ))
+
+  cat(sprintf(
+    "%s. %s\n\n",
+    if (nrow(rc_hosts) == 1) {
+      sprintf("It is one host. A single address ran %s of the %s variants", words(rc_hosts$tools[1]), words(length(rc_agents)))
+    } else {
+      sprintf("There are %s hosts on %s distinct /24 networks. The busiest ran %s of the %s variants and %s %s ran more than one",
+              words(nrow(rc_hosts)), words(rc_nets), words(rc_hosts$tools[1]),
+              words(length(rc_agents)), words(nrow(rc_multi)),
+              ifelse(nrow(rc_multi) == 1, "host", "hosts"))
+    },
+    if (nrow(rc_multi) > 0) {
+      "Hosts that run several of the variants point to a family of related programs from one party, not independent consumers who happened to pick similar names."
+    } else {
+      "No host ran more than one variant, so these may be independent consumers."
+    }
+  ))
+
+  cat(sprintf(
+    "%s\n\n",
+    if (rc_first == rc_last) {
+      sprintf("It was a single day. Every request landed on %s, with nothing before or after in thirty days of logs. So this is a one-off batch pull or a development run, not an established recurring pipeline, which is worth knowing before treating it as a stable downstream dependency.", rc_first)
+    } else {
+      sprintf("Activity runs from %s to %s, which is %s days in the window. A span like that is closer to a recurring pipeline than a one-off pull.", rc_first, rc_last, rc_span)
+    }
+  ))
+
+  cat("The names line up with the data where `nbm_` prefixes appear: those are National Broadband Map data, BEAD is the federal Broadband Equity, Access and Deployment program, and \"WireModel\" reads like wireline modelling. The plausible reading is someone building BEAD-related broadband analysis on the FCC data CORI republishes.\n\n")
+
+  cat("Two limits worth stating. The user agent is unverified free text, so the name is a claim rather than an identity. And logs cannot tell you who the operator is, because that needs ASN or reverse-DNS lookup on the IPs, which Athena cannot do.\n")
+}
+```
+
+### Report 8 — Referrer hosts
+
+```{r}
+#| label: report-08
+
+report_08 <- dbGetQuery(con, "
+  SELECT
+      sourcebucket,
+      regexp_extract(referrer, '^https?://([^/]+)', 1) AS referrer_host,
+      COUNT(*)                           AS api_calls,
+      COUNT(DISTINCT remoteip)           AS distinct_ips,
+      COUNT(DISTINCT key)                AS distinct_objects,
+      SUM(TRY_CAST(bytessent AS BIGINT)) AS bytes_sent
+  FROM cori_data_monitoring.s3_access_identified
+  WHERE caller_class = 'anonymous_unauth'
+    AND referrer <> '-'
+    AND (year || month || day) >= date_format(current_date - interval '30' day, '%Y%m%d')
+  GROUP BY 1, 2
+  ORDER BY api_calls DESC
+")
+```
+
+The `referrer` field is populated only when a browser follows a link, so it
+is sparse by construction — programmatic clients send `-`. It is included
+because every non-null row names an actual referring site, which nothing
+else in these logs provides.
+
+```{r}
+#| label: report-08-table
+
+report_08 |>
+  arrange(desc(api_calls)) |>
+  mutate(mb = round(bytes_sent / 1e6, 2)) |>
+  select(sourcebucket, referrer_host, api_calls, distinct_ips,
+         distinct_objects, mb) |>
+  kable(caption = "Referring hosts for anonymous traffic")
+```
+
+```{r}
+#| label: report-08-summary
+#| output: asis
+#| echo: false
+
+if (nrow(report_08) == 0) {
+  cat("No anonymous request in this window carried a referrer.\n")
+} else {
+  r8 <- report_08 |>
+    mutate(api_calls = as.numeric(api_calls), distinct_ips = as.numeric(distinct_ips)) |>
+    arrange(desc(api_calls))
+  r8_top    <- r8[1, ]
+  r8_google <- r8[grepl("google\\.", r8$referrer_host), ]
+  r8_aws    <- r8[grepl("console\\.aws\\.amazon\\.com", r8$referrer_host), ]
+  r8_self   <- r8[mapply(function(h, b) grepl(b, h, fixed = TRUE),
+                         r8$referrer_host, r8$sourcebucket), ]
+
+  cat(sprintf(
+    "%s rows, and the sparsity is as expected. The busiest referrer is `%s`, with %s requests from %s distinct IPs to `%s`.\n\n",
+    num(nrow(r8)), r8_top$referrer_host, num(r8_top$api_calls),
+    num(r8_top$distinct_ips), r8_top$sourcebucket
+  ))
+
+  if (nrow(r8_google)) {
+    cat(sprintf(
+      "Google is the result worth noting: %s referred %s requests from %s distinct IPs to %s. People are finding CORI data files through Google search and downloading them directly. That is small in volume but it is real organic discovery, invisible in every other report.\n\n",
+      knitr::combine_words(paste0("`", unique(r8_google$referrer_host), "`")),
+      num(sum(r8_google$api_calls)), num(sum(r8_google$distinct_ips)),
+      knitr::combine_words(paste0("`", unique(r8_google$sourcebucket), "`"))
+    ))
+  }
+
+  if (nrow(r8_aws)) {
+    cat(sprintf(
+      "AWS console hosts (%s) account for %s of the referred requests: staff clicking through the console, not external interest.\n\n",
+      knitr::combine_words(paste0("`", unique(r8_aws$referrer_host), "`")),
+      pct(sum(r8_aws$api_calls) / sum(r8$api_calls))
+    ))
+  }
+
+  if (nrow(r8_self)) {
+    cat(sprintf(
+      "%s %s a referrer for its own bucket, which is a bucket-hosted page linking to its own objects.\n",
+      knitr::combine_words(paste0("`", unique(r8_self$referrer_host), "`")),
+      ifelse(length(unique(r8_self$referrer_host)) == 1, "appears as", "appear as")
+    ))
+  }
+}
+```
+
+### Report 9 — Sessionized anonymous consumers
+
+```{r}
+#| label: report-09
+
+report_09 <- dbGetQuery(con, "
+  WITH e AS (
+      SELECT
+          sourcebucket, remoteip, useragent, key,
+          date_parse(requestdatetime, '%d/%b/%Y:%H:%i:%s +0000') AS ts,
+          TRY_CAST(bytessent AS BIGINT)                          AS bytes
+      FROM cori_data_monitoring.s3_access_identified
+      WHERE caller_class = 'anonymous_unauth'
+        AND operation LIKE 'REST.GET.OBJECT%'
+        AND (year || month || day) >= date_format(current_date - interval '30' day, '%Y%m%d')
+  ),
+  gapped AS (
+      SELECT *,
+          CASE
+              WHEN LAG(ts) OVER (PARTITION BY remoteip, useragent ORDER BY ts) IS NULL
+                OR date_diff('minute',
+                     LAG(ts) OVER (PARTITION BY remoteip, useragent ORDER BY ts), ts) >= 30
+              THEN 1 ELSE 0
+          END AS is_new
+      FROM e
+  ),
+  sessioned AS (
+      SELECT *,
+          SUM(is_new) OVER (PARTITION BY remoteip, useragent ORDER BY ts
+                            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS session_seq
+      FROM gapped
+  )
+  SELECT
+      sourcebucket,
+      COUNT(DISTINCT remoteip || '|' || useragent || '|' || CAST(session_seq AS VARCHAR)) AS sessions,
+      COUNT(DISTINCT remoteip)  AS distinct_ips,
+      COUNT(DISTINCT key)       AS distinct_objects,
+      SUM(bytes)                AS bytes_sent
+  FROM sessioned
+  GROUP BY 1
+  ORDER BY sessions DESC
+")
+```
+
+This is the report that actually answers the question in the title. Because
+range reads make `api_calls` meaningless as a measure of use, the unit here
+is a session: consecutive requests from one `(remoteip, useragent)` pair
+separated by less than thirty minutes.
+
+```{r}
+#| label: report-09-table
+
+report_09 |>
+  mutate(
+    mb                 = round(bytes_sent / 1e6, 1),
+    sessions_per_ip    = round(sessions / distinct_ips, 2)
+  ) |>
+  select(sourcebucket, sessions, distinct_ips, sessions_per_ip,
+         distinct_objects, mb) |>
+  arrange(desc(sessions)) |>
+  kable(caption = "Anonymous sessions over 30 days")
+```
+
+```{r}
+#| label: report-09-summary
+#| include: false
+
+r9 <- report_09 |>
+  mutate(
+    sessions         = as.numeric(sessions),
+    distinct_ips     = as.numeric(distinct_ips),
+    distinct_objects = as.numeric(distinct_objects),
+    bytes_sent       = as.numeric(bytes_sent),
+    sessions_per_ip  = sessions / pmax(distinct_ips, 1)
+  ) |>
+  arrange(desc(sessions))
+r9_top  <- r9[1, ]
+r9_rest_txt <- knitr::combine_words(paste0(
+  "`", r9$sourcebucket[-1], "` ", num(r9$sessions[-1]),
+  ifelse(r9$sessions[-1] == 1, " session", " sessions"),
+  " from ", num(r9$distinct_ips[-1]), ifelse(r9$distinct_ips[-1] == 1, " IP", " IPs")
+))
+r9_sessions <- sum(r9$sessions)
+r9_ips      <- sum(r9$distinct_ips)
+r4_calls    <- total(report_04$api_calls)
+r9_orders   <- round(log10(r4_calls / r9_sessions), 1)
+r9_multi    <- r9[r9$sessions >= 10, ]
+r9_hi       <- r9_multi[which.max(r9_multi$sessions_per_ip), ]
+r9_lo       <- r9_multi[which.min(r9_multi$sessions_per_ip), ]
+```
+
+`r words(nrow(r9))` rows. `r code(r9_top$sourcebucket)` carries `r num(r9_top$sessions)`
+sessions from `r num(r9_top$distinct_ips)` IPs against
+`r num(r9_top$distinct_objects)` distinct objects and
+`r bytes(r9_top$bytes_sent)`; `r r9_rest_txt`.
+
+`r num(r9_sessions)` sessions from `r num(r9_ips)` distinct IP addresses (IPs
+summed across buckets) over thirty days. Set that against report 4's
+`r num(r4_calls)` API calls: the same traffic, measured in a unit that means
+something, is roughly `r r9_orders` orders of magnitude smaller.
+
+The per-bucket shapes differ in a way worth noticing. Among buckets with at
+least ten sessions, `r code(r9_lo$sourcebucket)` has `r num(r9_lo$sessions)` sessions
+from `r num(r9_lo$distinct_ips)` IPs (`r round(r9_lo$sessions_per_ip, 2)`
+sessions per IP), the closest to one session each: many different people each
+visiting once. `r code(r9_hi$sourcebucket)` has `r num(r9_hi$sessions)` sessions from
+`r num(r9_hi$distinct_ips)` IPs (`r round(r9_hi$sessions_per_ip, 2)` per IP),
+a few consumers returning repeatedly. Those are different audiences and imply
+different things about how the data is used.
+
+Two caveats that cannot be resolved from logs alone. The thirty-minute gap
+is a starting point, not a validated constant; sweep it at 10, 30 and 60
+minutes and report the sensitivity rather than publishing one number. And a
+NATed institution appears as one IP while a CGNAT home user appears as
+several, so sessions bound the truth from both sides without pinning it.
+
+### Report 10 — Dataset attribution from the object key
+
+```{r}
+#| label: report-10
+
+report_10 <- dbGetQuery(con, "
+  SELECT
+      sourcebucket,
+      split_part(COALESCE(try(url_decode(url_decode(key))), key), '/', 1) AS key_prefix,
+      regexp_extract(COALESCE(try(url_decode(url_decode(key))), key), 'release=([^/]+)', 1)    AS release,
+      regexp_extract(COALESCE(try(url_decode(url_decode(key))), key), 'state_usps=([^/]+)', 1) AS state_usps,
+      COUNT(*)                           AS api_calls,
+      COUNT(DISTINCT key)                AS distinct_objects,
+      COUNT(DISTINCT remoteip)           AS distinct_ips,
+      SUM(TRY_CAST(bytessent AS BIGINT)) AS bytes_sent
+  FROM cori_data_monitoring.s3_access_identified
+  WHERE caller_class = 'anonymous_unauth'
+    AND operation LIKE 'REST.GET.OBJECT%'
+    AND key <> '-'
+    AND (year || month || day) >= date_format(current_date - interval '30' day, '%Y%m%d')
+  GROUP BY 1, 2, 3, 4
+  ORDER BY bytes_sent DESC
+")
+```
+
+Translates object keys into dataset terms. Keys in the access log are doubly
+URL-encoded — `release%253D2025-12-01` rather than `release=2025-12-01` —
+so `url_decode` is applied twice, wrapped in `try()` because a malformed
+escape sequence throws rather than returning null. Once decoded, the Hive
+partition values name the vintage and geography directly.
+
+```{r}
+#| label: report-10-table
+
+report_10 |>
+  group_by(sourcebucket, key_prefix) |>
+  summarise(
+    api_calls = sum(api_calls),
+    objects   = sum(distinct_objects),
+    mb        = round(sum(bytes_sent, na.rm = TRUE) / 1e6, 1),
+    .groups   = "drop"
+  ) |>
+  slice_max(mb, n = 10) |>
+  kable(caption = "Consumption by dataset prefix")
+```
+
+```{r}
+#| label: report-10-geography
+
+report_10 |>
+  filter(!is.na(state_usps), state_usps != "") |>
+  group_by(state_usps) |>
+  summarise(
+    api_calls = sum(api_calls),
+    ips       = sum(distinct_ips),
+    mb        = round(sum(bytes_sent, na.rm = TRUE) / 1e6, 1),
+    .groups   = "drop"
+  ) |>
+  slice_max(mb, n = 10) |>
+  kable(caption = "Top states by bytes served")
+```
+
+```{r}
+#| label: report-10-summary
+#| output: asis
+#| echo: false
+
+r10 <- report_10 |>
+  mutate(across(c(api_calls, distinct_objects, distinct_ips, bytes_sent), as.numeric))
+
+r10_prefix <- r10 |>
+  group_by(sourcebucket, key_prefix) |>
+  summarise(api_calls = sum(api_calls), bytes_sent = sum(bytes_sent, na.rm = TRUE),
+            .groups = "drop") |>
+  arrange(desc(bytes_sent))
+r10_p1 <- r10_prefix[1, ]
+r10_next <- head(r10_prefix[-1, ], 2)
+
+cat(sprintf(
+  "%s rows. `%s` under `%s` is %s calls and %s, %s of all bytes attributed here%s.\n\n",
+  num(nrow(r10)), r10_p1$key_prefix, r10_p1$sourcebucket,
+  num(r10_p1$api_calls), bytes(r10_p1$bytes_sent),
+  pct(r10_p1$bytes_sent / sum(r10_prefix$bytes_sent)),
+  if (nrow(r10_next)) {
+    paste0("; the next largest prefixes are ",
+           knitr::combine_words(paste0("`", r10_next$key_prefix, "` at ", bytes(r10_next$bytes_sent))))
+  } else ""
+))
+
+r10_rel <- r10 |>
+  filter(!is.na(release), release != "") |>
+  group_by(release) |>
+  summarise(bytes_sent = sum(bytes_sent, na.rm = TRUE), .groups = "drop") |>
+  arrange(desc(bytes_sent))
+
+r10_geo <- r10 |>
+  filter(!is.na(state_usps), state_usps != "") |>
+  group_by(state_usps) |>
+  summarise(api_calls = sum(api_calls), ips = sum(distinct_ips),
+            bytes_sent = sum(bytes_sent, na.rm = TRUE), .groups = "drop") |>
+  arrange(desc(bytes_sent))
+
+cat("Two things stand out.\n\n")
+
+if (nrow(r10_rel)) {
+  rel_share <- r10_rel$bytes_sent[1] / sum(r10_rel$bytes_sent)
+  cat(sprintf(
+    "%s release `%s` accounts for %s of the bytes from keys that carry a release partition (%s %s seen). %s\n\n",
+    if (rel_share > 0.8) "Consumption is almost entirely of a single release:" else "Consumption is spread across releases; the largest is",
+    r10_rel$release[1], pct(rel_share),
+    words(nrow(r10_rel)), ifelse(nrow(r10_rel) == 1, "release", "releases"),
+    if (rel_share > 0.8) {
+      "If that is the current release, people are pulling current data rather than backfilling history, which is a useful input to any decision about how long to retain old vintages."
+    } else {
+      "Older vintages are still being pulled, which argues for retaining them."
+    }
+  ))
+} else {
+  cat("No keys in this window carry a release partition.\n\n")
+}
+
+if (nrow(r10_geo)) {
+  g <- head(r10_geo, 4)
+  cat(sprintf(
+    "Demand is geographic: `%s` leads at %s calls and %s, followed by %s. Per-state IP counts are %s. A small IP count against large byte totals means a modest number of consumers pulling large state-level extracts rather than broad diffuse interest.\n",
+    g$state_usps[1], num(g$api_calls[1]), bytes(g$bytes_sent[1]),
+    knitr::combine_words(paste0("`", g$state_usps[-1], "` at ", bytes(g$bytes_sent[-1]))),
+    knitr::combine_words(paste0(num(g$ips[1:min(2, nrow(g))]), " for `", g$state_usps[1:min(2, nrow(g))], "`"))
+  ))
+} else {
+  cat("No keys in this window carry a state partition.\n")
+}
+```
+
+### Report 11 — Anonymous downloads in the past week, by bucket
+
+This report uses a 7-day window, not the 30 days used elsewhere. It answers
+a narrower question: of the bytes served to callers with no credential in
+the last week, which buckets did they come from?
+
+```{r}
+#| label: report-11
+
+report_11 <- dbGetQuery(con, "
+  SELECT
+      sourcebucket,
+      COUNT(*)                           AS api_calls,
+      COUNT_IF(httpstatus = '206')       AS range_calls,
+      COUNT(DISTINCT key)                AS distinct_objects,
+      COUNT(DISTINCT remoteip)           AS distinct_ips,
+      SUM(TRY_CAST(bytessent AS BIGINT)) AS bytes_sent
+  FROM cori_data_monitoring.s3_access_identified
+  WHERE caller_class = 'anonymous_unauth'
+    AND operation LIKE 'REST.GET.OBJECT%'
+    AND (year || month || day) >= date_format(current_date - interval '7' day, '%Y%m%d')
+  GROUP BY 1
+  ORDER BY bytes_sent DESC
+") |>
+  # Athena BIGINT arrives as bit64::integer64, which dplyr arithmetic and
+  # ggplot2 scales do not handle.
+  mutate(across(c(api_calls, range_calls, distinct_objects, distinct_ips, bytes_sent), as.numeric))
+
+report_11_daily <- dbGetQuery(con, "
+  SELECT
+      sourcebucket,
+      from_iso8601_date(year || '-' || month || '-' || day) AS day,
+      SUM(TRY_CAST(bytessent AS BIGINT)) AS bytes_sent
+  FROM cori_data_monitoring.s3_access_identified
+  WHERE caller_class = 'anonymous_unauth'
+    AND operation LIKE 'REST.GET.OBJECT%'
+    AND (year || month || day) >= date_format(current_date - interval '7' day, '%Y%m%d')
+  GROUP BY 1, 2
+") |>
+  mutate(bytes_sent = as.numeric(bytes_sent))
+```
+
+Both queries count only object GETs (`REST.GET.OBJECT%`), so listing calls
+and other operations are excluded. The first returns one row per bucket for the whole week, which keeps
+`distinct_objects` and `distinct_ips` honest; summing daily distinct counts
+would count the same object once for every day it was fetched.
+
+```{r}
+#| label: report-11-table
+
+report_11 |>
+  mutate(
+    mb               = round(bytes_sent / 1e6, 1),
+    share_of_bytes   = round(100 * bytes_sent / sum(bytes_sent, na.rm = TRUE), 1),
+    calls_per_object = round(api_calls / distinct_objects, 1)
+  ) |>
+  arrange(desc(mb)) |>
+  select(sourcebucket, mb, share_of_bytes, distinct_objects, distinct_ips,
+         api_calls, range_calls, calls_per_object) |>
+  kable(caption = "Anonymous downloads by bucket, past 7 days")
+```
+
+`share_of_bytes` says which bucket accounts for the total. `calls_per_object`
+is the range-read signature: a value near 1 is whole-file downloads, a value
+in the hundreds is a client reading parquet in many HTTP 206 pieces. A
+bucket with high bytes, few distinct IPs and a high `calls_per_object` is a
+small number of analytic jobs, not broad public interest.
+
+```{r}
+#| label: report-11-chart
+
+r11_totals <- report_11_daily |>
+  group_by(sourcebucket) |>
+  summarise(bytes_sent = sum(bytes_sent, na.rm = TRUE), .groups = "drop") |>
+  arrange(desc(bytes_sent))
+r11_top <- head(r11_totals$sourcebucket, 4)
+r11_levels <- c(r11_top, "Other buckets")
+r11_colors <- setNames(
+  c(unname(cori_colors[c("Emerald", "Mid Blue", "Mid Purple", "Mid Orange")])[seq_along(r11_top)],
+    cori_colors[["CORI Gray"]]),
+  c(r11_top, "Other buckets")
+)
+
+report_11_daily |>
+  mutate(bucket = factor(
+    ifelse(sourcebucket %in% r11_top, sourcebucket, "Other buckets"),
+    levels = rev(r11_levels)
+  )) |>
+  group_by(day, bucket) |>
+  summarise(bytes_sent = sum(bytes_sent, na.rm = TRUE), .groups = "drop") |>
+  ggplot(aes(day, bytes_sent, fill = bucket)) +
+  geom_col(width = 0.7) +
+  scale_fill_manual(values = r11_colors, breaks = r11_levels) +
+  scale_y_continuous(
+    labels = bytes,
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "1 day") +
+  theme_cori() +
+  theme(legend.position = "top") +
+  guides(fill = guide_legend(nrow = 1)) +
+  labs(
+    title    = paste0(
+      r11_top[1], " served ",
+      percent(r11_totals$bytes_sent[1] / sum(r11_totals$bytes_sent), accuracy = 1),
+      " of the week's\nanonymous bytes"
+    ),
+    subtitle = "Daily bytes served to callers with no credential, past 7 days, stacked by source bucket",
+    caption  = paste0(
+      "Source: CORI analysis of S3 server access logs (cori_data_monitoring.s3_access_identified).\n",
+      "Object GETs by anonymous_unauth callers only."
+    ),
+    x = NULL, y = NULL, fill = NULL
+  )
+```
+
+The daily chart separates two explanations for a large weekly total. One
+tall bar means a single burst, typically one client pulling a large extract.
+Bars of similar height every day mean steady background consumption.
+
+The total here need not match the `anonymous` bar in the monitoring
+resource's "Bytes served by caller" chart, for two reasons. That chart sums
+the whole 30-day frame it queried, not the last week. And it groups by
+`caller_id`, where a vended session with no `caller` tag is also folded into
+`anonymous`; this report counts only `caller_class = 'anonymous_unauth'`,
+meaning requests that carried no credential at all.
+
+#### Which kind of credential is behind `cori.data.fcc`'s traffic?
+
+Report 11 counts only callers with no credential. To see which kind of
+credential accounts for the bulk of `cori.data.fcc`'s data requests over the
+same seven days, this query keeps every caller class and also splits on the
+HTTP status of the response, so a request that was served can be told apart
+from one that was refused.
+
+```{r}
+#| label: report-11-fcc
+
+report_11_fcc <- dbGetQuery(con, "
+  SELECT
+      caller_class,
+      httpstatus,
+      COUNT(*)                           AS api_calls,
+      COUNT(DISTINCT remoteip)           AS distinct_ips,
+      SUM(TRY_CAST(bytessent AS BIGINT)) AS bytes_sent
+  FROM cori_data_monitoring.s3_access_identified
+  WHERE sourcebucket = 'cori.data.fcc'
+    AND operation LIKE 'REST.GET.OBJECT%'
+    AND (year || month || day) >= date_format(current_date - interval '7' day, '%Y%m%d')
+  GROUP BY 1, 2
+") |>
+  mutate(across(c(api_calls, distinct_ips, bytes_sent), as.numeric))
+
+report_11_fcc |>
+  mutate(
+    caller_class = ifelse(grepl("^vended", caller_class), "vended_*", caller_class),
+    served       = grepl("^2", httpstatus)
+  ) |>
+  group_by(caller_class, served) |>
+  summarise(
+    api_calls    = sum(api_calls),
+    distinct_ips = sum(distinct_ips),
+    mb           = round(sum(bytes_sent, na.rm = TRUE) / 1e6, 2),
+    .groups      = "drop"
+  ) |>
+  arrange(desc(mb)) |>
+  kable(caption = "cori.data.fcc GETs by caller class and outcome, past 7 days")
+```
+
+```{r}
+#| label: report-11-fcc-summary
+#| include: false
+
+r11f <- report_11_fcc |>
+  mutate(
+    caller_group = ifelse(grepl("^vended", caller_class), "vended", caller_class),
+    served       = grepl("^2", httpstatus)
+  )
+r11f_phrase <- c(
+  anonymous_unauth   = "anonymous callers",
+  local_iam          = "staff IAM callers",
+  other_assumed_role = "infrastructure roles",
+  vended             = "vended-credential callers"
+)
+r11f_by <- r11f |>
+  filter(served) |>
+  group_by(caller_group) |>
+  summarise(
+    api_calls  = sum(api_calls),
+    bytes_sent = sum(bytes_sent, na.rm = TRUE),
+    .groups    = "drop"
+  ) |>
+  arrange(desc(bytes_sent))
+r11f_bytes <- sum(r11f_by$bytes_sent)
+r11f_top   <- r11f_by[1, ]
+
+r11f_anon       <- r11f |> filter(caller_group == "anonymous_unauth")
+r11f_anon_ok    <- r11f_anon |> filter(served)
+r11f_anon_no    <- r11f_anon |> filter(!served)
+r11f_anon_calls <- total(r11f_anon$api_calls)
+r11f_no_calls   <- total(r11f_anon_no$api_calls)
+r11f_ok_calls   <- total(r11f_anon_ok$api_calls)
+r11f_no_status  <- knitr::combine_words(paste0(
+  "`", unique(r11f_anon_no$httpstatus), "`"
+))
+
+r11_fcc_row <- report_11 |> filter(sourcebucket == "cori.data.fcc")
+report_11_fcc_row_txt <- if (nrow(r11_fcc_row)) {
+  paste0(
+    "`cori.data.fcc` shows ", num(r11_fcc_row$api_calls), " unsigned calls for ",
+    num(r11_fcc_row$distinct_objects), " distinct objects from ",
+    num(r11_fcc_row$distinct_ips), " IP addresses, totalling only ",
+    bytes(r11_fcc_row$bytes_sent), "."
+  )
+} else {
+  "`cori.data.fcc` does not appear in that table at all."
+}
+
+r11f_lead_txt <- if (nrow(r11f_by) == 0) {
+  "No `cori.data.fcc` GET was served to any caller in this window."
+} else {
+  paste0(
+    "Over the past seven days, ", r11f_phrase[[r11f_top$caller_group]],
+    " received ", pct(r11f_top$bytes_sent / r11f_bytes, 1), " of the ",
+    bytes(r11f_bytes), " that `cori.data.fcc` served (",
+    num(r11f_top$api_calls), " served requests). Anonymous callers received ",
+    bytes(total(r11f_anon_ok$bytes_sent)), "."
+  )
+}
+r11f_anon_txt <- if (r11f_anon_calls == 0) {
+  "No unsigned request reached `cori.data.fcc` in this window."
+} else if (r11f_ok_calls == 0) {
+  paste0(
+    "Unsigned callers sent ", num(r11f_anon_calls), " GET requests to `cori.data.fcc` from ",
+    num(total(r11f_anon$distinct_ips)), " IP addresses, and every one was refused (status ",
+    r11f_no_status, "). They moved ", bytes(total(r11f_anon_no$bytes_sent)),
+    " in total, which is the size of the error responses, not of any data."
+  )
+} else {
+  paste0(
+    "Unsigned callers sent ", num(r11f_anon_calls), " GET requests to `cori.data.fcc`; ",
+    num(r11f_ok_calls), " were served (", bytes(total(r11f_anon_ok$bytes_sent)),
+    ") and ", num(r11f_no_calls), " were refused",
+    if (r11f_no_calls > 0) paste0(" (status ", r11f_no_status, ")"), ". ",
+    "If the bucket policy was tightened partway through this window, the served ",
+    "requests came before the change; if not, something other than the policy shown ",
+    "below is allowing unsigned reads, and that needs finding."
+  )
+}
+```
+
+`r r11f_lead_txt` `r r11f_anon_txt`
+
+```{r}
+#| label: report-11-fcc-chart
+#| eval: !expr nrow(r11f_by) > 0
+
+r11f_label <- c(
+  anonymous_unauth   = "Anonymous callers",
+  local_iam          = "Staff IAM callers",
+  other_assumed_role = "Infrastructure roles",
+  vended             = "Vended-credential callers"
+)
+r11f_colors <- c(
+  anonymous_unauth   = cori_colors[["Emerald"]],
+  local_iam          = cori_colors[["Mid Blue"]],
+  other_assumed_role = cori_colors[["Mid Orange"]],
+  vended             = cori_colors[["Mid Purple"]]
+)
+
+r11f_cls <- r11f |>
+  group_by(caller_group) |>
+  summarise(
+    served_bytes  = sum(bytes_sent[served], na.rm = TRUE),
+    refused_calls = sum(api_calls[!served]),
+    .groups       = "drop"
+  ) |>
+  mutate(label = paste0(
+    bytes(served_bytes),
+    ifelse(refused_calls > 0, paste0(", ", num(refused_calls), " refused"), "")
+  ))
+
+r11f_cls |>
+  ggplot(aes(reorder(caller_group, served_bytes), served_bytes, fill = caller_group)) +
+  geom_col(width = 0.7) +
+  geom_text(
+    aes(label = label),
+    hjust    = -0.1,
+    fontface = "bold",
+    family   = "Lato",
+    size     = 4
+  ) +
+  coord_flip() +
+  scale_x_discrete(labels = r11f_label) +
+  scale_fill_manual(values = r11f_colors, guide = "none") +
+  scale_y_continuous(labels = bytes, expand = expansion(mult = c(0, 0.2))) +
+  theme_cori_horizontal_bars() +
+  labs(
+    title    = paste0(
+      r11f_label[[r11f_top$caller_group]], " received ",
+      pct(r11f_top$bytes_sent / r11f_bytes, 1), " of the\nbytes cori.data.fcc served"
+    ),
+    subtitle = "Bytes served in the past 7 days by kind of credential; requests answered with an error are counted beside the bar",
+    caption  = paste0(
+      "Source: CORI analysis of S3 server access logs (cori_data_monitoring.s3_access_identified).\n",
+      "Object GETs to cori.data.fcc. Bytes are from successful (2xx) responses only."
+    ),
+    x = NULL, y = NULL
+  )
+```
+
+##### How can a caller with no credential reach this bucket at all?
+
+Under the bucket policy as written, it cannot read anything. Both statements
+(`s3:ListBucket` on the bucket and the four read actions on `cori.data.fcc/*`)
+set `"Principal": "*"`, which matches every caller, anonymous ones included.
+The `Condition`, though, requires `aws:PrincipalAccount` to equal
+`312512371189`, and `Principal: "*"` only widens who is *considered*; the
+condition still has to be true for the statement to apply. For a signed
+request AWS fills `aws:PrincipalAccount` with the account that owns the
+calling identity. For an unsigned request it holds the literal string
+`anonymous` ([AWS IAM global condition keys](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html)),
+so `StringEquals` is false, neither statement applies, and S3 returns an
+implicit deny (HTTP 403, `AccessDenied`).
+
+What the policy actually grants is read access to any principal in account
+`312512371189`: IAM users and roles, and the temporary credentials the vending
+endpoint issues, which arrive as assumed-role sessions in that account. That is the
+mechanism by which `cori.data.fcc` moves from "public" to "credentialed". The
+statement id `PublicReadGetObject` is a leftover name; the effect is no longer
+public.
+
+Anonymous rows still appear in these reports for two reasons:
+
+- Refused requests are logged. S3 server access logs record every request that
+  reaches the bucket, including ones answered with a 403, and an unsigned
+  request has `requester = '-'`. The view therefore labels it
+  `anonymous_unauth`, and the queries above count `REST.GET.OBJECT%`
+  operations without filtering on `httpstatus`. A refused request adds to
+  `api_calls` but contributes only its error response to `bytes_sent`. That is the signature in Report 11's table:
+  `r report_11_fcc_row_txt`
+- The 30-day window can straddle a policy change. Report 2 attributes
+  `r bytes(r2_get("anonymous_unauth", "bytes_sent"))` to anonymous callers
+  across all buckets over thirty days. Those bytes were served, so some bucket
+  allowed unsigned reads at some point in that window, and if that bucket was
+  `cori.data.fcc` the change is visible by splitting a report on `day` and
+  `httpstatus`: `200` and `206` responses give way to `403`.
+
+Other buckets are not covered by this policy. A bucket whose own policy still
+allows public reads keeps serving anonymous callers normally, and the table
+above Report 11's chart shows which buckets those are.
+
+### What these reports establish
+
+```{r}
+#| label: conclusion-summary
+#| include: false
+
+anon_calls_share <- r2_get("anonymous_unauth", "api_calls") / r2_calls
+anon_bytes_share <- r2_get("anonymous_unauth", "bytes_sent") / r2_bytes
+
+concl_shape_txt <- paste0(
+  if (nrow(r10_prefix)) paste0(
+    "mostly `", r10_p1$key_prefix, "` data (", pct(r10_p1$bytes_sent / sum(r10_prefix$bytes_sent)),
+    " of attributed bytes)"
+  ),
+  if (nrow(r10_rel)) paste0(
+    ", chiefly release `", r10_rel$release[1], "` (",
+    pct(r10_rel$bytes_sent[1] / sum(r10_rel$bytes_sent)), " of release-tagged bytes)"
+  ),
+  if (nrow(r10_geo)) paste0(
+    ", led by the states ",
+    knitr::combine_words(paste0("`", head(r10_geo$state_usps, 4), "`"))
+  )
+)
+
+concl_clients <- c(
+  r7b_rc$useragent,
+  r7b_named$useragent
+)
+concl_clients_txt <- paste0(
+  if (length(concl_clients)) paste0(
+    "Named clients in the user-agent residual show ", words(length(concl_clients)),
+    " purpose-built third-party ", ifelse(length(concl_clients) == 1, "tool", "tools"), " (",
+    knitr::combine_words(paste0("`", concl_clients, "`")), ")"
+  ) else "The user-agent residual shows no named third-party tools",
+  if (nrow(r7b_rstudio) || nrow(r7b_curl)) paste0(
+    " and ",
+    knitr::combine_words(c(
+      if (nrow(r7b_rstudio)) "RStudio users",
+      if (nrow(r7b_curl)) paste0("curl users (", num(total(r7b_curl$distinct_ips)), " IPs)")
+    ))
+  ),
+  "."
+)
+```
+
+Three findings hold across the set.
+
+The consumers are external and anonymous. `r pct(anon_calls_share)` of calls
+and `r pct(anon_bytes_share)` of bytes carry no credential. The identification
+mechanism built for this purpose, vended credentials, covers
+`r num(r2_get("vended", "api_calls"))` calls in thirty days,
+`r one_in(r2_get("vended", "api_calls"), r2_calls)`.
+
+The real audience is small and legible. Roughly `r num(r9_sessions)` sessions
+from `r num(r9_ips)` IP addresses, pulling
+`r num(sum(r9$distinct_objects))` distinct objects, `r concl_shape_txt`.
+`r concl_clients_txt`
+
+Request counts mislead by about `r r9_orders` orders of magnitude. Any
+statement of the form "`r num(r4_calls)` requests" describes range-read
+behaviour, not demand. Reports 9 and 10 are the ones to quote.
+
+```{r}
+#| label: disconnect
+
+dbDisconnect(con)
+```

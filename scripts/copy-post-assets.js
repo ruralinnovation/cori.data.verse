@@ -36,7 +36,7 @@ function copyAssets(srcDir, destDir, basePath = "") {
     const destPath = path.join(destDir, entry.name);
 
     if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue;
+      if (SKIP_DIRS.has(entry.name) || entry.name.endsWith("_cache")) continue;
       copied += copyAssets(srcPath, destPath, path.join(basePath, entry.name));
     } else {
       const ext = path.extname(entry.name).toLowerCase();

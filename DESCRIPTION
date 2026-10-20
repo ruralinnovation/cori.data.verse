@@ -27,14 +27,16 @@ Imports:
   jsonlite,
   here
 Suggests:
-  igraph,
-  ggraph,
   ggplot2,
+  ggraph,
+  ggrepel,
+  igraph,
   quarto,
   tidygraph,
   targets,
   paws.storage,
   noctua,
+  scales,
   testthat (>= 3.0.0)
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
